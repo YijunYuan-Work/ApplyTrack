@@ -15,6 +15,9 @@ export const initialApplications = [
     contact: 'Maya Chen',
     salary: '$95k - $120k',
     followUp: '2026-05-30',
+    coverLetter: 'Yes',
+    referral: 'No',
+    lastUpdated: '2026-05-21',
     notes: 'Submitted through the careers page. Follow up with recruiter.',
   },
   {
@@ -28,6 +31,9 @@ export const initialApplications = [
     contact: 'Alex Rivera',
     salary: '$105k - $130k',
     followUp: '2026-05-28',
+    coverLetter: 'Yes',
+    referral: 'No',
+    lastUpdated: '2026-05-24',
     notes: 'Screening call booked. Review component architecture examples.',
   },
 ]
@@ -43,6 +49,9 @@ export function createBlankApplication() {
     contact: '',
     salary: '',
     followUp: '',
+    coverLetter: '',
+    referral: '',
+    lastUpdated: '',
     notes: '',
   }
 }

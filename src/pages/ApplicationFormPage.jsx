@@ -168,6 +168,44 @@ function ApplicationFormPage({
             </label>
           </div>
 
+          <div className="form-grid">
+            <label>
+              Cover letter
+              <select
+                name="coverLetter"
+                value={formData.coverLetter}
+                onChange={handleChange}
+              >
+                <option value="">Not set</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </label>
+
+            <label>
+              Referral
+              <select
+                name="referral"
+                value={formData.referral}
+                onChange={handleChange}
+              >
+                <option value="">Not set</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Last updated
+            <input
+              type="date"
+              name="lastUpdated"
+              value={formData.lastUpdated}
+              onChange={handleChange}
+            />
+          </label>
+
           <label>
             Notes
             <textarea

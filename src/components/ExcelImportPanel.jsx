@@ -4,15 +4,23 @@ import { parseExcelApplications } from '../utils/excelImport'
 function ExcelImportPanel({ onImportApplications }) {
   const [fileName, setFileName] = useState('')
   const [parsedApplications, setParsedApplications] = useState([])
+  const [selectedIndexes, setSelectedIndexes] = useState([])
   const [error, setError] = useState('')
   const [isParsing, setIsParsing] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const selectedApplications = selectedIndexes.map(
+    (index) => parsedApplications[index],
+  )
+  const allSelected =
+    parsedApplications.length > 0 &&
+    selectedIndexes.length === parsedApplications.length
 
   async function handleFileChange(event) {
     const file = event.target.files?.[0]
 
     setError('')
     setParsedApplications([])
+    setSelectedIndexes([])
 
     if (!file) {
       setFileName('')
@@ -25,6 +33,7 @@ function ExcelImportPanel({ onImportApplications }) {
     try {
       const applications = await parseExcelApplications(file)
       setParsedApplications(applications)
+      setSelectedIndexes(applications.map((_application, index) => index))
 
       if (applications.length === 0) {
         setError('No rows with both company and role were found.')
@@ -37,7 +46,7 @@ function ExcelImportPanel({ onImportApplications }) {
   }
 
   async function handleImport() {
-    if (parsedApplications.length === 0) {
+    if (selectedApplications.length === 0) {
       return
     }
 
@@ -45,9 +54,10 @@ function ExcelImportPanel({ onImportApplications }) {
     setError('')
 
     try {
-      await onImportApplications(parsedApplications)
+      await onImportApplications(selectedApplications)
       setFileName('')
       setParsedApplications([])
+      setSelectedIndexes([])
     } catch (importError) {
       setError(importError.message)
     } finally {
@@ -55,9 +65,23 @@ function ExcelImportPanel({ onImportApplications }) {
     }
   }
 
+  function handleToggleApplication(index) {
+    setSelectedIndexes((currentIndexes) =>
+      currentIndexes.includes(index)
+        ? currentIndexes.filter((currentIndex) => currentIndex !== index)
+        : [...currentIndexes, index],
+    )
+  }
+
+  function handleToggleAll() {
+    setSelectedIndexes(
+      allSelected ? [] : parsedApplications.map((_application, index) => index),
+    )
+  }
+
   return (
     <section className="import-panel" aria-label="Import applications">
-      <div>
+      <div className="import-copy">
         <p className="eyebrow">Import</p>
         <h2>Upload your Excel tracker</h2>
         <p>
@@ -72,30 +96,51 @@ function ExcelImportPanel({ onImportApplications }) {
           <input accept=".xlsx,.xls" type="file" onChange={handleFileChange} />
         </label>
 
-        <div className="import-summary">
-          <span>{fileName || 'No file selected'}</span>
-          <strong>
-            {isParsing
-              ? 'Reading...'
-              : `${parsedApplications.length} applications ready`}
-          </strong>
-        </div>
-
         <button
           type="button"
-          disabled={parsedApplications.length === 0 || isImporting}
+          disabled={selectedApplications.length === 0 || isImporting}
           onClick={handleImport}
         >
-          {isImporting ? 'Importing...' : 'Import applications'}
+          {isImporting
+            ? 'Importing...'
+            : selectedApplications.length > 0
+              ? `Import ${selectedApplications.length} applications`
+              : 'Import applications'}
         </button>
+      </div>
+
+      <div className="import-summary">
+        <span>{fileName || 'No file selected'}</span>
+        <strong>
+          {isParsing ? 'Reading...' : `${parsedApplications.length} applications found`}
+        </strong>
       </div>
 
       {parsedApplications.length > 0 && (
         <div className="import-preview">
-          <span>Preview</span>
-          <p>
-            {parsedApplications[0].company} - {parsedApplications[0].role}
-          </p>
+          <div className="import-preview-header">
+            <div>
+              <span>Preview</span>
+              <strong>{selectedApplications.length} selected</strong>
+            </div>
+            <button className="ghost-button" type="button" onClick={handleToggleAll}>
+              {allSelected ? 'Clear all' : 'Select all'}
+            </button>
+          </div>
+
+          <div className="import-preview-list">
+            {parsedApplications.map((application, index) => (
+              <label className="import-preview-row" key={`${application.company}-${application.role}-${index}`}>
+                <input
+                  checked={selectedIndexes.includes(index)}
+                  type="checkbox"
+                  onChange={() => handleToggleApplication(index)}
+                />
+                <span>{application.company}</span>
+                <strong>{application.role}</strong>
+              </label>
+            ))}
+          </div>
         </div>
       )}
 

@@ -9,6 +9,7 @@ function DashboardPage({
   error,
   isLoading,
   onAddApplication,
+  onBulkDeleteApplications,
   onDeleteApplication,
   onDashboard,
   onEditApplication,
@@ -18,6 +19,8 @@ function DashboardPage({
   user,
 }) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedApplicationIds, setSelectedApplicationIds] = useState([])
   const [statusFilter, setStatusFilter] = useState('All')
 
   const statusCounts = useMemo(
@@ -42,6 +45,9 @@ function DashboardPage({
         application.location,
         application.contact,
         application.salary,
+        application.coverLetter,
+        application.referral,
+        application.lastUpdated,
         application.notes,
       ]
         .join(' ')
@@ -58,6 +64,61 @@ function DashboardPage({
 
     return datedFollowUps[0]?.followUp || 'None set'
   }, [applications])
+
+  const filteredApplicationIds = filteredApplications.map(
+    (application) => application.id,
+  )
+  const allVisibleSelected =
+    filteredApplicationIds.length > 0 &&
+    filteredApplicationIds.every((applicationId) =>
+      selectedApplicationIds.includes(applicationId),
+    )
+
+  function handleSelectApplication(applicationId) {
+    setSelectedApplicationIds((currentIds) =>
+      currentIds.includes(applicationId)
+        ? currentIds.filter((currentId) => currentId !== applicationId)
+        : [...currentIds, applicationId],
+    )
+  }
+
+  function handleSelectAllVisible() {
+    setSelectedApplicationIds((currentIds) => {
+      if (allVisibleSelected) {
+        return currentIds.filter(
+          (applicationId) => !filteredApplicationIds.includes(applicationId),
+        )
+      }
+
+      return Array.from(new Set([...currentIds, ...filteredApplicationIds]))
+    })
+  }
+
+  function handleToggleSelectionMode() {
+    setIsSelectionMode((currentMode) => {
+      if (currentMode) {
+        setSelectedApplicationIds([])
+      }
+
+      return !currentMode
+    })
+  }
+
+  function handleClearSelection() {
+    setSelectedApplicationIds([])
+  }
+
+  async function handleBulkDelete() {
+    await onBulkDeleteApplications(selectedApplicationIds)
+    setSelectedApplicationIds([])
+  }
+
+  async function handleDeleteApplication(applicationId) {
+    await onDeleteApplication(applicationId)
+    setSelectedApplicationIds((currentIds) =>
+      currentIds.filter((currentId) => currentId !== applicationId),
+    )
+  }
 
   return (
     <AppLayout
@@ -121,13 +182,65 @@ function DashboardPage({
           </label>
         </div>
 
+        <div className="list-action-bar" aria-label="Application list actions">
+          {isSelectionMode && (
+            <div className="bulk-toolbar" aria-label="Bulk application actions">
+              <span>{selectedApplicationIds.length} selected</span>
+              <button
+                className="ghost-button"
+                disabled={filteredApplications.length === 0}
+                type="button"
+                onClick={handleSelectAllVisible}
+              >
+                {allVisibleSelected ? 'Unselect all' : 'Select all'}
+              </button>
+              <button
+                className="danger-action"
+                disabled={selectedApplicationIds.length === 0}
+                type="button"
+                onClick={handleBulkDelete}
+              >
+                Delete selected
+              </button>
+              {selectedApplicationIds.length > 0 && (
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={handleClearSelection}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+
+          <button
+            aria-label={isSelectionMode ? 'Exit multi-select' : 'Enter multi-select'}
+            className={`icon-action ${isSelectionMode ? 'icon-action-active' : ''}`}
+            disabled={filteredApplications.length === 0}
+            title={isSelectionMode ? 'Exit multi-select' : 'Multi-select'}
+            type="button"
+            onClick={handleToggleSelectionMode}
+          >
+            <img
+              alt=""
+              aria-hidden="true"
+              className="multi-select-icon"
+              src="/selection.png"
+            />
+          </button>
+        </div>
+
         {error && <p className="form-error">{error}</p>}
         {isLoading && <p className="loading-message">Loading applications...</p>}
 
         <ApplicationList
           applications={filteredApplications}
-          onDeleteApplication={onDeleteApplication}
+          selectedApplicationIds={selectedApplicationIds}
+          onDeleteApplication={handleDeleteApplication}
           onEditApplication={onEditApplication}
+          onSelectApplication={handleSelectApplication}
+          selectionMode={isSelectionMode}
         />
       </section>
     </AppLayout>

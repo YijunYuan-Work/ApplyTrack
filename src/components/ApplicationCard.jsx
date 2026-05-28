@@ -2,11 +2,35 @@ import StatusBadge from './StatusBadge'
 
 function ApplicationCard({
   application,
+  isSelected = false,
+  onSelectApplication,
   onDeleteApplication,
   onEditApplication,
+  selectionMode = false,
 }) {
   return (
-    <article className="application-card">
+    <article
+      className={`application-card ${selectionMode ? 'selection-card' : ''} ${
+        isSelected ? 'selected-card' : ''
+      }`}
+    >
+      {selectionMode && (
+        <label
+          className="card-select"
+          title={isSelected ? 'Unselect application' : 'Select application'}
+        >
+          <input
+            checked={isSelected}
+            type="checkbox"
+            onChange={() => onSelectApplication(application.id)}
+          />
+          <span aria-hidden="true"></span>
+          <span className="sr-only">
+            {isSelected ? 'Unselect application' : 'Select application'}
+          </span>
+        </label>
+      )}
+
       <div className="application-main">
         <div className="card-heading">
           <div>
@@ -37,9 +61,26 @@ function ApplicationCard({
             <dt>Salary</dt>
             <dd>{application.salary || 'Not set'}</dd>
           </div>
+          <div>
+            <dt>Cover letter</dt>
+            <dd>{application.coverLetter || 'Not set'}</dd>
+          </div>
+          <div>
+            <dt>Referral</dt>
+            <dd>{application.referral || 'Not set'}</dd>
+          </div>
+          <div>
+            <dt>Last updated</dt>
+            <dd>{application.lastUpdated || 'Not set'}</dd>
+          </div>
         </dl>
 
-        {application.notes && <p className="notes">{application.notes}</p>}
+        {application.notes && (
+          <div className="notes-block">
+            <span>Notes</span>
+            <p>{application.notes}</p>
+          </div>
+        )}
       </div>
 
       <div className="card-actions">

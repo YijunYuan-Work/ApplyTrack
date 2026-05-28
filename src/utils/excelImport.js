@@ -7,7 +7,7 @@ const fieldAliases = {
   jobUrl: ['job link', 'job url', 'link', 'url', 'posting'],
   date: ['date applied', 'data applied', 'applied date', 'applied on'],
   status: ['status'],
-  contact: ['contact', 'recruiter', 'referral'],
+  contact: ['contact', 'recruiter'],
   salary: ['salary', 'salary range', 'compensation'],
   followUp: ['follow up', 'follow-up', 'followup', 'next follow up'],
   notes: ['notes', 'note'],
@@ -102,14 +102,8 @@ function normalizeStatus(value, interviewStage) {
 function buildNotes(row, headerMap) {
   const notes = [
     getCell(row, headerMap, 'notes'),
-    getCell(row, headerMap, 'coverLetter') &&
-      `Cover letter: ${getCell(row, headerMap, 'coverLetter')}`,
-    getCell(row, headerMap, 'referral') &&
-      `Referral: ${getCell(row, headerMap, 'referral')}`,
     getCell(row, headerMap, 'interviewStage') &&
       `Interview stage: ${getCell(row, headerMap, 'interviewStage')}`,
-    getCell(row, headerMap, 'lastUpdated') &&
-      `Last updated: ${getCell(row, headerMap, 'lastUpdated')}`,
   ].filter(Boolean)
 
   return notes.join('\n')
@@ -148,6 +142,9 @@ export async function parseExcelApplications(file) {
         contact: getCell(row, headerMap, 'contact'),
         salary: getCell(row, headerMap, 'salary'),
         followUp: toIsoDate(row[headerMap.followUp], XLSX),
+        coverLetter: getCell(row, headerMap, 'coverLetter'),
+        referral: getCell(row, headerMap, 'referral'),
+        lastUpdated: toIsoDate(row[headerMap.lastUpdated], XLSX),
         notes: buildNotes(row, headerMap),
       }
 

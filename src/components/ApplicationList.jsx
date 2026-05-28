@@ -2,17 +2,23 @@ import ApplicationCard from './ApplicationCard'
 
 function ApplicationList({
   applications,
+  selectedApplicationIds = [],
   onDeleteApplication,
   onEditApplication,
+  onSelectApplication,
+  selectionMode = false,
 }) {
   return (
     <div className="application-list">
       {applications.map((application) => (
         <ApplicationCard
           application={application}
+          isSelected={selectedApplicationIds.includes(application.id)}
           key={application.id}
           onDeleteApplication={onDeleteApplication}
           onEditApplication={onEditApplication}
+          onSelectApplication={onSelectApplication}
+          selectionMode={selectionMode}
         />
       ))}
 

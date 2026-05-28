@@ -3,6 +3,7 @@ import {
   createApplication,
   createApplications,
   deleteApplication,
+  deleteApplications,
   fetchApplications,
   updateApplication,
 } from './api/applications'
@@ -174,6 +175,8 @@ function App() {
       jobUrl: applicationData.jobUrl.trim(),
       contact: applicationData.contact.trim(),
       salary: applicationData.salary.trim(),
+      coverLetter: applicationData.coverLetter.trim(),
+      referral: applicationData.referral.trim(),
       notes: applicationData.notes.trim(),
     })
 
@@ -211,6 +214,14 @@ function App() {
   }
 
   async function handleDeleteApplication(applicationId) {
+    const confirmed = window.confirm(
+      'Delete this application? This cannot be undone.',
+    )
+
+    if (!confirmed) {
+      return
+    }
+
     setDataError('')
 
     try {
@@ -218,6 +229,33 @@ function App() {
       setApplications((currentApplications) =>
         currentApplications.filter(
           (application) => application.id !== applicationId,
+        ),
+      )
+    } catch (error) {
+      setDataError(getFriendlyErrorMessage(error.message))
+    }
+  }
+
+  async function handleBulkDeleteApplications(applicationIds) {
+    if (applicationIds.length === 0) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${applicationIds.length} selected applications? This cannot be undone.`,
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setDataError('')
+
+    try {
+      await deleteApplications(applicationIds)
+      setApplications((currentApplications) =>
+        currentApplications.filter(
+          (application) => !applicationIds.includes(application.id),
         ),
       )
     } catch (error) {
@@ -346,6 +384,7 @@ function App() {
       error={dataError}
       isLoading={dataLoading}
       onAddApplication={() => navigate('/applications/new')}
+      onBulkDeleteApplications={handleBulkDeleteApplications}
       onDeleteApplication={handleDeleteApplication}
       onDashboard={() => navigate('/dashboard')}
       onEditApplication={(applicationId) =>

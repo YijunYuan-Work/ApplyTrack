@@ -454,12 +454,57 @@ button:disabled {
   box-shadow: none;
 }
 
+.list-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.bulk-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.bulk-toolbar span {
+  color: var(--text-h);
+  font-weight: 800;
+}
+
+.icon-action {
+  width: 46px;
+  min-height: 46px;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-h);
+}
+
+.icon-action:hover,
+.icon-action-active {
+  background: #eef4f2;
+  border-color: var(--accent);
+}
+
+.multi-select-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
 .import-panel {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(360px, 1.15fr);
-  gap: 18px;
-  align-items: center;
+  gap: 16px;
   padding: 20px;
+}
+
+.import-copy {
+  max-width: 680px;
 }
 
 .import-panel h2 {
@@ -475,7 +520,7 @@ button:disabled {
 
 .import-controls {
   display: grid;
-  grid-template-columns: minmax(150px, 0.75fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: end;
 }
@@ -500,7 +545,7 @@ button:disabled {
 }
 
 .import-summary span,
-.import-preview span {
+.import-preview-header span {
   color: var(--text);
   font-size: 0.76rem;
   font-weight: 800;
@@ -508,15 +553,53 @@ button:disabled {
 }
 
 .import-summary strong,
-.import-preview p {
+.import-preview-header strong {
   margin: 0;
   color: var(--text-h);
   font-size: 0.92rem;
   overflow-wrap: anywhere;
 }
 
-.import-preview {
-  grid-column: 1 / -1;
+.import-preview-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.import-preview-list {
+  display: grid;
+  gap: 8px;
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.import-preview-row {
+  display: grid;
+  grid-template-columns: auto minmax(130px, 0.5fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #f8fafb;
+}
+
+.import-preview-row input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.import-preview-row span {
+  color: var(--accent);
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.import-preview-row strong {
+  color: var(--text-h);
+  overflow-wrap: anywhere;
 }
 
 .form-error,
@@ -546,11 +629,66 @@ button:disabled {
 }
 
 .application-card {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 20px;
   align-items: start;
   padding: 20px;
+}
+
+.application-card.selection-card {
+  padding-left: 56px;
+}
+
+.application-card.selected-card {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 3px var(--accent-bg),
+    var(--shadow);
+}
+
+.card-select {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.card-select input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card-select span[aria-hidden='true'] {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.card-select input:checked + span {
+  border-color: var(--accent);
+  background:
+    radial-gradient(circle at center, var(--accent) 0 42%, transparent 45%),
+    #fff;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .application-main {
@@ -572,7 +710,7 @@ button:disabled {
 
 .application-details {
   display: grid;
-  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 12px;
   margin: 18px 0 0;
 }
@@ -595,8 +733,24 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
-.notes {
+.notes-block {
   margin: 18px 0 0;
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: rgba(47, 117, 104, 0.07);
+  padding: 12px 14px;
+}
+
+.notes-block span {
+  display: block;
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.notes-block p {
+  margin: 5px 0 0;
   color: var(--text);
   line-height: 1.55;
 }

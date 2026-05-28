@@ -10,10 +10,18 @@ create table if not exists public.applications (
   contact text default '',
   salary text default '',
   follow_up date,
+  cover_letter text default '',
+  referral text default '',
+  last_updated date,
   notes text default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.applications
+  add column if not exists cover_letter text default '',
+  add column if not exists referral text default '',
+  add column if not exists last_updated date;
 
 alter table public.applications enable row level security;
 
