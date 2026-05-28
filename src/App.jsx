@@ -11,6 +11,8 @@ import { normalizeApplication } from './data/applications'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
 import ApplicationFormPage from './pages/ApplicationFormPage'
 import DashboardPage from './pages/DashboardPage'
+import ImportExcelPage from './pages/ImportExcelPage'
+import ProfilePage from './pages/ProfilePage'
 import SetupPage from './pages/SetupPage'
 import SignInPage from './pages/SignInPage'
 import { getEditingApplicationId, getRoute, navigate } from './utils/routes'
@@ -281,8 +283,13 @@ function App() {
       <ApplicationFormPage
         application={null}
         error={dataError}
+        onAddApplication={() => navigate('/applications/new')}
         onCancel={() => navigate('/dashboard')}
+        onDashboard={() => navigate('/dashboard')}
+        onImportExcel={() => navigate('/import')}
+        onProfile={() => navigate('/profile')}
         onSave={handleSaveApplication}
+        onSignOut={handleSignOut}
         user={appUser}
       />
     )
@@ -293,8 +300,41 @@ function App() {
       <ApplicationFormPage
         application={editingApplication}
         error={dataError}
+        onAddApplication={() => navigate('/applications/new')}
         onCancel={() => navigate('/dashboard')}
+        onDashboard={() => navigate('/dashboard')}
+        onImportExcel={() => navigate('/import')}
+        onProfile={() => navigate('/profile')}
         onSave={handleSaveApplication}
+        onSignOut={handleSignOut}
+        user={appUser}
+      />
+    )
+  }
+
+  if (route === '/profile') {
+    return (
+      <ProfilePage
+        applications={applications}
+        onAddApplication={() => navigate('/applications/new')}
+        onDashboard={() => navigate('/dashboard')}
+        onImportExcel={() => navigate('/import')}
+        onProfile={() => navigate('/profile')}
+        onSignOut={handleSignOut}
+        user={appUser}
+      />
+    )
+  }
+
+  if (route === '/import') {
+    return (
+      <ImportExcelPage
+        onAddApplication={() => navigate('/applications/new')}
+        onDashboard={() => navigate('/dashboard')}
+        onImportExcel={() => navigate('/import')}
+        onImportApplications={handleImportApplications}
+        onProfile={() => navigate('/profile')}
+        onSignOut={handleSignOut}
         user={appUser}
       />
     )
@@ -307,10 +347,12 @@ function App() {
       isLoading={dataLoading}
       onAddApplication={() => navigate('/applications/new')}
       onDeleteApplication={handleDeleteApplication}
+      onDashboard={() => navigate('/dashboard')}
       onEditApplication={(applicationId) =>
         navigate(`/applications/${applicationId}/edit`)
       }
-      onImportApplications={handleImportApplications}
+      onImportExcel={() => navigate('/import')}
+      onOpenProfile={() => navigate('/profile')}
       onSignOut={handleSignOut}
       user={appUser}
     />

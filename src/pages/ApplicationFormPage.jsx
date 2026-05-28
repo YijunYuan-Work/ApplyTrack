@@ -1,11 +1,23 @@
 import { useState } from 'react'
+import AppLayout from '../components/AppLayout'
 import {
   createBlankApplication,
   normalizeApplication,
   statuses,
 } from '../data/applications'
 
-function ApplicationFormPage({ application, error, onCancel, onSave, user }) {
+function ApplicationFormPage({
+  application,
+  error,
+  onAddApplication,
+  onCancel,
+  onDashboard,
+  onImportExcel,
+  onProfile,
+  onSave,
+  onSignOut,
+  user,
+}) {
   const [formData, setFormData] = useState(() =>
     application ? normalizeApplication(application) : createBlankApplication(),
   )
@@ -21,7 +33,15 @@ function ApplicationFormPage({ application, error, onCancel, onSave, user }) {
   }
 
   return (
-    <main className="app-shell">
+    <AppLayout
+      currentPage="applications"
+      onAddApplication={onAddApplication}
+      onDashboard={onDashboard}
+      onImportExcel={onImportExcel}
+      onProfile={onProfile}
+      onSignOut={onSignOut}
+      user={user}
+    >
       <header className="app-header compact">
         <div>
           <p className="eyebrow">ApplyTrack</p>
@@ -171,7 +191,7 @@ function ApplicationFormPage({ application, error, onCancel, onSave, user }) {
           {error && <p className="form-error">{error}</p>}
         </form>
       </section>
-    </main>
+    </AppLayout>
   )
 }
 

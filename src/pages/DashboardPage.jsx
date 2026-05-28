@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
+import AppLayout from '../components/AppLayout'
 import ApplicationList from '../components/ApplicationList'
-import ExcelImportPanel from '../components/ExcelImportPanel'
 import MetricGrid from '../components/MetricGrid'
 import { statuses } from '../data/applications'
 
@@ -10,14 +10,15 @@ function DashboardPage({
   isLoading,
   onAddApplication,
   onDeleteApplication,
+  onDashboard,
   onEditApplication,
-  onImportApplications,
+  onImportExcel,
+  onOpenProfile,
   onSignOut,
   user,
 }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
-  const [showImportPanel, setShowImportPanel] = useState(false)
 
   const statusCounts = useMemo(
     () =>
@@ -59,26 +60,19 @@ function DashboardPage({
   }, [applications])
 
   return (
-    <main className="app-shell">
+    <AppLayout
+      currentPage="dashboard"
+      onAddApplication={onAddApplication}
+      onDashboard={onDashboard}
+      onImportExcel={onImportExcel}
+      onProfile={onOpenProfile}
+      onSignOut={onSignOut}
+      user={user}
+    >
       <header className="app-header">
         <div>
           <p className="eyebrow">Dashboard</p>
           <h1>Welcome {user.name}, here are the applications you made.</h1>
-        </div>
-        <div className="header-actions">
-          <button type="button" onClick={onAddApplication}>
-            Add application
-          </button>
-          <button
-            className="ghost-button"
-            type="button"
-            onClick={() => setShowImportPanel((isVisible) => !isVisible)}
-          >
-            {showImportPanel ? 'Hide import' : 'Import Excel'}
-          </button>
-          <button className="ghost-button" type="button" onClick={onSignOut}>
-            Sign out
-          </button>
         </div>
       </header>
 
@@ -87,12 +81,6 @@ function DashboardPage({
         nextFollowUp={nextFollowUp}
         statusCounts={statusCounts}
       />
-
-      {showImportPanel && (
-        <div className="dashboard-section">
-          <ExcelImportPanel onImportApplications={onImportApplications} />
-        </div>
-      )}
 
       <section className="tracker-section" aria-label="Application tracker">
         <div className="section-header">
@@ -142,7 +130,7 @@ function DashboardPage({
           onEditApplication={onEditApplication}
         />
       </section>
-    </main>
+    </AppLayout>
   )
 }
 
