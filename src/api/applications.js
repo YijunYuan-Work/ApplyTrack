@@ -60,6 +60,21 @@ export async function createApplication(application, userId) {
   return fromApplicationRow(data)
 }
 
+export async function createApplications(applications, userId) {
+  const { data, error } = await supabase
+    .from('applications')
+    .insert(
+      applications.map((application) => toApplicationRow(application, userId)),
+    )
+    .select()
+
+  if (error) {
+    throw error
+  }
+
+  return data.map(fromApplicationRow)
+}
+
 export async function updateApplication(applicationId, application, userId) {
   const { data, error } = await supabase
     .from('applications')

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   createApplication,
+  createApplications,
   deleteApplication,
   fetchApplications,
   updateApplication,
@@ -222,6 +223,22 @@ function App() {
     }
   }
 
+  async function handleImportApplications(importedApplications) {
+    setDataError('')
+
+    try {
+      const savedApplications = await createApplications(importedApplications, user.id)
+      setApplications((currentApplications) => [
+        ...savedApplications,
+        ...currentApplications,
+      ])
+    } catch (error) {
+      const message = getFriendlyErrorMessage(error.message)
+      setDataError(message)
+      throw new Error(message, { cause: error })
+    }
+  }
+
   if (!hasSupabaseConfig) {
     return <SetupPage />
   }
@@ -293,6 +310,7 @@ function App() {
       onEditApplication={(applicationId) =>
         navigate(`/applications/${applicationId}/edit`)
       }
+      onImportApplications={handleImportApplications}
       onSignOut={handleSignOut}
       user={appUser}
     />
