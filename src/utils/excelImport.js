@@ -1,4 +1,9 @@
-import { createBlankApplication, normalizeApplication, statuses } from '../data/applications'
+import {
+  createBlankApplication,
+  getTodayIsoDate,
+  normalizeApplication,
+  statuses,
+} from '../data/applications'
 
 const fieldAliases = {
   company: ['company', 'employer', 'organization'],
@@ -168,7 +173,7 @@ export async function parseExcelApplications(file) {
         followUp: toIsoDate(row[headerMap.followUp], XLSX),
         coverLetter: getCell(row, headerMap, 'coverLetter'),
         referral: getCell(row, headerMap, 'referral'),
-        lastUpdated: toIsoDate(row[headerMap.lastUpdated], XLSX),
+        lastUpdated: toIsoDate(row[headerMap.lastUpdated], XLSX) || getTodayIsoDate(),
         interviewCount: inferInterviewCount(interviewStage),
         notes: buildNotes(row, headerMap),
       }

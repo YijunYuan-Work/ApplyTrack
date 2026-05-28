@@ -178,6 +178,8 @@ function App() {
       coverLetter: applicationData.coverLetter.trim(),
       referral: applicationData.referral.trim(),
       interviewCount: Number(applicationData.interviewCount) || 0,
+      lastUpdated:
+        applicationData.lastUpdated || new Date().toISOString().slice(0, 10),
       notes: applicationData.notes.trim(),
     })
 

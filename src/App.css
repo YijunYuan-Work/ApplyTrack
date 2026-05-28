@@ -447,7 +447,7 @@ button:disabled {
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) 190px 220px;
   gap: 14px;
   margin-top: 24px;
   padding: 16px;

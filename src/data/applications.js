@@ -3,6 +3,10 @@ export const userKey = 'applytrack-user'
 
 export const statuses = ['Wishlist', 'Applied', 'Interview', 'Offer', 'Rejected']
 
+export function getTodayIsoDate() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export const initialApplications = [
   {
     id: 1,
@@ -46,14 +50,14 @@ export function createBlankApplication() {
     role: '',
     location: '',
     status: 'Applied',
-    date: new Date().toISOString().slice(0, 10),
+    date: getTodayIsoDate(),
     jobUrl: '',
     contact: '',
     salary: '',
     followUp: '',
     coverLetter: '',
     referral: '',
-    lastUpdated: '',
+    lastUpdated: getTodayIsoDate(),
     interviewCount: 0,
     notes: '',
   }
@@ -66,6 +70,7 @@ export function normalizeApplication(application) {
     ...createBlankApplication(),
     ...application,
     interviewCount: Number.isNaN(interviewCount) ? 0 : Math.max(0, interviewCount),
+    lastUpdated: application.lastUpdated || application.date || getTodayIsoDate(),
     location: application.location || '',
     status: statuses.includes(application.status) ? application.status : 'Applied',
   }

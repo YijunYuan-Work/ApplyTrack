@@ -21,6 +21,7 @@ function DashboardPage({
   const [searchTerm, setSearchTerm] = useState('')
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedApplicationIds, setSelectedApplicationIds] = useState([])
+  const [sortBy, setSortBy] = useState('applied')
   const [statusFilter, setStatusFilter] = useState('All')
 
   const statusCounts = useMemo(
@@ -36,27 +37,40 @@ function DashboardPage({
   const filteredApplications = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
 
-    return applications.filter((application) => {
-      const matchesStatus =
-        statusFilter === 'All' || application.status === statusFilter
-      const searchableText = [
-        application.company,
-        application.role,
-        application.location,
-        application.contact,
-        application.salary,
-        application.coverLetter,
-        application.referral,
-        application.lastUpdated,
-        application.interviewCount,
-        application.notes,
-      ]
-        .join(' ')
-        .toLowerCase()
+    return applications
+      .filter((application) => {
+        const matchesStatus =
+          statusFilter === 'All' || application.status === statusFilter
+        const searchableText = [
+          application.company,
+          application.role,
+          application.location,
+          application.contact,
+          application.salary,
+          application.coverLetter,
+          application.referral,
+          application.lastUpdated,
+          application.interviewCount,
+          application.notes,
+        ]
+          .join(' ')
+          .toLowerCase()
 
-      return matchesStatus && searchableText.includes(normalizedSearch)
-    })
-  }, [applications, searchTerm, statusFilter])
+        return matchesStatus && searchableText.includes(normalizedSearch)
+      })
+      .sort((firstApplication, secondApplication) => {
+        const firstDate =
+          sortBy === 'lastUpdated'
+            ? firstApplication.lastUpdated
+            : firstApplication.date
+        const secondDate =
+          sortBy === 'lastUpdated'
+            ? secondApplication.lastUpdated
+            : secondApplication.date
+
+        return String(secondDate || '').localeCompare(String(firstDate || ''))
+      })
+  }, [applications, searchTerm, sortBy, statusFilter])
 
   const nextFollowUp = useMemo(() => {
     const datedFollowUps = applications
@@ -179,6 +193,17 @@ function DashboardPage({
               {statuses.map((status) => (
                 <option key={status}>{status}</option>
               ))}
+            </select>
+          </label>
+
+          <label>
+            Sort by
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+            >
+              <option value="applied">Applied date</option>
+              <option value="lastUpdated">Last updated date</option>
             </select>
           </label>
         </div>

@@ -79,7 +79,7 @@ export async function fetchApplications() {
   const { data, error } = await supabase
     .from('applications')
     .select('*')
-    .order('created_at', { ascending: false })
+    .order('applied_date', { ascending: false, nullsFirst: false })
 
   if (error) {
     throw error
