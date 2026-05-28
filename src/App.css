@@ -603,6 +603,7 @@ button:disabled {
 }
 
 .form-error,
+.form-success,
 .loading-message {
   margin: 16px 0 0;
   border-radius: 8px;
@@ -614,6 +615,12 @@ button:disabled {
   border: 1px solid #f1c9c9;
   background: #fff0f0;
   color: #8b2d2d;
+}
+
+.form-success {
+  border: 1px solid #b8dfc6;
+  background: #eefaf2;
+  color: #285039;
 }
 
 .loading-message {

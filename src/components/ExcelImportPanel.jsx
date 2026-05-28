@@ -6,6 +6,7 @@ function ExcelImportPanel({ onImportApplications }) {
   const [parsedApplications, setParsedApplications] = useState([])
   const [selectedIndexes, setSelectedIndexes] = useState([])
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [isParsing, setIsParsing] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const selectedApplications = selectedIndexes.map(
@@ -19,6 +20,7 @@ function ExcelImportPanel({ onImportApplications }) {
     const file = event.target.files?.[0]
 
     setError('')
+    setSuccessMessage('')
     setParsedApplications([])
     setSelectedIndexes([])
 
@@ -52,9 +54,13 @@ function ExcelImportPanel({ onImportApplications }) {
 
     setIsImporting(true)
     setError('')
+    setSuccessMessage('')
 
     try {
       await onImportApplications(selectedApplications)
+      setSuccessMessage(
+        `${selectedApplications.length} applications imported successfully.`,
+      )
       setFileName('')
       setParsedApplications([])
       setSelectedIndexes([])
@@ -144,6 +150,7 @@ function ExcelImportPanel({ onImportApplications }) {
         </div>
       )}
 
+      {successMessage && <p className="form-success">{successMessage}</p>}
       {error && <p className="form-error">{error}</p>}
     </section>
   )
