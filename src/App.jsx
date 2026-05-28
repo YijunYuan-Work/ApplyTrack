@@ -177,6 +177,7 @@ function App() {
       salary: applicationData.salary.trim(),
       coverLetter: applicationData.coverLetter.trim(),
       referral: applicationData.referral.trim(),
+      interviewCount: Number(applicationData.interviewCount) || 0,
       notes: applicationData.notes.trim(),
     })
 

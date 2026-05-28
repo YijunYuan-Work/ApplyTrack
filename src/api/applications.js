@@ -50,6 +50,7 @@ function fromApplicationRow(row) {
     coverLetter: row.cover_letter || legacyDetails.coverLetter,
     referral: row.referral || legacyDetails.referral,
     lastUpdated: row.last_updated || legacyDetails.lastUpdated,
+    interviewCount: row.interview_count,
     notes: legacyDetails.notes,
   })
 }
@@ -69,6 +70,7 @@ function toApplicationRow(application, userId) {
     cover_letter: application.coverLetter,
     referral: application.referral,
     last_updated: application.lastUpdated || null,
+    interview_count: Number(application.interviewCount) || 0,
     notes: application.notes,
   }
 }

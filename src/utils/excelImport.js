@@ -99,6 +99,30 @@ function normalizeStatus(value, interviewStage) {
   return 'Applied'
 }
 
+function inferInterviewCount(interviewStage) {
+  const normalizedStage = String(interviewStage).trim().toLowerCase()
+
+  if (!normalizedStage) {
+    return 0
+  }
+
+  const numericMatch = normalizedStage.match(/\d+/)
+
+  if (numericMatch) {
+    return Number(numericMatch[0])
+  }
+
+  if (
+    normalizedStage.includes('final') ||
+    normalizedStage.includes('onsite') ||
+    normalizedStage.includes('panel')
+  ) {
+    return 2
+  }
+
+  return 1
+}
+
 function buildNotes(row, headerMap) {
   const notes = [
     getCell(row, headerMap, 'notes'),
@@ -145,6 +169,7 @@ export async function parseExcelApplications(file) {
         coverLetter: getCell(row, headerMap, 'coverLetter'),
         referral: getCell(row, headerMap, 'referral'),
         lastUpdated: toIsoDate(row[headerMap.lastUpdated], XLSX),
+        interviewCount: inferInterviewCount(interviewStage),
         notes: buildNotes(row, headerMap),
       }
 

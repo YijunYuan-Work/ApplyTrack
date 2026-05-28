@@ -1,4 +1,9 @@
 function MetricGrid({ applications, nextFollowUp, statusCounts }) {
+  const interviewTotal = applications.reduce(
+    (total, application) => total + Number(application.interviewCount || 0),
+    0,
+  )
+
   return (
     <section className="metric-grid" aria-label="Application summary">
       <article>
@@ -7,9 +12,7 @@ function MetricGrid({ applications, nextFollowUp, statusCounts }) {
       </article>
       <article>
         <span>Interviews</span>
-        <strong>
-          {statusCounts.find((item) => item.status === 'Interview').count}
-        </strong>
+        <strong>{interviewTotal}</strong>
       </article>
       <article>
         <span>Offers</span>

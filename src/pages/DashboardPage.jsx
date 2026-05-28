@@ -48,6 +48,7 @@ function DashboardPage({
         application.coverLetter,
         application.referral,
         application.lastUpdated,
+        application.interviewCount,
         application.notes,
       ]
         .join(' ')

@@ -18,6 +18,7 @@ export const initialApplications = [
     coverLetter: 'Yes',
     referral: 'No',
     lastUpdated: '2026-05-21',
+    interviewCount: 0,
     notes: 'Submitted through the careers page. Follow up with recruiter.',
   },
   {
@@ -34,6 +35,7 @@ export const initialApplications = [
     coverLetter: 'Yes',
     referral: 'No',
     lastUpdated: '2026-05-24',
+    interviewCount: 1,
     notes: 'Screening call booked. Review component architecture examples.',
   },
 ]
@@ -52,14 +54,18 @@ export function createBlankApplication() {
     coverLetter: '',
     referral: '',
     lastUpdated: '',
+    interviewCount: 0,
     notes: '',
   }
 }
 
 export function normalizeApplication(application) {
+  const interviewCount = Number(application.interviewCount ?? 0)
+
   return {
     ...createBlankApplication(),
     ...application,
+    interviewCount: Number.isNaN(interviewCount) ? 0 : Math.max(0, interviewCount),
     location: application.location || '',
     status: statuses.includes(application.status) ? application.status : 'Applied',
   }

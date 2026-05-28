@@ -136,6 +136,17 @@ function ApplicationFormPage({
           </div>
 
           <label>
+            Interview count
+            <input
+              min="0"
+              name="interviewCount"
+              type="number"
+              value={formData.interviewCount}
+              onChange={handleChange}
+            />
+          </label>
+
+          <label>
             Job link
             <input
               type="url"

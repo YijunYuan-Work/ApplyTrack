@@ -54,6 +54,10 @@ function ApplicationCard({
             <dd>{application.followUp || 'Not set'}</dd>
           </div>
           <div>
+            <dt>Interviews</dt>
+            <dd>{application.interviewCount}</dd>
+          </div>
+          <div>
             <dt>Contact</dt>
             <dd>{application.contact || 'Not set'}</dd>
           </div>
