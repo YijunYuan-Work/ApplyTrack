@@ -1,12 +1,6 @@
 import { supabase } from '../lib/supabase'
 
-function createAuthEmail(username, email) {
-  const trimmedEmail = email.trim()
-
-  if (trimmedEmail) {
-    return trimmedEmail
-  }
-
+function createAuthEmail(username) {
   const projectHost = new URL(import.meta.env.VITE_SUPABASE_URL).hostname
   const normalizedUsername = username
     .trim()
@@ -29,7 +23,7 @@ export async function getCurrentUser() {
 
 export async function signInWithEmail(username, password) {
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: createAuthEmail(username, ''),
+    email: createAuthEmail(username),
     password,
   })
 
@@ -42,12 +36,12 @@ export async function signInWithEmail(username, password) {
 
 export async function signUpWithEmail(username, email, password) {
   const { data, error } = await supabase.auth.signUp({
-    email: createAuthEmail(username, email),
+    email: createAuthEmail(username),
     password,
     options: {
       data: {
-        email: email.trim(),
         name: username,
+        profileEmail: email.trim(),
         username,
       },
     },
@@ -66,4 +60,30 @@ export async function signOut() {
   if (error) {
     throw error
   }
+}
+
+export async function updateProfileEmail(email) {
+  const { data, error } = await supabase.auth.updateUser({
+    data: {
+      profileEmail: email.trim(),
+    },
+  })
+
+  if (error) {
+    throw error
+  }
+
+  return data.user
+}
+
+export async function updatePassword(password) {
+  const { data, error } = await supabase.auth.updateUser({
+    password,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  return data.user
 }

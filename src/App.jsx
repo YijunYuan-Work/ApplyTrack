@@ -7,7 +7,14 @@ import {
   fetchApplications,
   updateApplication,
 } from './api/applications'
-import { getCurrentUser, signInWithEmail, signOut, signUpWithEmail } from './api/auth'
+import {
+  getCurrentUser,
+  signInWithEmail,
+  signOut,
+  signUpWithEmail,
+  updatePassword,
+  updateProfileEmail,
+} from './api/auth'
 import { normalizeApplication } from './data/applications'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
 import ApplicationFormPage from './pages/ApplicationFormPage'
@@ -164,6 +171,16 @@ function App() {
     setUser(null)
     setApplications([])
     navigate('/sign-in')
+  }
+
+  async function handleUpdateProfileEmail(email) {
+    const updatedUser = await updateProfileEmail(email)
+    setUser(updatedUser)
+  }
+
+  async function handleUpdatePassword(password) {
+    const updatedUser = await updatePassword(password)
+    setUser(updatedUser)
   }
 
   async function handleSaveApplication(applicationData, applicationId) {
@@ -356,12 +373,13 @@ function App() {
   if (route === '/profile') {
     return (
       <ProfilePage
-        applications={applications}
         onAddApplication={() => navigate('/applications/new')}
         onDashboard={() => navigate('/dashboard')}
         onImportExcel={() => navigate('/import')}
         onProfile={() => navigate('/profile')}
         onSignOut={handleSignOut}
+        onUpdatePassword={handleUpdatePassword}
+        onUpdateProfileEmail={handleUpdateProfileEmail}
         user={appUser}
       />
     )
