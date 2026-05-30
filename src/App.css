@@ -118,6 +118,32 @@
   gap: 18px;
 }
 
+.auth-form-copy {
+  margin: 0;
+}
+
+.auth-link-button {
+  justify-self: start;
+  min-height: auto;
+  padding: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.86rem;
+}
+
+.auth-link-button:hover {
+  background: transparent;
+  color: #256257;
+  text-decoration: underline;
+}
+
+.field-hint {
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
 .setup-panel {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
 }
@@ -214,13 +240,20 @@
   margin: 0 auto 18px;
 }
 
+.progress-section {
+  width: min(1080px, calc(100% - 40px));
+  margin: 0 auto 18px;
+}
+
 .metric-grid article,
 .application-form,
 .application-card,
 .empty-state,
 .toolbar,
 .import-panel,
-.profile-card {
+.profile-card,
+.progress-chart-panel,
+.progress-summary article {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.9);
@@ -246,6 +279,65 @@
   color: var(--text-h);
   font-size: 2rem;
   line-height: 1;
+}
+
+.progress-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.progress-summary article {
+  display: grid;
+  gap: 8px;
+  min-height: 102px;
+  padding: 18px;
+}
+
+.progress-summary span {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.progress-summary strong {
+  align-self: end;
+  color: var(--text-h);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.progress-chart-panel {
+  margin-top: 14px;
+  padding: 20px;
+}
+
+.progress-chart-heading h2 {
+  margin: 0;
+  color: var(--text-h);
+  font-size: 1.3rem;
+}
+
+.progress-chart-scroll {
+  overflow-x: auto;
+}
+
+.progress-chart {
+  min-width: 760px;
+  height: 500px;
+}
+
+.progress-node-count {
+  fill: var(--text-h);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.progress-node-name {
+  fill: var(--text);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .profile-card {
@@ -876,6 +968,10 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .progress-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .import-panel,
   .import-controls {
     grid-template-columns: 1fr;
@@ -901,6 +997,7 @@ button:disabled {
   .form-page,
   .dashboard-section,
   .profile-section,
+  .progress-section,
   .metric-grid {
     width: min(100% - 28px, 1080px);
   }

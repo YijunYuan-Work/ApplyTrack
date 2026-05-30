@@ -15,6 +15,7 @@ function DashboardPage({
   onEditApplication,
   onImportExcel,
   onOpenProfile,
+  onProgress,
   onSignOut,
   user,
 }) {
@@ -142,6 +143,7 @@ function DashboardPage({
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
       onProfile={onOpenProfile}
+      onProgress={onProgress}
       onSignOut={onSignOut}
       user={user}
     >

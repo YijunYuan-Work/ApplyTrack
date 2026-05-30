@@ -14,6 +14,7 @@ function ApplicationFormPage({
   onDashboard,
   onImportExcel,
   onProfile,
+  onProgress,
   onSave,
   onSignOut,
   user,
@@ -39,6 +40,7 @@ function ApplicationFormPage({
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
       onProfile={onProfile}
+      onProgress={onProgress}
       onSignOut={onSignOut}
       user={user}
     >

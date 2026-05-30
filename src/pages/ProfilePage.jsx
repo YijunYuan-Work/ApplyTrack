@@ -19,6 +19,7 @@ function ProfilePage({
   onDashboard,
   onImportExcel,
   onProfile,
+  onProgress,
   onSignOut,
   onUpdatePassword,
   onUpdateProfileEmail,
@@ -87,6 +88,7 @@ function ProfilePage({
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
       onProfile={onProfile}
+      onProgress={onProgress}
       onSignOut={onSignOut}
       user={user}
     >

@@ -62,6 +62,23 @@ export async function signOut() {
   }
 }
 
+export async function requestPasswordReset(email) {
+  const { data, error } = await supabase.functions.invoke('request-password-reset', {
+    body: {
+      email: email.trim(),
+      redirectTo: `${window.location.origin}/?recovery=1`,
+    },
+  })
+
+  if (error) {
+    throw new Error('Password recovery is unavailable right now. Please try again later.')
+  }
+
+  if (!data.exists) {
+    throw new Error('There is no account associated with this email.')
+  }
+}
+
 export async function updateProfileEmail(email) {
   const { data, error } = await supabase.auth.updateUser({
     data: {

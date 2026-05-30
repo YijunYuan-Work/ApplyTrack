@@ -7,6 +7,7 @@ function ImportExcelPage({
   onImportExcel,
   onImportApplications,
   onProfile,
+  onProgress,
   onSignOut,
   user,
 }) {
@@ -17,6 +18,7 @@ function ImportExcelPage({
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
       onProfile={onProfile}
+      onProgress={onProgress}
       onSignOut={onSignOut}
       user={user}
     >

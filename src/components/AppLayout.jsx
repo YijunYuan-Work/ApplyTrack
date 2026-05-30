@@ -5,6 +5,7 @@ function AppLayout({
   onDashboard,
   onImportExcel,
   onProfile,
+  onProgress,
   onSignOut,
   user,
 }) {
@@ -30,6 +31,13 @@ function AppLayout({
             onClick={onProfile}
           >
             Profile
+          </button>
+          <button
+            className={currentPage === 'progress' ? 'nav-active' : ''}
+            type="button"
+            onClick={onProgress}
+          >
+            Progress
           </button>
           <button
             className={currentPage === 'import' ? 'nav-active' : ''}

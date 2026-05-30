@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import {
   createApplication,
   createApplications,
@@ -9,6 +9,7 @@ import {
 } from './api/applications'
 import {
   getCurrentUser,
+  requestPasswordReset,
   signInWithEmail,
   signOut,
   signUpWithEmail,
@@ -21,10 +22,13 @@ import ApplicationFormPage from './pages/ApplicationFormPage'
 import DashboardPage from './pages/DashboardPage'
 import ImportExcelPage from './pages/ImportExcelPage'
 import ProfilePage from './pages/ProfilePage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import SetupPage from './pages/SetupPage'
 import SignInPage from './pages/SignInPage'
 import { getEditingApplicationId, getRoute, navigate } from './utils/routes'
 import './App.css'
+
+const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 
 function getUserName(user) {
   return user?.user_metadata?.name || user?.email?.split('@')[0] || 'there'
@@ -40,6 +44,12 @@ function getFriendlyErrorMessage(message) {
   }
 
   return message
+}
+
+function clearRecoveryQuery() {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('recovery')
+  window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
 }
 
 function App() {
@@ -82,9 +92,13 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       const sessionUser = session?.user ?? null
       setUser(sessionUser)
+
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password')
+      }
 
       if (!sessionUser) {
         setApplications([])
@@ -99,6 +113,15 @@ function App() {
 
   useEffect(() => {
     if (!hasSupabaseConfig || authLoading) {
+      return
+    }
+
+    if (
+      user &&
+      new URLSearchParams(window.location.search).get('recovery') === '1'
+    ) {
+      navigate('/reset-password')
+      clearRecoveryQuery()
       return
     }
 
@@ -171,6 +194,10 @@ function App() {
     setUser(null)
     setApplications([])
     navigate('/sign-in')
+  }
+
+  async function handlePasswordResetRequest(email) {
+    await requestPasswordReset(email)
   }
 
   async function handleUpdateProfileEmail(email) {
@@ -332,6 +359,16 @@ function App() {
         error={authError}
         isLoading={authLoading}
         onAuthSubmit={handleAuthSubmit}
+        onPasswordResetRequest={handlePasswordResetRequest}
+      />
+    )
+  }
+
+  if (route === '/reset-password') {
+    return (
+      <ResetPasswordPage
+        onContinue={() => navigate('/dashboard')}
+        onUpdatePassword={handleUpdatePassword}
       />
     )
   }
@@ -346,6 +383,7 @@ function App() {
         onDashboard={() => navigate('/dashboard')}
         onImportExcel={() => navigate('/import')}
         onProfile={() => navigate('/profile')}
+        onProgress={() => navigate('/progress')}
         onSave={handleSaveApplication}
         onSignOut={handleSignOut}
         user={appUser}
@@ -363,6 +401,7 @@ function App() {
         onDashboard={() => navigate('/dashboard')}
         onImportExcel={() => navigate('/import')}
         onProfile={() => navigate('/profile')}
+        onProgress={() => navigate('/progress')}
         onSave={handleSaveApplication}
         onSignOut={handleSignOut}
         user={appUser}
@@ -377,11 +416,38 @@ function App() {
         onDashboard={() => navigate('/dashboard')}
         onImportExcel={() => navigate('/import')}
         onProfile={() => navigate('/profile')}
+        onProgress={() => navigate('/progress')}
         onSignOut={handleSignOut}
         onUpdatePassword={handleUpdatePassword}
         onUpdateProfileEmail={handleUpdateProfileEmail}
         user={appUser}
       />
+    )
+  }
+
+  if (route === '/progress') {
+    return (
+      <Suspense
+        fallback={
+          <main className="auth-shell">
+            <section className="auth-panel">
+              <p className="eyebrow">ApplyTrack</p>
+              <h1>Loading your progress.</h1>
+            </section>
+          </main>
+        }
+      >
+        <ProgressPage
+          applications={applications}
+          onAddApplication={() => navigate('/applications/new')}
+          onDashboard={() => navigate('/dashboard')}
+          onImportExcel={() => navigate('/import')}
+          onProfile={() => navigate('/profile')}
+          onProgress={() => navigate('/progress')}
+          onSignOut={handleSignOut}
+          user={appUser}
+        />
+      </Suspense>
     )
   }
 
@@ -393,6 +459,7 @@ function App() {
         onImportExcel={() => navigate('/import')}
         onImportApplications={handleImportApplications}
         onProfile={() => navigate('/profile')}
+        onProgress={() => navigate('/progress')}
         onSignOut={handleSignOut}
         user={appUser}
       />
@@ -413,6 +480,7 @@ function App() {
       }
       onImportExcel={() => navigate('/import')}
       onOpenProfile={() => navigate('/profile')}
+      onProgress={() => navigate('/progress')}
       onSignOut={handleSignOut}
       user={appUser}
     />
