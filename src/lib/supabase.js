@@ -7,22 +7,100 @@ const supabasePublishableKey =
 
 export const hasSupabaseConfig = Boolean(supabaseUrl && supabasePublishableKey)
 
-function clearLegacyLocalStorageSession() {
+const cookieChunkSize = 3500
+const maxCookieChunks = 20
+
+function getCookieAttributes() {
+  return `Path=/; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`
+}
+
+function getCookies() {
+  return new Map(
+    document.cookie
+      .split(';')
+      .map((cookie) => cookie.trim())
+      .filter(Boolean)
+      .map((cookie) => {
+        const separatorIndex = cookie.indexOf('=')
+        return [
+          decodeURIComponent(cookie.slice(0, separatorIndex)),
+          cookie.slice(separatorIndex + 1),
+        ]
+      }),
+  )
+}
+
+function removeCookie(name) {
+  document.cookie = `${encodeURIComponent(name)}=; Max-Age=0; ${getCookieAttributes()}`
+}
+
+const browserSessionCookieStorage = {
+  getItem(key) {
+    const cookies = getCookies()
+    const chunkCount = Number(cookies.get(`${key}.chunks`) || 0)
+
+    if (chunkCount === 0) {
+      return null
+    }
+
+    const value = Array.from({ length: chunkCount }, (_, index) =>
+      cookies.get(`${key}.${index}`),
+    ).join('')
+
+    return value ? decodeURIComponent(value) : null
+  },
+
+  removeItem(key) {
+    const cookies = getCookies()
+    const chunkCount = Number(cookies.get(`${key}.chunks`) || 0)
+
+    removeCookie(`${key}.chunks`)
+
+    for (let index = 0; index < Math.max(chunkCount, maxCookieChunks); index += 1) {
+      removeCookie(`${key}.${index}`)
+    }
+  },
+
+  setItem(key, value) {
+    browserSessionCookieStorage.removeItem(key)
+
+    const encodedValue = encodeURIComponent(value)
+    const chunks =
+      encodedValue.match(new RegExp(`.{1,${cookieChunkSize}}`, 'g')) || []
+
+    document.cookie = `${encodeURIComponent(`${key}.chunks`)}=${chunks.length}; ${getCookieAttributes()}`
+
+    chunks.forEach((chunk, index) => {
+      document.cookie = `${encodeURIComponent(`${key}.${index}`)}=${chunk}; ${getCookieAttributes()}`
+    })
+  },
+}
+
+function migrateLegacyStorageSession() {
   if (!hasSupabaseConfig) {
     return
   }
 
   const projectReference = new URL(supabaseUrl).hostname.split('.')[0]
-  window.localStorage.removeItem(`sb-${projectReference}-auth-token`)
+  const storageKey = `sb-${projectReference}-auth-token`
+  const existingSession = window.sessionStorage.getItem(storageKey)
+
+  window.localStorage.removeItem(storageKey)
+
+  if (existingSession && !browserSessionCookieStorage.getItem(storageKey)) {
+    browserSessionCookieStorage.setItem(storageKey, existingSession)
+  }
+
+  window.sessionStorage.removeItem(storageKey)
 }
 
-clearLegacyLocalStorageSession()
+migrateLegacyStorageSession()
 
 export const supabase = hasSupabaseConfig
   ? createClient(supabaseUrl, supabasePublishableKey, {
       auth: {
         persistSession: true,
-        storage: window.sessionStorage,
+        storage: browserSessionCookieStorage,
       },
     })
   : null

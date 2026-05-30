@@ -12,9 +12,10 @@ const flowColors = {
 }
 
 function ProgressNode({ height, payload, width, x, y }) {
-  const labelOnLeft = x < 150
-  const labelX = labelOnLeft ? x - 14 : x + width + 14
-  const textAnchor = labelOnLeft ? 'end' : 'start'
+  const labelAbove = payload.name === 'Reached interview'
+  const labelOnLeft = !labelAbove && x < 150
+  const labelX = labelAbove ? x + width / 2 : labelOnLeft ? x - 14 : x + width + 14
+  const textAnchor = labelAbove ? 'middle' : labelOnLeft ? 'end' : 'start'
   const labelY = y + height / 2
 
   return (
@@ -31,7 +32,7 @@ function ProgressNode({ height, payload, width, x, y }) {
         className="progress-node-count"
         textAnchor={textAnchor}
         x={labelX}
-        y={labelY - 4}
+        y={labelAbove ? y - 26 : labelY - 4}
       >
         {payload.count}
       </text>
@@ -39,7 +40,7 @@ function ProgressNode({ height, payload, width, x, y }) {
         className="progress-node-name"
         textAnchor={textAnchor}
         x={labelX}
-        y={labelY + 18}
+        y={labelAbove ? y - 7 : labelY + 18}
       >
         {payload.name}
       </text>
@@ -88,13 +89,6 @@ function buildProgressData(applications) {
   const activeAfterInterview =
     interviewedApplications.length - offers - rejectedAfterInterview
 
-  addBranch(
-    0,
-    'Rejected before interview',
-    rejectedBeforeInterview,
-    flowColors.rejectedBeforeInterview,
-  )
-  addBranch(0, 'No interview yet', awaitingInterview, flowColors.pending)
   const interviewedNode = addBranch(
     0,
     'Reached interview',
@@ -117,6 +111,14 @@ function buildProgressData(applications) {
       flowColors.pending,
     )
   }
+
+  addBranch(0, 'No interview yet', awaitingInterview, flowColors.pending)
+  addBranch(
+    0,
+    'Rejected before interview',
+    rejectedBeforeInterview,
+    flowColors.rejectedBeforeInterview,
+  )
 
   return {
     data: { nodes, links },
@@ -209,6 +211,7 @@ function ProgressPage({
                     node={<ProgressNode />}
                     nodePadding={42}
                     nodeWidth={14}
+                    verticalAlign="top"
                   >
                     <Tooltip formatter={(value) => [`${value} applications`, 'Flow']} />
                   </Sankey>
