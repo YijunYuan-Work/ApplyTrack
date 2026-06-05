@@ -24,6 +24,8 @@ function DashboardPage({
   const [selectedApplicationIds, setSelectedApplicationIds] = useState([])
   const [sortBy, setSortBy] = useState('applied')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [pageSize, setPageSize] = useState(10)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const statusCounts = useMemo(
     () =>
@@ -73,6 +75,18 @@ function DashboardPage({
       })
   }, [applications, searchTerm, sortBy, statusFilter])
 
+  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / pageSize))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const pageStartIndex = (safeCurrentPage - 1) * pageSize
+  const pagedApplications = filteredApplications.slice(
+    pageStartIndex,
+    pageStartIndex + pageSize,
+  )
+  const pageEndIndex =
+    filteredApplications.length === 0
+      ? 0
+      : Math.min(pageStartIndex + pageSize, filteredApplications.length)
+
   const nextFollowUp = useMemo(() => {
     const datedFollowUps = applications
       .filter((application) => application.followUp)
@@ -81,14 +95,18 @@ function DashboardPage({
     return datedFollowUps[0]?.followUp || 'None set'
   }, [applications])
 
-  const filteredApplicationIds = filteredApplications.map(
+  const pagedApplicationIds = pagedApplications.map(
     (application) => application.id,
   )
   const allVisibleSelected =
-    filteredApplicationIds.length > 0 &&
-    filteredApplicationIds.every((applicationId) =>
+    pagedApplicationIds.length > 0 &&
+    pagedApplicationIds.every((applicationId) =>
       selectedApplicationIds.includes(applicationId),
     )
+
+  function resetToFirstPage() {
+    setCurrentPage(1)
+  }
 
   function handleSelectApplication(applicationId) {
     setSelectedApplicationIds((currentIds) =>
@@ -102,11 +120,11 @@ function DashboardPage({
     setSelectedApplicationIds((currentIds) => {
       if (allVisibleSelected) {
         return currentIds.filter(
-          (applicationId) => !filteredApplicationIds.includes(applicationId),
+          (applicationId) => !pagedApplicationIds.includes(applicationId),
         )
       }
 
-      return Array.from(new Set([...currentIds, ...filteredApplicationIds]))
+      return Array.from(new Set([...currentIds, ...pagedApplicationIds]))
     })
   }
 
@@ -133,6 +151,63 @@ function DashboardPage({
     await onDeleteApplication(applicationId)
     setSelectedApplicationIds((currentIds) =>
       currentIds.filter((currentId) => currentId !== applicationId),
+    )
+  }
+
+  function renderPaginationControls(position) {
+    if (filteredApplications.length === 0) {
+      return null
+    }
+
+    return (
+      <div
+        className="pagination-bar"
+        aria-label={`${position} pagination controls`}
+      >
+        <p>
+          Showing {pageStartIndex + 1}-{pageEndIndex} of{' '}
+          {filteredApplications.length}
+        </p>
+
+        <label>
+          Per page
+          <select
+            value={pageSize}
+            onChange={(event) => {
+              setPageSize(Number(event.target.value))
+              resetToFirstPage()
+            }}
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+          </select>
+        </label>
+
+        <div className="pagination-buttons">
+          <button
+            className="ghost-button"
+            disabled={safeCurrentPage === 1}
+            type="button"
+            onClick={() => setCurrentPage(Math.max(1, safeCurrentPage - 1))}
+          >
+            Previous
+          </button>
+          <span>
+            Page {safeCurrentPage} of {totalPages}
+          </span>
+          <button
+            className="ghost-button"
+            disabled={safeCurrentPage === totalPages}
+            type="button"
+            onClick={() =>
+              setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))
+            }
+          >
+            Next
+          </button>
+        </div>
+      </div>
     )
   }
 
@@ -180,7 +255,10 @@ function DashboardPage({
             Search
             <input
               value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              onChange={(event) => {
+                setSearchTerm(event.target.value)
+                resetToFirstPage()
+              }}
               placeholder="Company, role, notes..."
             />
           </label>
@@ -189,7 +267,10 @@ function DashboardPage({
             Status
             <select
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
+              onChange={(event) => {
+                setStatusFilter(event.target.value)
+                resetToFirstPage()
+              }}
             >
               <option>All</option>
               {statuses.map((status) => (
@@ -202,7 +283,10 @@ function DashboardPage({
             Sort by
             <select
               value={sortBy}
-              onChange={(event) => setSortBy(event.target.value)}
+              onChange={(event) => {
+                setSortBy(event.target.value)
+                resetToFirstPage()
+              }}
             >
               <option value="applied">Applied date</option>
               <option value="lastUpdated">Last updated date</option>
@@ -216,7 +300,7 @@ function DashboardPage({
               <span>{selectedApplicationIds.length} selected</span>
               <button
                 className="ghost-button"
-                disabled={filteredApplications.length === 0}
+                disabled={pagedApplications.length === 0}
                 type="button"
                 onClick={handleSelectAllVisible}
               >
@@ -262,14 +346,18 @@ function DashboardPage({
         {error && <p className="form-error">{error}</p>}
         {isLoading && <p className="loading-message">Loading applications...</p>}
 
+        {renderPaginationControls('Top')}
+
         <ApplicationList
-          applications={filteredApplications}
+          applications={pagedApplications}
           selectedApplicationIds={selectedApplicationIds}
           onDeleteApplication={handleDeleteApplication}
           onEditApplication={onEditApplication}
           onSelectApplication={handleSelectApplication}
           selectionMode={isSelectionMode}
         />
+
+        {renderPaginationControls('Bottom')}
       </section>
     </AppLayout>
   )
