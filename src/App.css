@@ -144,6 +144,17 @@
   line-height: 1.45;
 }
 
+.required-label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.required-mark {
+  color: #8b2d2d;
+  font-weight: 900;
+}
+
 .setup-panel {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
 }
@@ -313,10 +324,40 @@
   padding: 20px;
 }
 
+.progress-view-header,
+.calendar-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
 .progress-chart-heading h2 {
   margin: 0;
   color: var(--text-h);
   font-size: 1.3rem;
+}
+
+.progress-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  min-width: 250px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f6f8fa;
+}
+
+.progress-tabs button {
+  min-height: 38px;
+  background: transparent;
+  color: var(--text-h);
+}
+
+.progress-tabs button:hover,
+.progress-tabs .progress-tab-active {
+  background: #fff;
 }
 
 .progress-chart-scroll {
@@ -338,6 +379,144 @@
   fill: var(--text);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.progress-calendar {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  overflow-x: auto;
+}
+
+.calendar-toolbar {
+  align-items: center;
+}
+
+.calendar-toolbar div {
+  text-align: center;
+}
+
+.calendar-toolbar h3 {
+  margin: 0;
+  color: var(--text-h);
+  font-size: 1.3rem;
+}
+
+.calendar-toolbar p {
+  margin: 5px 0 0;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 840px;
+}
+
+.calendar-weekday {
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.calendar-day {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 138px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.calendar-day-muted {
+  background: rgba(246, 248, 250, 0.72);
+  color: var(--text);
+}
+
+.calendar-day-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.calendar-day-header span {
+  color: var(--text-h);
+  font-weight: 900;
+}
+
+.calendar-day-header strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+.calendar-day ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendar-day li {
+  display: grid;
+  gap: 2px;
+  padding: 7px;
+  border-radius: 7px;
+  background: rgba(47, 117, 104, 0.08);
+}
+
+.calendar-day li em {
+  color: var(--text);
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.calendar-day li span {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.calendar-day li strong {
+  color: var(--text-h);
+  font-size: 0.82rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.calendar-day .calendar-event-rejected {
+  background: #fff0f0;
+}
+
+.calendar-day .calendar-event-rejected em,
+.calendar-day .calendar-event-rejected span {
+  color: #8b2d2d;
+}
+
+.calendar-day .calendar-event-rejected strong {
+  color: #5f1f1f;
+}
+
+.calendar-day p {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.78rem;
 }
 
 .profile-card {
@@ -970,6 +1149,15 @@ button:disabled {
 
   .progress-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .progress-view-header {
+    flex-direction: column;
+  }
+
+  .progress-tabs {
+    width: 100%;
+    min-width: 0;
   }
 
   .import-panel,

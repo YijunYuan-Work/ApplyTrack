@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ResponsiveContainer, Sankey, Tooltip } from 'recharts'
 import AppLayout from '../components/AppLayout'
 
@@ -9,6 +9,71 @@ const flowColors = {
   pending: '#7b8fa1',
   rejected: '#bd5d67',
   rejectedBeforeInterview: '#d97745',
+}
+
+const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const monthFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  year: 'numeric',
+})
+
+function getDateKey(dateValue) {
+  return String(dateValue || '').slice(0, 10)
+}
+
+function getMonthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function getLocalDateKey(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+function getDateFromKey(dateKey) {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+function getMonthFromKey(monthKey) {
+  const [year, month] = monthKey.split('-').map(Number)
+  return new Date(year, month - 1, 1)
+}
+
+function shiftMonth(monthKey, offset) {
+  const monthDate = getMonthFromKey(monthKey)
+  return getMonthKey(new Date(monthDate.getFullYear(), monthDate.getMonth() + offset, 1))
+}
+
+function buildCalendarDays(monthKey, eventsByDate) {
+  const monthDate = getMonthFromKey(monthKey)
+  const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+  const calendarStart = new Date(firstDay)
+  calendarStart.setDate(firstDay.getDate() - firstDay.getDay())
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(calendarStart)
+    date.setDate(calendarStart.getDate() + index)
+    const dateKey = getLocalDateKey(date)
+
+    return {
+      events: eventsByDate.get(dateKey) || [],
+      date,
+      dateKey,
+      isCurrentMonth: date.getMonth() === monthDate.getMonth(),
+    }
+  })
+}
+
+function sortCalendarEvents(first, second) {
+  return (
+    first.application.company.localeCompare(second.application.company) ||
+    first.application.role.localeCompare(second.application.role) ||
+    first.type.localeCompare(second.type)
+  )
 }
 
 function ProgressNode({ height, payload, width, x, y }) {
@@ -144,10 +209,61 @@ function ProgressPage({
   onSignOut,
   user,
 }) {
+  const [activeView, setActiveView] = useState('map')
+  const [visibleMonthOverride, setVisibleMonthOverride] = useState('')
+  const latestApplicationMonth = useMemo(() => {
+    const latestDateKey = applications
+      .map((application) => getDateKey(application.date))
+      .filter(Boolean)
+      .sort()
+      .at(-1)
+
+    return latestDateKey ? getMonthKey(getDateFromKey(latestDateKey)) : getMonthKey(new Date())
+  }, [applications])
+  const visibleMonth = visibleMonthOverride || latestApplicationMonth
+
   const { data, summary } = useMemo(
     () => buildProgressData(applications),
     [applications],
   )
+  const eventsByDate = useMemo(() => {
+    const groupedEvents = new Map()
+
+    function addCalendarEvent(dateKey, event) {
+      if (!dateKey) {
+        return
+      }
+
+      const eventsForDay = groupedEvents.get(dateKey) || []
+      eventsForDay.push(event)
+      groupedEvents.set(dateKey, eventsForDay.sort(sortCalendarEvents))
+    }
+
+    applications.forEach((application) => {
+      addCalendarEvent(getDateKey(application.date), {
+        application,
+        key: `${application.id}-applied`,
+        type: 'Applied',
+      })
+
+      if (application.status === 'Rejected') {
+        addCalendarEvent(getDateKey(application.lastUpdated), {
+          application,
+          key: `${application.id}-rejected`,
+          type: 'Rejected',
+        })
+      }
+    })
+
+    return groupedEvents
+  }, [applications])
+  const calendarDays = useMemo(
+    () => buildCalendarDays(visibleMonth, eventsByDate),
+    [eventsByDate, visibleMonth],
+  )
+  const visibleMonthTotal = calendarDays
+    .filter((day) => day.isCurrentMonth)
+    .reduce((total, day) => total + day.events.length, 0)
 
   return (
     <AppLayout
@@ -189,17 +305,42 @@ function ProgressPage({
         </div>
 
         <div className="progress-chart-panel">
-          <div className="progress-chart-heading">
-            <p className="eyebrow">Pipeline map</p>
-            <h2>Applications by outcome</h2>
+          <div className="progress-view-header">
+            <div className="progress-chart-heading">
+              <p className="eyebrow">
+                {activeView === 'map' ? 'Pipeline map' : 'Calendar'}
+              </p>
+              <h2>
+                {activeView === 'map'
+                  ? 'Applications by outcome'
+                  : 'Applications by day'}
+              </h2>
+            </div>
+
+            <div className="progress-tabs" aria-label="Progress views">
+              <button
+                className={activeView === 'map' ? 'progress-tab-active' : ''}
+                type="button"
+                onClick={() => setActiveView('map')}
+              >
+                Pipeline map
+              </button>
+              <button
+                className={activeView === 'calendar' ? 'progress-tab-active' : ''}
+                type="button"
+                onClick={() => setActiveView('calendar')}
+              >
+                Calendar
+              </button>
+            </div>
           </div>
 
           {applications.length === 0 ? (
             <div className="empty-state">
-              <h3>No applications to chart yet.</h3>
-              <p>Add an application and your progress map will appear here.</p>
+              <h3>No applications to show yet.</h3>
+              <p>Add an application and your progress views will appear here.</p>
             </div>
-          ) : (
+          ) : activeView === 'map' ? (
             <div className="progress-chart-scroll">
               <div className="progress-chart">
                 <ResponsiveContainer height="100%" width="100%">
@@ -216,6 +357,76 @@ function ProgressPage({
                     <Tooltip formatter={(value) => [`${value} applications`, 'Flow']} />
                   </Sankey>
                 </ResponsiveContainer>
+              </div>
+            </div>
+          ) : (
+            <div className="progress-calendar">
+              <div className="calendar-toolbar">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() =>
+                    setVisibleMonthOverride((currentMonth) =>
+                      shiftMonth(currentMonth || visibleMonth, -1),
+                    )
+                  }
+                >
+                  Previous
+                </button>
+                <div>
+                  <h3>{monthFormatter.format(getMonthFromKey(visibleMonth))}</h3>
+                  <p>{visibleMonthTotal} events this month</p>
+                </div>
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() =>
+                    setVisibleMonthOverride((currentMonth) =>
+                      shiftMonth(currentMonth || visibleMonth, 1),
+                    )
+                  }
+                >
+                  Next
+                </button>
+              </div>
+
+              <div className="calendar-grid" aria-label="Application calendar">
+                {weekdayLabels.map((dayLabel) => (
+                  <div className="calendar-weekday" key={dayLabel}>
+                    {dayLabel}
+                  </div>
+                ))}
+
+                {calendarDays.map((day) => (
+                  <article
+                    className={`calendar-day ${day.isCurrentMonth ? '' : 'calendar-day-muted'}`}
+                    key={day.dateKey}
+                  >
+                    <div className="calendar-day-header">
+                      <span>{day.date.getDate()}</span>
+                      {day.events.length > 0 && (
+                        <strong>{day.events.length}</strong>
+                      )}
+                    </div>
+
+                    {day.events.length > 0 ? (
+                      <ul>
+                        {day.events.map((event) => (
+                          <li
+                            className={event.type === 'Rejected' ? 'calendar-event-rejected' : ''}
+                            key={event.key}
+                          >
+                            <em>{event.type}</em>
+                            <span>{event.application.company}</span>
+                            <strong>{event.application.role}</strong>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No applications</p>
+                    )}
+                  </article>
+                ))}
               </div>
             </div>
           )}

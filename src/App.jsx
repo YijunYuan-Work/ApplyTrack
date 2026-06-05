@@ -211,6 +211,7 @@ function App() {
   }
 
   async function handleSaveApplication(applicationData, applicationId) {
+    const today = new Date().toISOString().slice(0, 10)
     const preparedApplication = normalizeApplication({
       ...applicationData,
       company: applicationData.company.trim(),
@@ -222,8 +223,7 @@ function App() {
       coverLetter: applicationData.coverLetter.trim(),
       referral: applicationData.referral.trim(),
       interviewCount: Number(applicationData.interviewCount) || 0,
-      lastUpdated:
-        applicationData.lastUpdated || new Date().toISOString().slice(0, 10),
+      lastUpdated: applicationId ? today : applicationData.lastUpdated || today,
       notes: applicationData.notes.trim(),
     })
 

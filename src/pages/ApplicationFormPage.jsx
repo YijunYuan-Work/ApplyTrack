@@ -68,7 +68,13 @@ function ApplicationFormPage({
 
           <div className="form-grid">
             <label>
-              Company
+              <span className="required-label">
+                Company
+                <span aria-hidden="true" className="required-mark">
+                  *
+                </span>
+                <span className="sr-only">required</span>
+              </span>
               <input
                 name="company"
                 value={formData.company}
@@ -79,7 +85,13 @@ function ApplicationFormPage({
             </label>
 
             <label>
-              Role
+              <span className="required-label">
+                Role
+                <span aria-hidden="true" className="required-mark">
+                  *
+                </span>
+                <span className="sr-only">required</span>
+              </span>
               <input
                 name="role"
                 value={formData.role}
@@ -216,7 +228,13 @@ function ApplicationFormPage({
               name="lastUpdated"
               value={formData.lastUpdated}
               onChange={handleChange}
+              disabled={Boolean(application)}
             />
+            {application && (
+              <span className="field-hint">
+                Updates automatically when you save changes.
+              </span>
+            )}
           </label>
 
           <label>
