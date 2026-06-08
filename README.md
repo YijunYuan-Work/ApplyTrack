@@ -20,16 +20,16 @@ Supabase recovery link server-side, and sends it with Resend.
 2. Set the Edge Function secrets in the Supabase dashboard or with the CLI:
 
 ```powershell
-supabase secrets set RESEND_API_KEY=re_your_api_key
-supabase secrets set "PASSWORD_RESET_FROM_EMAIL=ApplyTrack <noreply@your-domain.com>"
-supabase secrets set APP_URL=https://your-vercel-project.vercel.app
-supabase secrets set "ALLOWED_REDIRECT_ORIGINS=http://localhost:5173,https://your-vercel-project.vercel.app"
+npx supabase secrets set RESEND_API_KEY=re_your_api_key
+npx supabase secrets set "PASSWORD_RESET_FROM_EMAIL=ApplyTrack <noreply@your-domain.com>"
+npx supabase secrets set APP_URL=https://your-vercel-project.vercel.app
+npx supabase secrets set "ALLOWED_REDIRECT_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://your-vercel-project.vercel.app"
 ```
 
 3. Deploy the public Edge Function:
 
 ```powershell
-supabase functions deploy request-password-reset
+npx supabase functions deploy request-password-reset
 ```
 
 For local Edge Function testing, copy `supabase/functions/.env.example` to
