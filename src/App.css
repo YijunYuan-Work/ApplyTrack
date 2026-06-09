@@ -412,7 +412,7 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
-  min-width: 840px;
+  min-width: 760px;
 }
 
 .calendar-weekday {
@@ -427,16 +427,11 @@
   display: grid;
   align-content: start;
   gap: 8px;
-  min-height: 138px;
+  min-height: 180px;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #fff;
-}
-
-.calendar-day-muted {
-  background: rgba(246, 248, 250, 0.72);
-  color: var(--text);
 }
 
 .calendar-day-header {

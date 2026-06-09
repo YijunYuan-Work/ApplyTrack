@@ -12,17 +12,14 @@ const flowColors = {
 }
 
 const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const monthFormatter = new Intl.DateTimeFormat('en-US', {
+const weekDateFormatter = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
   month: 'long',
   year: 'numeric',
 })
 
 function getDateKey(dateValue) {
   return String(dateValue || '').slice(0, 10)
-}
-
-function getMonthKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
 function getLocalDateKey(date) {
@@ -38,32 +35,46 @@ function getDateFromKey(dateKey) {
   return new Date(year, month - 1, day)
 }
 
-function getMonthFromKey(monthKey) {
-  const [year, month] = monthKey.split('-').map(Number)
-  return new Date(year, month - 1, 1)
+function getWeekStart(date) {
+  const weekStart = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+  return weekStart
 }
 
-function shiftMonth(monthKey, offset) {
-  const monthDate = getMonthFromKey(monthKey)
-  return getMonthKey(new Date(monthDate.getFullYear(), monthDate.getMonth() + offset, 1))
+function getWeekKey(date) {
+  return getLocalDateKey(getWeekStart(date))
 }
 
-function buildCalendarDays(monthKey, eventsByDate) {
-  const monthDate = getMonthFromKey(monthKey)
-  const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
-  const calendarStart = new Date(firstDay)
-  calendarStart.setDate(firstDay.getDate() - firstDay.getDay())
+function getWeekFromKey(weekKey) {
+  return getDateFromKey(weekKey)
+}
 
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(calendarStart)
-    date.setDate(calendarStart.getDate() + index)
+function shiftWeek(weekKey, offset) {
+  const weekDate = getWeekFromKey(weekKey)
+  weekDate.setDate(weekDate.getDate() + offset * 7)
+  return getWeekKey(weekDate)
+}
+
+function getWeekRangeLabel(weekKey) {
+  const weekStart = getWeekFromKey(weekKey)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+
+  return `${weekDateFormatter.format(weekStart)} - ${weekDateFormatter.format(weekEnd)}`
+}
+
+function buildCalendarDays(weekKey, eventsByDate) {
+  const weekStart = getWeekFromKey(weekKey)
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart)
+    date.setDate(weekStart.getDate() + index)
     const dateKey = getLocalDateKey(date)
 
     return {
       events: eventsByDate.get(dateKey) || [],
       date,
       dateKey,
-      isCurrentMonth: date.getMonth() === monthDate.getMonth(),
     }
   })
 }
@@ -210,17 +221,21 @@ function ProgressPage({
   user,
 }) {
   const [activeView, setActiveView] = useState('map')
-  const [visibleMonthOverride, setVisibleMonthOverride] = useState('')
-  const latestApplicationMonth = useMemo(() => {
+  const [visibleWeekOverride, setVisibleWeekOverride] = useState('')
+  const latestEventWeek = useMemo(() => {
     const latestDateKey = applications
-      .map((application) => getDateKey(application.date))
+      .flatMap((application) =>
+        application.status === 'Rejected'
+          ? [getDateKey(application.date), getDateKey(application.lastUpdated)]
+          : [getDateKey(application.date)],
+      )
       .filter(Boolean)
       .sort()
       .at(-1)
 
-    return latestDateKey ? getMonthKey(getDateFromKey(latestDateKey)) : getMonthKey(new Date())
+    return latestDateKey ? getWeekKey(getDateFromKey(latestDateKey)) : getWeekKey(new Date())
   }, [applications])
-  const visibleMonth = visibleMonthOverride || latestApplicationMonth
+  const visibleWeek = visibleWeekOverride || latestEventWeek
 
   const { data, summary } = useMemo(
     () => buildProgressData(applications),
@@ -258,12 +273,13 @@ function ProgressPage({
     return groupedEvents
   }, [applications])
   const calendarDays = useMemo(
-    () => buildCalendarDays(visibleMonth, eventsByDate),
-    [eventsByDate, visibleMonth],
+    () => buildCalendarDays(visibleWeek, eventsByDate),
+    [eventsByDate, visibleWeek],
   )
-  const visibleMonthTotal = calendarDays
-    .filter((day) => day.isCurrentMonth)
-    .reduce((total, day) => total + day.events.length, 0)
+  const visibleWeekTotal = calendarDays.reduce(
+    (total, day) => total + day.events.length,
+    0,
+  )
 
   return (
     <AppLayout
@@ -366,27 +382,27 @@ function ProgressPage({
                   className="ghost-button"
                   type="button"
                   onClick={() =>
-                    setVisibleMonthOverride((currentMonth) =>
-                      shiftMonth(currentMonth || visibleMonth, -1),
+                    setVisibleWeekOverride((currentWeek) =>
+                      shiftWeek(currentWeek || visibleWeek, -1),
                     )
                   }
                 >
-                  Previous
+                  Previous week
                 </button>
                 <div>
-                  <h3>{monthFormatter.format(getMonthFromKey(visibleMonth))}</h3>
-                  <p>{visibleMonthTotal} events this month</p>
+                  <h3>{getWeekRangeLabel(visibleWeek)}</h3>
+                  <p>{visibleWeekTotal} events this week</p>
                 </div>
                 <button
                   className="ghost-button"
                   type="button"
                   onClick={() =>
-                    setVisibleMonthOverride((currentMonth) =>
-                      shiftMonth(currentMonth || visibleMonth, 1),
+                    setVisibleWeekOverride((currentWeek) =>
+                      shiftWeek(currentWeek || visibleWeek, 1),
                     )
                   }
                 >
-                  Next
+                  Next week
                 </button>
               </div>
 
@@ -399,7 +415,7 @@ function ProgressPage({
 
                 {calendarDays.map((day) => (
                   <article
-                    className={`calendar-day ${day.isCurrentMonth ? '' : 'calendar-day-muted'}`}
+                    className="calendar-day"
                     key={day.dateKey}
                   >
                     <div className="calendar-day-header">
