@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import AppLayout from '../components/AppLayout'
 import ApplicationList from '../components/ApplicationList'
 import MetricGrid from '../components/MetricGrid'
-import { statuses } from '../data/applications'
+import { getTodayIsoDate, statuses } from '../data/applications'
 
 function DashboardPage({
   applications,
@@ -14,7 +14,7 @@ function DashboardPage({
   onDashboard,
   onEditApplication,
   onImportExcel,
-  onOpenProfile,
+  onProfile,
   onProgress,
   onSignOut,
   user,
@@ -87,12 +87,38 @@ function DashboardPage({
       ? 0
       : Math.min(pageStartIndex + pageSize, filteredApplications.length)
 
-  const nextFollowUp = useMemo(() => {
+  const followUpSummary = useMemo(() => {
+    const today = getTodayIsoDate()
     const datedFollowUps = applications
       .filter((application) => application.followUp)
       .sort((first, second) => first.followUp.localeCompare(second.followUp))
+    const overdueFollowUps = datedFollowUps.filter(
+      (application) => application.followUp < today,
+    )
+    const upcomingFollowUp = datedFollowUps.find(
+      (application) => application.followUp >= today,
+    )
 
-    return datedFollowUps[0]?.followUp || 'None set'
+    if (overdueFollowUps.length > 0) {
+      return {
+        value: overdueFollowUps[0].followUp,
+        note: `${overdueFollowUps.length} overdue follow-up${
+          overdueFollowUps.length === 1 ? '' : 's'
+        }`,
+      }
+    }
+
+    if (upcomingFollowUp) {
+      return {
+        value: upcomingFollowUp.followUp,
+        note: 'Next upcoming action',
+      }
+    }
+
+    return {
+      value: 'None set',
+      note: 'No follow-ups scheduled',
+    }
   }, [applications])
 
   const pagedApplicationIds = pagedApplications.map(
@@ -217,7 +243,7 @@ function DashboardPage({
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
-      onProfile={onOpenProfile}
+      onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
       user={user}
@@ -242,7 +268,7 @@ function DashboardPage({
 
       <MetricGrid
         applications={applications}
-        nextFollowUp={nextFollowUp}
+        followUpSummary={followUpSummary}
         statusCounts={statusCounts}
       />
 
@@ -345,12 +371,14 @@ function DashboardPage({
             type="button"
             onClick={handleToggleSelectionMode}
           >
-            <img
-              alt=""
-              aria-hidden="true"
-              className="multi-select-icon"
-              src="/selection.png"
-            />
+            <span className="multi-select-glyph" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <span className="icon-action-label">
+              {isSelectionMode ? 'Done' : 'Select'}
+            </span>
           </button>
         </div>
 

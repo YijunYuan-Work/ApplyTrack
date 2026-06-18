@@ -439,7 +439,7 @@ function ProgressPage({
                         ))}
                       </ul>
                     ) : (
-                      <p>No applications</p>
+                      <p>No events</p>
                     )}
                   </article>
                 ))}

@@ -30,6 +30,7 @@ function AppLayout({
         <nav className="sidebar-nav" aria-label="Primary navigation">
           {navItems.map((item) => (
             <button
+              aria-current={currentPage === item.key ? 'page' : undefined}
               className={currentPage === item.key ? 'nav-active' : ''}
               key={item.key}
               type="button"
@@ -43,7 +44,7 @@ function AppLayout({
 
         <div className="sidebar-actions">
           <button type="button" onClick={onAddApplication}>
-            <span className="button-plus" aria-hidden="true">+</span>
+            <span className="button-plus" aria-hidden="true"></span>
             Add application
           </button>
         </div>

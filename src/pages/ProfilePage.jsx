@@ -44,7 +44,11 @@ function ProfilePage({
 
     try {
       await onUpdateProfileEmail(email)
-      setEmailSuccess(email.trim() ? 'Email updated successfully.' : 'Email removed.')
+      setEmailSuccess(
+        email.trim()
+          ? 'Recovery email updated successfully.'
+          : 'Recovery email removed.',
+      )
     } catch (error) {
       setEmailError(error.message)
     } finally {
@@ -111,13 +115,13 @@ function ProfilePage({
         <div className="profile-settings-grid">
           <form className="profile-form" onSubmit={handleEmailSubmit}>
             <div>
-              <p className="eyebrow">Contact</p>
-              <h2>Email</h2>
-              <p>Optional account contact email.</p>
+              <p className="eyebrow">Recovery</p>
+              <h2>Recovery email</h2>
+              <p>Optional email used only when you need to reset your password.</p>
             </div>
 
             <label>
-              Email
+              Recovery email
               <input
                 type="email"
                 value={email}
@@ -127,7 +131,7 @@ function ProfilePage({
             </label>
 
             <button type="submit" disabled={isSavingEmail}>
-              {isSavingEmail ? 'Saving...' : 'Save email'}
+              {isSavingEmail ? 'Saving...' : 'Save recovery email'}
             </button>
 
             {emailSuccess && <p className="form-success">{emailSuccess}</p>}

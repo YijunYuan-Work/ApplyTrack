@@ -1,7 +1,12 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.106.2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2.106.2/cors'
 
-const emailNotFoundMessage = 'There is no account associated with this email.'
+const recoveryResponse = {
+  message: 'If an account uses that recovery email, a reset link is on its way.',
+}
+const rateLimitWindowMs = 15 * 60 * 1000
+const maxResetRequests = 5
+const resetAttempts = new Map<string, { count: number; resetAt: number }>()
 
 function jsonResponse(body: Record<string, string | boolean>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -19,6 +24,34 @@ function getSecretKey() {
 
   const secretKeys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}')
   return Object.values(secretKeys)[0] as string | undefined
+}
+
+function getRateLimitKey(request: Request, email: string) {
+  const forwardedFor =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+
+  return `${forwardedFor}:${email || 'empty'}`
+}
+
+function isRateLimited(request: Request, email: string) {
+  const now = Date.now()
+  const key = getRateLimitKey(request, email)
+  const attempt = resetAttempts.get(key)
+
+  if (!attempt || attempt.resetAt <= now) {
+    resetAttempts.set(key, { count: 1, resetAt: now + rateLimitWindowMs })
+    return false
+  }
+
+  if (attempt.count >= maxResetRequests) {
+    return true
+  }
+
+  resetAttempts.set(key, {
+    count: attempt.count + 1,
+    resetAt: attempt.resetAt,
+  })
+  return false
 }
 
 function getSafeRedirectUrl(requestedRedirect: string) {
@@ -122,8 +155,15 @@ Deno.serve(async (request) => {
     const normalizedEmail =
       typeof email === 'string' ? email.trim().toLowerCase() : ''
 
+    if (isRateLimited(request, normalizedEmail)) {
+      return jsonResponse(
+        { error: 'Too many reset requests. Please wait before trying again.' },
+        429,
+      )
+    }
+
     if (!normalizedEmail) {
-      return jsonResponse({ error: emailNotFoundMessage, exists: false })
+      return jsonResponse(recoveryResponse)
     }
 
     const supabaseAdmin = createClient(supabaseUrl, secretKey, {
@@ -135,7 +175,7 @@ Deno.serve(async (request) => {
     const user = await findUserByRecoveryEmail(supabaseAdmin, normalizedEmail)
 
     if (!user?.email) {
-      return jsonResponse({ error: emailNotFoundMessage, exists: false })
+      return jsonResponse(recoveryResponse)
     }
 
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
@@ -157,5 +197,5 @@ Deno.serve(async (request) => {
     )
   }
 
-  return jsonResponse({ exists: true, message: 'A password reset link is on its way.' })
+  return jsonResponse(recoveryResponse)
 })

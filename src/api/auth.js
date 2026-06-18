@@ -74,8 +74,8 @@ export async function requestPasswordReset(email) {
     throw new Error('Password recovery is unavailable right now. Please try again later.')
   }
 
-  if (!data.exists) {
-    throw new Error('There is no account associated with this email.')
+  if (data?.error) {
+    throw new Error(data.error)
   }
 }
 

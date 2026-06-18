@@ -16,7 +16,7 @@ import {
   updatePassword,
   updateProfileEmail,
 } from './api/auth'
-import { normalizeApplication } from './data/applications'
+import { getTodayIsoDate, normalizeApplication } from './data/applications'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
 import ApplicationFormPage from './pages/ApplicationFormPage'
 import DashboardPage from './pages/DashboardPage'
@@ -27,6 +27,7 @@ import SetupPage from './pages/SetupPage'
 import SignInPage from './pages/SignInPage'
 import { getEditingApplicationId, getRoute, navigate } from './utils/routes'
 import './App.css'
+import './styles/theme.css'
 
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 
@@ -211,7 +212,7 @@ function App() {
   }
 
   async function handleSaveApplication(applicationData, applicationId) {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = getTodayIsoDate()
     const preparedApplication = normalizeApplication({
       ...applicationData,
       company: applicationData.company.trim(),
@@ -352,6 +353,15 @@ function App() {
   const editingApplication = applications.find(
     (application) => application.id === editingApplicationId,
   )
+  const sharedPageProps = {
+    onAddApplication: () => navigate('/applications/new'),
+    onDashboard: () => navigate('/dashboard'),
+    onImportExcel: () => navigate('/import'),
+    onProfile: () => navigate('/profile'),
+    onProgress: () => navigate('/progress'),
+    onSignOut: handleSignOut,
+    user: appUser,
+  }
 
   if (!appUser) {
     return (
@@ -376,17 +386,11 @@ function App() {
   if (route === '/applications/new') {
     return (
       <ApplicationFormPage
+        {...sharedPageProps}
         application={null}
         error={dataError}
-        onAddApplication={() => navigate('/applications/new')}
         onCancel={() => navigate('/dashboard')}
-        onDashboard={() => navigate('/dashboard')}
-        onImportExcel={() => navigate('/import')}
-        onProfile={() => navigate('/profile')}
-        onProgress={() => navigate('/progress')}
         onSave={handleSaveApplication}
-        onSignOut={handleSignOut}
-        user={appUser}
       />
     )
   }
@@ -394,17 +398,11 @@ function App() {
   if (route.endsWith('/edit') && editingApplication) {
     return (
       <ApplicationFormPage
+        {...sharedPageProps}
         application={editingApplication}
         error={dataError}
-        onAddApplication={() => navigate('/applications/new')}
         onCancel={() => navigate('/dashboard')}
-        onDashboard={() => navigate('/dashboard')}
-        onImportExcel={() => navigate('/import')}
-        onProfile={() => navigate('/profile')}
-        onProgress={() => navigate('/progress')}
         onSave={handleSaveApplication}
-        onSignOut={handleSignOut}
-        user={appUser}
       />
     )
   }
@@ -412,15 +410,9 @@ function App() {
   if (route === '/profile') {
     return (
       <ProfilePage
-        onAddApplication={() => navigate('/applications/new')}
-        onDashboard={() => navigate('/dashboard')}
-        onImportExcel={() => navigate('/import')}
-        onProfile={() => navigate('/profile')}
-        onProgress={() => navigate('/progress')}
-        onSignOut={handleSignOut}
+        {...sharedPageProps}
         onUpdatePassword={handleUpdatePassword}
         onUpdateProfileEmail={handleUpdateProfileEmail}
-        user={appUser}
       />
     )
   }
@@ -438,14 +430,8 @@ function App() {
         }
       >
         <ProgressPage
+          {...sharedPageProps}
           applications={applications}
-          onAddApplication={() => navigate('/applications/new')}
-          onDashboard={() => navigate('/dashboard')}
-          onImportExcel={() => navigate('/import')}
-          onProfile={() => navigate('/profile')}
-          onProgress={() => navigate('/progress')}
-          onSignOut={handleSignOut}
-          user={appUser}
         />
       </Suspense>
     )
@@ -454,35 +440,23 @@ function App() {
   if (route === '/import') {
     return (
       <ImportExcelPage
-        onAddApplication={() => navigate('/applications/new')}
-        onDashboard={() => navigate('/dashboard')}
-        onImportExcel={() => navigate('/import')}
+        {...sharedPageProps}
         onImportApplications={handleImportApplications}
-        onProfile={() => navigate('/profile')}
-        onProgress={() => navigate('/progress')}
-        onSignOut={handleSignOut}
-        user={appUser}
       />
     )
   }
 
   return (
     <DashboardPage
+      {...sharedPageProps}
       applications={applications}
       error={dataError}
       isLoading={dataLoading}
-      onAddApplication={() => navigate('/applications/new')}
       onBulkDeleteApplications={handleBulkDeleteApplications}
       onDeleteApplication={handleDeleteApplication}
-      onDashboard={() => navigate('/dashboard')}
       onEditApplication={(applicationId) =>
         navigate(`/applications/${applicationId}/edit`)
       }
-      onImportExcel={() => navigate('/import')}
-      onOpenProfile={() => navigate('/profile')}
-      onProgress={() => navigate('/progress')}
-      onSignOut={handleSignOut}
-      user={appUser}
     />
   )
 }

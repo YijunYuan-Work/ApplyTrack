@@ -35,7 +35,9 @@ function SignInPage({
 
     try {
       await onPasswordResetRequest(email.trim())
-      setRecoverySuccess('A password reset link is on its way.')
+      setRecoverySuccess(
+        'If an account uses that recovery email, a reset link is on its way.',
+      )
     } catch (requestError) {
       setRecoveryError(requestError.message)
     } finally {
