@@ -1280,3 +1280,545 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* ApplyTrack refresh: professional career workspace with energetic pipeline cues. */
+.app-layout,
+.auth-shell {
+  background:
+    linear-gradient(145deg, oklch(95% 0.04 224) 0 22%, transparent 22% 100%),
+    linear-gradient(18deg, transparent 0 72%, oklch(95.5% 0.054 82) 72% 100%),
+    var(--bg);
+}
+
+.app-layout {
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.sidebar {
+  gap: 24px;
+  padding: 24px 18px;
+  border-right-color: oklch(27% 0.06 245);
+  background:
+    linear-gradient(180deg, oklch(22% 0.07 247), oklch(17% 0.055 250));
+  color: oklch(92% 0.018 238);
+  backdrop-filter: none;
+}
+
+.sidebar-identity {
+  display: grid;
+  gap: 8px;
+  padding: 2px 4px 12px;
+}
+
+.brand-lockup {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid oklch(74% 0.12 152);
+  border-radius: 10px;
+  background: var(--success);
+  color: #fff;
+  font-weight: 900;
+}
+
+.sidebar-brand {
+  color: #fff;
+  font-size: 1.26rem;
+}
+
+.sidebar-user {
+  margin: 0;
+  color: oklch(78% 0.028 240);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.sidebar-nav button {
+  min-height: 44px;
+  border-color: transparent;
+  color: oklch(90% 0.018 240);
+}
+
+.sidebar-nav button:hover,
+.sidebar-nav .nav-active {
+  border-color: oklch(43% 0.11 242);
+  background: oklch(29% 0.08 246);
+  color: #fff;
+}
+
+.nav-dot {
+  width: 8px;
+  height: 8px;
+  margin-right: 10px;
+  border-radius: 999px;
+  background: oklch(53% 0.065 245);
+}
+
+.nav-active .nav-dot,
+.sidebar-nav button:hover .nav-dot {
+  background: var(--energy);
+}
+
+.button-plus {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-momentum {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  padding: 14px;
+  border: 1px solid oklch(33% 0.08 246);
+  border-radius: 12px;
+  background: oklch(24% 0.065 248);
+}
+
+.sidebar-momentum span {
+  color: var(--energy);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sidebar-momentum strong {
+  color: #fff;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.sign-out-button {
+  margin-top: 0;
+  border-color: oklch(35% 0.07 247);
+  background: transparent;
+  color: oklch(88% 0.018 238);
+}
+
+.sign-out-button:hover {
+  background: oklch(29% 0.08 246);
+}
+
+.app-header,
+.tracker-section,
+.form-page,
+.dashboard-section,
+.profile-section,
+.progress-section,
+.metric-grid {
+  width: min(1120px, calc(100% - 44px));
+}
+
+.app-header {
+  padding-top: 44px;
+}
+
+.app-header h1 {
+  font-size: 2.95rem;
+  text-wrap: balance;
+}
+
+.auth-panel,
+.metric-grid article,
+.application-form,
+.application-card,
+.empty-state,
+.toolbar,
+.import-panel,
+.profile-card,
+.progress-chart-panel,
+.progress-summary article,
+.profile-form,
+.pagination-bar {
+  border-color: var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.metric-grid article {
+  position: relative;
+  min-height: 134px;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.metric-grid article::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  width: 52px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.metric-card-interviews::after {
+  background: var(--energy);
+}
+
+.metric-card-offers::after {
+  background: var(--success);
+}
+
+.metric-card-followup::after {
+  background: oklch(50% 0.13 305);
+}
+
+.metric-grid span,
+.progress-summary span,
+.import-summary span,
+.import-preview-header span,
+.profile-card span,
+.application-details dt {
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.metric-grid strong,
+.progress-summary strong {
+  font-size: 2rem;
+  overflow-wrap: anywhere;
+}
+
+.metric-grid small {
+  max-width: 22ch;
+  color: var(--text);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.section-header {
+  padding-top: 26px;
+}
+
+.status-summary span {
+  background: var(--surface);
+  color: var(--text-h);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+input,
+select,
+textarea {
+  border-radius: 10px;
+  background: var(--surface);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: oklch(52% 0.04 248);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--border-strong);
+}
+
+button,
+.secondary-action,
+.danger-action {
+  border-radius: 10px;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+button {
+  min-height: 46px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+}
+
+button:hover {
+  border-color: var(--accent-h);
+  background: var(--accent-h);
+}
+
+button:focus-visible,
+.secondary-action:focus-visible,
+.danger-action:focus-visible {
+  outline: 3px solid var(--accent-bg);
+  outline-offset: 2px;
+}
+
+.auth-toggle,
+.progress-tabs {
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.auth-toggle button,
+.progress-tabs button {
+  border-color: transparent;
+  background: transparent;
+}
+
+.auth-toggle button:hover,
+.auth-toggle .toggle-active,
+.progress-tabs button:hover,
+.progress-tabs .progress-tab-active {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.ghost-button,
+.secondary-action,
+.danger-action,
+.icon-action {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-h);
+}
+
+.ghost-button:hover,
+.secondary-action:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-soft);
+}
+
+.danger-action {
+  color: var(--danger);
+}
+
+.danger-action:hover {
+  border-color: oklch(82% 0.07 24);
+  background: var(--danger-bg);
+}
+
+.application-card {
+  overflow: hidden;
+  padding-left: 22px;
+}
+
+.application-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--accent);
+}
+
+.application-card-wishlist::before {
+  background: oklch(58% 0.035 260);
+}
+
+.application-card-applied::before {
+  background: var(--accent);
+}
+
+.application-card-interview::before {
+  background: var(--energy);
+}
+
+.application-card-offer::before {
+  background: var(--success);
+}
+
+.application-card-rejected::before {
+  background: var(--danger);
+}
+
+.application-card.selection-card {
+  padding-left: 56px;
+}
+
+.application-card.selected-card {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.application-details div {
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.application-details dd {
+  font-weight: 720;
+}
+
+.notes-block {
+  border: 1px solid oklch(86% 0.04 236);
+  border-left-width: 1px;
+  border-radius: 10px;
+  background: oklch(97% 0.02 236);
+}
+
+.company,
+.notes-block span,
+.calendar-day li span,
+.import-preview-row span {
+  color: var(--accent);
+}
+
+.status {
+  color: var(--accent-h);
+  background: var(--accent-bg);
+  font-weight: 900;
+}
+
+.status.wishlist {
+  color: oklch(33% 0.032 260);
+  background: oklch(92.5% 0.018 260);
+}
+
+.status.interview {
+  color: oklch(36% 0.12 74);
+  background: var(--energy-bg);
+}
+
+.status.offer {
+  color: oklch(34% 0.1 150);
+  background: var(--success-bg);
+}
+
+.status.rejected {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.form-error {
+  border-color: oklch(83% 0.07 24);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.form-success {
+  border-color: oklch(83% 0.09 150);
+  background: var(--success-bg);
+  color: oklch(34% 0.1 150);
+}
+
+.loading-message {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.profile-card,
+.profile-form,
+.import-panel {
+  gap: 16px;
+  padding: 20px;
+}
+
+.calendar-day,
+.import-summary,
+.import-preview,
+.import-preview-row {
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.import-preview-row {
+  background: var(--surface-soft);
+}
+
+.calendar-day li {
+  border-radius: 8px;
+  background: var(--accent-bg);
+}
+
+.calendar-day .calendar-event-rejected {
+  background: var(--danger-bg);
+}
+
+.calendar-day .calendar-event-rejected em,
+.calendar-day .calendar-event-rejected span {
+  color: var(--danger);
+}
+
+.auth-link-button {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  box-shadow: none;
+}
+
+.auth-link-button:hover {
+  border: 0;
+  background: transparent;
+  color: var(--accent-h);
+  text-decoration: underline;
+}
+
+.sign-out-button {
+  border-color: oklch(35% 0.07 247);
+  background: transparent;
+  color: oklch(88% 0.018 238);
+}
+
+.sign-out-button:hover {
+  background: oklch(29% 0.08 246);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 1040px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid oklch(27% 0.06 245);
+  }
+
+  .sidebar-momentum {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-header,
+  .tracker-section,
+  .form-page,
+  .dashboard-section,
+  .profile-section,
+  .progress-section,
+  .metric-grid {
+    width: min(100% - 28px, 1120px);
+  }
+
+  .app-header h1,
+  .auth-panel h1 {
+    font-size: 2.35rem;
+  }
+}
+
+@media (max-width: 440px) {
+  .app-header h1,
+  .auth-panel h1 {
+    font-size: 2rem;
+  }
+}

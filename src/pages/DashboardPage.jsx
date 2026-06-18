@@ -224,8 +224,19 @@ function DashboardPage({
     >
       <header className="app-header">
         <div>
-          <p className="eyebrow">Dashboard</p>
-          <h1>Welcome {user.name}, here are the applications you made.</h1>
+          <p className="eyebrow">Opportunity command center</p>
+          <h1>Welcome {user.name}, keep every lead warm.</h1>
+          <p>
+            Track outreach, interviews, and follow-ups from one focused pipeline.
+          </p>
+        </div>
+        <div className="header-actions">
+          <button type="button" onClick={onAddApplication}>
+            Add application
+          </button>
+          <button className="ghost-button" type="button" onClick={onProgress}>
+            View progress
+          </button>
         </div>
       </header>
 

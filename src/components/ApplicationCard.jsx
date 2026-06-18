@@ -8,9 +8,13 @@ function ApplicationCard({
   onEditApplication,
   selectionMode = false,
 }) {
+  const statusClass = application.status.toLowerCase().replace(/\s+/g, '-')
+
   return (
     <article
-      className={`application-card ${selectionMode ? 'selection-card' : ''} ${
+      className={`application-card application-card-${statusClass} ${
+        selectionMode ? 'selection-card' : ''
+      } ${
         isSelected ? 'selected-card' : ''
       }`}
     >
