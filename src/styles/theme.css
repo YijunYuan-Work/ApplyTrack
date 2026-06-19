@@ -557,3 +557,338 @@ button:focus-visible,
   }
 }
 
+@media (max-width: 900px) {
+  .app-layout {
+    min-height: 100svh;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    padding:
+      max(18px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      18px
+      max(16px, env(safe-area-inset-left));
+  }
+
+  .sidebar-identity {
+    grid-template-columns: 1fr;
+    padding-bottom: 4px;
+  }
+
+  .sidebar-nav,
+  .sidebar-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sidebar-nav button,
+  .sidebar-actions button,
+  .sign-out-button {
+    min-height: 48px;
+  }
+
+  .sidebar-momentum {
+    display: none;
+  }
+
+  .sign-out-button {
+    margin-top: 0;
+  }
+
+  .app-content {
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+  }
+
+  .app-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+    padding-top: 30px;
+  }
+
+  .header-actions {
+    align-items: stretch;
+  }
+
+  .metric-grid,
+  .progress-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(170px, 0.5fr);
+  }
+
+  .toolbar label:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .application-card {
+    grid-template-columns: 1fr;
+  }
+
+  .card-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .card-actions > * {
+    flex: 1 1 140px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header,
+  .tracker-section,
+  .form-page,
+  .dashboard-section,
+  .profile-section,
+  .progress-section,
+  .metric-grid {
+    width: min(100% - 24px, 1120px);
+  }
+
+  .auth-shell {
+    min-height: 100svh;
+    padding:
+      max(16px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+  }
+
+  .auth-panel {
+    gap: 24px;
+    padding: 22px;
+  }
+
+  .auth-panel h1,
+  .app-header h1 {
+    font-size: 2.05rem;
+    line-height: 1.08;
+  }
+
+  .app-header p,
+  .auth-panel p {
+    font-size: 0.98rem;
+  }
+
+  .header-actions,
+  .form-actions,
+  .card-actions,
+  .pagination-buttons,
+  .calendar-toolbar {
+    flex-direction: column;
+  }
+
+  .header-actions button,
+  .header-actions .ghost-button,
+  .form-actions button,
+  .form-actions .ghost-button,
+  .card-actions > *,
+  .pagination-buttons button {
+    width: 100%;
+  }
+
+  .sidebar {
+    gap: 14px;
+  }
+
+  .brand-lockup {
+    gap: 10px;
+  }
+
+  .sidebar-brand {
+    font-size: 1.15rem;
+  }
+
+  .sidebar-user {
+    font-size: 0.8rem;
+  }
+
+  .sidebar-nav {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .sidebar-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-nav button,
+  .sidebar-actions button,
+  .sign-out-button {
+    justify-content: center;
+    padding-inline: 10px;
+    white-space: normal;
+  }
+
+  .nav-dot {
+    margin-right: 6px;
+  }
+
+  .metric-grid,
+  .progress-summary,
+  .profile-settings-grid,
+  .form-grid,
+  .toolbar,
+  .import-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-grid article,
+  .progress-summary article {
+    min-height: 112px;
+  }
+
+  .toolbar label:first-child {
+    grid-column: auto;
+  }
+
+  .status-summary {
+    justify-content: flex-start;
+  }
+
+  .list-action-bar {
+    justify-content: stretch;
+  }
+
+  .bulk-toolbar {
+    width: 100%;
+  }
+
+  .bulk-toolbar button,
+  .icon-action {
+    flex: 1 1 auto;
+  }
+
+  .pagination-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pagination-bar label {
+    justify-content: space-between;
+  }
+
+  .pagination-bar select {
+    min-width: 96px;
+  }
+
+  .application-details {
+    grid-template-columns: 1fr;
+  }
+
+  .application-card {
+    gap: 16px;
+    padding: 18px;
+    padding-left: 20px;
+  }
+
+  .application-card.selection-card {
+    padding-left: 52px;
+  }
+
+  .card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .import-preview-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .import-preview-row strong {
+    grid-column: 2;
+  }
+
+  .progress-view-header,
+  .calendar-toolbar {
+    align-items: stretch;
+  }
+
+  .progress-tabs {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .progress-chart-panel {
+    padding: 16px;
+  }
+
+  .progress-chart {
+    min-width: 0;
+    height: 360px;
+  }
+
+  .progress-node-count {
+    font-size: 0.86rem;
+  }
+
+  .progress-node-name {
+    font-size: 0.68rem;
+  }
+
+  .progress-calendar {
+    overflow: visible;
+  }
+
+  .calendar-grid {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .calendar-weekday {
+    display: none;
+  }
+
+  .calendar-day {
+    min-height: auto;
+  }
+
+  .calendar-day-header span::before {
+    content: "Day ";
+    color: var(--text-soft);
+    font-weight: 800;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-header,
+  .tracker-section,
+  .form-page,
+  .dashboard-section,
+  .profile-section,
+  .progress-section,
+  .metric-grid {
+    width: min(100% - 18px, 1120px);
+  }
+
+  .auth-panel,
+  .application-form,
+  .import-panel,
+  .profile-card,
+  .profile-form,
+  .progress-chart-panel,
+  .toolbar,
+  .pagination-bar {
+    padding: 16px;
+  }
+
+  .auth-panel h1,
+  .app-header h1 {
+    font-size: 1.82rem;
+  }
+
+  .sidebar-nav,
+  .sidebar-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .status-summary span {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+

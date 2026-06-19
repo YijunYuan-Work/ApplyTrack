@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ResponsiveContainer, Sankey, Tooltip } from 'recharts'
 import AppLayout from '../components/AppLayout'
 
@@ -87,10 +87,25 @@ function sortCalendarEvents(first, second) {
   )
 }
 
-function ProgressNode({ height, payload, width, x, y }) {
+const compactNodeLabels = {
+  Applications: 'Applications',
+  'Reached interview': 'Interview',
+  Offers: 'Offers',
+  'Rejected after interview': 'Rejected after',
+  'No interview yet': 'No interview',
+  'Rejected before interview': 'Rejected before',
+  'Still in progress': 'In progress',
+}
+
+function ProgressNode({ compact = false, height, payload, width, x, y }) {
+  const nodeName = compact ? compactNodeLabels[payload.name] || payload.name : payload.name
   const labelAbove = payload.name === 'Reached interview'
-  const labelOnLeft = !labelAbove && x < 150
-  const labelX = labelAbove ? x + width / 2 : labelOnLeft ? x - 14 : x + width + 14
+  const labelOnLeft = !labelAbove && x < (compact ? 96 : 150)
+  const labelX = labelAbove
+    ? x + width / 2
+    : labelOnLeft
+      ? x - (compact ? 8 : 14)
+      : x + width + (compact ? 8 : 14)
   const textAnchor = labelAbove ? 'middle' : labelOnLeft ? 'end' : 'start'
   const labelY = y + height / 2
 
@@ -118,7 +133,7 @@ function ProgressNode({ height, payload, width, x, y }) {
         x={labelX}
         y={labelAbove ? y - 7 : labelY + 18}
       >
-        {payload.name}
+        {nodeName}
       </text>
     </g>
   )
@@ -210,6 +225,30 @@ function buildProgressData(applications) {
   }
 }
 
+function useCompactViewport() {
+  const [isCompactViewport, setIsCompactViewport] = useState(() =>
+    typeof window === 'undefined'
+      ? false
+      : window.matchMedia('(max-width: 640px)').matches,
+  )
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 640px)')
+
+    function handleViewportChange(event) {
+      setIsCompactViewport(event.matches)
+    }
+
+    mediaQuery.addEventListener('change', handleViewportChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleViewportChange)
+    }
+  }, [])
+
+  return isCompactViewport
+}
+
 function ProgressPage({
   applications,
   onAddApplication,
@@ -222,6 +261,7 @@ function ProgressPage({
 }) {
   const [activeView, setActiveView] = useState('map')
   const [visibleWeekOverride, setVisibleWeekOverride] = useState('')
+  const isCompactViewport = useCompactViewport()
   const latestEventWeek = useMemo(() => {
     const latestDateKey = applications
       .flatMap((application) =>
@@ -364,10 +404,14 @@ function ProgressPage({
                     data={data}
                     link={{ stroke: '#94a3b8', strokeOpacity: 0.42 }}
                     linkCurvature={0.55}
-                    margin={{ bottom: 48, left: 188, right: 188, top: 48 }}
-                    node={<ProgressNode />}
-                    nodePadding={42}
-                    nodeWidth={14}
+                    margin={
+                      isCompactViewport
+                        ? { bottom: 36, left: 78, right: 78, top: 62 }
+                        : { bottom: 48, left: 188, right: 188, top: 48 }
+                    }
+                    node={<ProgressNode compact={isCompactViewport} />}
+                    nodePadding={isCompactViewport ? 28 : 42}
+                    nodeWidth={isCompactViewport ? 12 : 14}
                     verticalAlign="top"
                   >
                     <Tooltip formatter={(value) => [`${value} applications`, 'Flow']} />
