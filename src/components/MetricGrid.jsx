@@ -1,4 +1,4 @@
-function MetricGrid({ applications, followUpSummary, statusCounts }) {
+function MetricGrid({ applications, statusCounts }) {
   const interviewTotal = applications.reduce(
     (total, application) => total + Number(application.interviewCount || 0),
     0,
@@ -26,11 +26,6 @@ function MetricGrid({ applications, followUpSummary, statusCounts }) {
         <span>Offers</span>
         <strong>{offerTotal}</strong>
         <small>{offerTotal === 1 ? '1 win in sight' : 'Wins in sight'}</small>
-      </article>
-      <article className="metric-card metric-card-followup">
-        <span>Follow-up</span>
-        <strong>{followUpSummary.value}</strong>
-        <small>{followUpSummary.note}</small>
       </article>
     </section>
   )

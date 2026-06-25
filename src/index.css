@@ -1,26 +1,29 @@
 :root {
-  --bg: oklch(97.8% 0.012 236);
-  --surface: oklch(100% 0 0);
-  --surface-soft: oklch(95.6% 0.018 236);
-  --surface-strong: oklch(92.8% 0.03 224);
-  --text: oklch(38% 0.042 250);
-  --text-h: oklch(22% 0.056 248);
-  --text-soft: oklch(48% 0.042 250);
-  --border: oklch(86.2% 0.028 238);
-  --border-strong: oklch(75% 0.052 235);
-  --accent: oklch(45% 0.14 243);
-  --accent-h: oklch(35% 0.14 246);
-  --accent-bg: oklch(92.8% 0.052 236);
-  --success: oklch(57% 0.145 150);
-  --success-bg: oklch(94.5% 0.06 148);
-  --energy: oklch(72% 0.15 78);
-  --energy-bg: oklch(95% 0.07 83);
-  --danger: oklch(49% 0.15 24);
-  --danger-bg: oklch(95% 0.045 24);
-  --shadow:
-    rgba(12, 38, 67, 0.08) 0 2px 8px;
+  --bg: #010102;
+  --surface: #0f1011;
+  --surface-soft: #141516;
+  --surface-strong: #18191a;
+  --surface-lift: #191a1b;
+  --text: #d0d6e0;
+  --text-h: #f7f8f8;
+  --text-soft: #8a8f98;
+  --text-tertiary: #62666d;
+  --border: #23252a;
+  --border-strong: #34343a;
+  --border-tertiary: #3e3e44;
+  --accent: #5e6ad2;
+  --accent-h: #828fff;
+  --accent-focus: #5e69d1;
+  --accent-bg: rgba(94, 106, 210, 0.18);
+  --success: #27a644;
+  --success-bg: rgba(39, 166, 68, 0.14);
+  --energy: #7a7fad;
+  --energy-bg: rgba(122, 127, 173, 0.18);
+  --danger: #f58a8a;
+  --danger-bg: rgba(245, 138, 138, 0.12);
+  --shadow: none;
   font-family:
-    "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system,
+    Inter, "SF Pro Display", "SF Pro Text", ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
   background: var(--bg);

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import AppLayout from '../components/AppLayout'
 import ApplicationList from '../components/ApplicationList'
 import MetricGrid from '../components/MetricGrid'
-import { getTodayIsoDate, statuses } from '../data/applications'
+import { statuses } from '../data/applications'
 
 function DashboardPage({
   applications,
@@ -86,40 +86,6 @@ function DashboardPage({
     filteredApplications.length === 0
       ? 0
       : Math.min(pageStartIndex + pageSize, filteredApplications.length)
-
-  const followUpSummary = useMemo(() => {
-    const today = getTodayIsoDate()
-    const datedFollowUps = applications
-      .filter((application) => application.followUp)
-      .sort((first, second) => first.followUp.localeCompare(second.followUp))
-    const overdueFollowUps = datedFollowUps.filter(
-      (application) => application.followUp < today,
-    )
-    const upcomingFollowUp = datedFollowUps.find(
-      (application) => application.followUp >= today,
-    )
-
-    if (overdueFollowUps.length > 0) {
-      return {
-        value: overdueFollowUps[0].followUp,
-        note: `${overdueFollowUps.length} overdue follow-up${
-          overdueFollowUps.length === 1 ? '' : 's'
-        }`,
-      }
-    }
-
-    if (upcomingFollowUp) {
-      return {
-        value: upcomingFollowUp.followUp,
-        note: 'Next upcoming action',
-      }
-    }
-
-    return {
-      value: 'None set',
-      note: 'No follow-ups scheduled',
-    }
-  }, [applications])
 
   const pagedApplicationIds = pagedApplications.map(
     (application) => application.id,
@@ -248,155 +214,161 @@ function DashboardPage({
       onSignOut={onSignOut}
       user={user}
     >
-      <header className="app-header">
-        <div>
-          <p className="eyebrow">Opportunity command center</p>
-          <h1>Welcome {user.name}, keep every lead warm.</h1>
-          <p>
-            Track outreach, interviews, and follow-ups from one focused pipeline.
-          </p>
-        </div>
-        <div className="header-actions">
-          <button type="button" onClick={onAddApplication}>
-            Add application
-          </button>
-          <button className="ghost-button" type="button" onClick={onProgress}>
-            View progress
-          </button>
-        </div>
-      </header>
-
-      <MetricGrid
-        applications={applications}
-        followUpSummary={followUpSummary}
-        statusCounts={statusCounts}
-      />
-
-      <section className="tracker-section" aria-label="Application tracker">
-        <div className="section-header">
-          <div>
-            <p className="eyebrow">Pipeline</p>
-            <h2>Your applications</h2>
-          </div>
-          <div className="status-summary">
-            {statusCounts.map((item) => (
-              <span key={item.status}>
-                {item.status}: {item.count}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="toolbar" aria-label="Filter applications">
-          <label>
-            Search
-            <input
-              value={searchTerm}
-              onChange={(event) => {
-                setSearchTerm(event.target.value)
-                resetToFirstPage()
-              }}
-              placeholder="Company, role, notes..."
-            />
-          </label>
-
-          <label>
-            Status
-            <select
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value)
-                resetToFirstPage()
-              }}
-            >
-              <option>All</option>
-              {statuses.map((status) => (
-                <option key={status}>{status}</option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Sort by
-            <select
-              value={sortBy}
-              onChange={(event) => {
-                setSortBy(event.target.value)
-                resetToFirstPage()
-              }}
-            >
-              <option value="applied">Applied date</option>
-              <option value="lastUpdated">Last updated date</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="list-action-bar" aria-label="Application list actions">
-          {isSelectionMode && (
-            <div className="bulk-toolbar" aria-label="Bulk application actions">
-              <span>{selectedApplicationIds.length} selected</span>
-              <button
-                className="ghost-button"
-                disabled={pagedApplications.length === 0}
-                type="button"
-                onClick={handleSelectAllVisible}
-              >
-                {allVisibleSelected ? 'Unselect all' : 'Select all'}
-              </button>
-              <button
-                className="danger-action"
-                disabled={selectedApplicationIds.length === 0}
-                type="button"
-                onClick={handleBulkDelete}
-              >
-                Delete selected
-              </button>
-              {selectedApplicationIds.length > 0 && (
-                <button
-                  className="ghost-button"
-                  type="button"
-                  onClick={handleClearSelection}
-                >
-                  Clear
-                </button>
-              )}
+      <section className="dashboard-workspace" aria-label="Dashboard workspace">
+        <section className="dashboard-command-panel" aria-label="Pipeline overview">
+          <header className="app-header dashboard-header">
+            <div>
+              <p className="eyebrow">Application dashboard</p>
+              <h1>Track your job search in one place.</h1>
+              <p>
+                Review applications, interviews, offers, and recent updates from
+                a focused workspace.
+              </p>
             </div>
-          )}
+            <div className="header-actions">
+              <button type="button" onClick={onAddApplication}>
+                Add application
+              </button>
+              <button className="ghost-button" type="button" onClick={onProgress}>
+                View progress
+              </button>
+            </div>
+          </header>
 
-          <button
-            aria-label={isSelectionMode ? 'Exit multi-select' : 'Enter multi-select'}
-            className={`icon-action ${isSelectionMode ? 'icon-action-active' : ''}`}
-            disabled={filteredApplications.length === 0}
-            title={isSelectionMode ? 'Exit multi-select' : 'Multi-select'}
-            type="button"
-            onClick={handleToggleSelectionMode}
-          >
-            <span className="multi-select-glyph" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-            <span className="icon-action-label">
-              {isSelectionMode ? 'Done' : 'Select'}
-            </span>
-          </button>
-        </div>
+          <MetricGrid
+            applications={applications}
+            statusCounts={statusCounts}
+          />
+        </section>
 
-        {error && <p className="form-error">{error}</p>}
-        {isLoading && <p className="loading-message">Loading applications...</p>}
+        <section className="tracker-section" aria-label="Application tracker">
+          <div className="section-header">
+            <div>
+              <p className="eyebrow">Pipeline</p>
+              <h2>Your applications</h2>
+            </div>
+            <div className="status-summary">
+              {statusCounts.map((item) => (
+                <span key={item.status}>
+                  {item.status}: {item.count}
+                </span>
+              ))}
+            </div>
+          </div>
 
-        {renderPaginationControls('Top')}
+          <div className="tracker-control-bar">
+            <div className="toolbar" aria-label="Filter applications">
+              <label>
+                Search
+                <input
+                  value={searchTerm}
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value)
+                    resetToFirstPage()
+                  }}
+                  placeholder="Company, role, notes..."
+                />
+              </label>
 
-        <ApplicationList
-          applications={pagedApplications}
-          selectedApplicationIds={selectedApplicationIds}
-          onDeleteApplication={handleDeleteApplication}
-          onEditApplication={onEditApplication}
-          onSelectApplication={handleSelectApplication}
-          selectionMode={isSelectionMode}
-        />
+              <label>
+                Status
+                <select
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value)
+                    resetToFirstPage()
+                  }}
+                >
+                  <option>All</option>
+                  {statuses.map((status) => (
+                    <option key={status}>{status}</option>
+                  ))}
+                </select>
+              </label>
 
-        {renderPaginationControls('Bottom')}
+              <label>
+                Sort by
+                <select
+                  value={sortBy}
+                  onChange={(event) => {
+                    setSortBy(event.target.value)
+                    resetToFirstPage()
+                  }}
+                >
+                  <option value="applied">Applied date</option>
+                  <option value="lastUpdated">Last updated date</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="list-action-bar" aria-label="Application list actions">
+              {isSelectionMode && (
+                <div className="bulk-toolbar" aria-label="Bulk application actions">
+                  <span>{selectedApplicationIds.length} selected</span>
+                  <button
+                    className="ghost-button"
+                    disabled={pagedApplications.length === 0}
+                    type="button"
+                    onClick={handleSelectAllVisible}
+                  >
+                    {allVisibleSelected ? 'Unselect all' : 'Select all'}
+                  </button>
+                  <button
+                    className="danger-action"
+                    disabled={selectedApplicationIds.length === 0}
+                    type="button"
+                    onClick={handleBulkDelete}
+                  >
+                    Delete selected
+                  </button>
+                  {selectedApplicationIds.length > 0 && (
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={handleClearSelection}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <button
+                aria-label={isSelectionMode ? 'Exit multi-select' : 'Enter multi-select'}
+                className={`icon-action ${isSelectionMode ? 'icon-action-active' : ''}`}
+                disabled={filteredApplications.length === 0}
+                title={isSelectionMode ? 'Exit multi-select' : 'Multi-select'}
+                type="button"
+                onClick={handleToggleSelectionMode}
+              >
+                <span className="multi-select-glyph" aria-hidden="true">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </span>
+                <span className="icon-action-label">
+                  {isSelectionMode ? 'Done' : 'Select'}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {error && <p className="form-error">{error}</p>}
+          {isLoading && <p className="loading-message">Loading applications...</p>}
+
+          {renderPaginationControls('Top')}
+
+          <ApplicationList
+            applications={pagedApplications}
+            selectedApplicationIds={selectedApplicationIds}
+            onDeleteApplication={handleDeleteApplication}
+            onEditApplication={onEditApplication}
+            onSelectApplication={handleSelectApplication}
+            selectionMode={isSelectionMode}
+          />
+
+          {renderPaginationControls('Bottom')}
+        </section>
       </section>
     </AppLayout>
   )

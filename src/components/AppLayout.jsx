@@ -49,11 +49,6 @@ function AppLayout({
           </button>
         </div>
 
-        <div className="sidebar-momentum" aria-label="Workspace focus">
-          <span>Focus mode</span>
-          <strong>Keep the pipeline moving.</strong>
-        </div>
-
         <button className="ghost-button sign-out-button" type="button" onClick={onSignOut}>
           Sign out
         </button>
