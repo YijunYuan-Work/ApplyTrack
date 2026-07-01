@@ -71,11 +71,11 @@ function ApplicationCard({
           </div>
           <div>
             <dt>Cover letter</dt>
-            <dd>{application.coverLetter || 'Not set'}</dd>
+            <dd>{application.coverLetter || 'No'}</dd>
           </div>
           <div>
             <dt>Referral</dt>
-            <dd>{application.referral || 'Not set'}</dd>
+            <dd>{application.referral || 'No'}</dd>
           </div>
           <div>
             <dt>Last updated</dt>

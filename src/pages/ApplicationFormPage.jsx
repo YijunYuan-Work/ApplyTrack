@@ -205,7 +205,6 @@ function ApplicationFormPage({
                 value={formData.coverLetter}
                 onChange={handleChange}
               >
-                <option value="">Not set</option>
                 <option>Yes</option>
                 <option>No</option>
               </select>
@@ -218,7 +217,6 @@ function ApplicationFormPage({
                 value={formData.referral}
                 onChange={handleChange}
               >
-                <option value="">Not set</option>
                 <option>Yes</option>
                 <option>No</option>
               </select>

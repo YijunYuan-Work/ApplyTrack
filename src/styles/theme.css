@@ -2618,6 +2618,22 @@ button:focus-visible,
   color: var(--danger);
 }
 
+:root[data-theme='light'] .calendar-day .calendar-event-rejected {
+  border-color: rgba(167, 55, 55, 0.34);
+  background: #fff1f1;
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+
+:root[data-theme='light'] .calendar-day .calendar-event-rejected em,
+:root[data-theme='light'] .calendar-day .calendar-event-rejected span,
+:root[data-theme='light'] .calendar-day .calendar-event-rejected strong {
+  color: #8f2424;
+}
+
+:root[data-theme='light'] .calendar-day .calendar-event-rejected em {
+  font-weight: 800;
+}
+
 @media (max-width: 720px) {
   .sidebar {
     display: grid;

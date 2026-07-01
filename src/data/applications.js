@@ -61,8 +61,8 @@ export function createBlankApplication() {
     contact: '',
     salary: '',
     followUp: '',
-    coverLetter: '',
-    referral: '',
+    coverLetter: 'No',
+    referral: 'No',
     lastUpdated: getTodayIsoDate(),
     interviewCount: 0,
     notes: '',
@@ -75,9 +75,11 @@ export function normalizeApplication(application) {
   return {
     ...createBlankApplication(),
     ...application,
+    coverLetter: application.coverLetter || 'No',
     interviewCount: Number.isNaN(interviewCount) ? 0 : Math.max(0, interviewCount),
     lastUpdated: application.lastUpdated || application.date || getTodayIsoDate(),
     location: application.location || '',
+    referral: application.referral || 'No',
     status: statuses.includes(application.status) ? application.status : 'Applied',
   }
 }
