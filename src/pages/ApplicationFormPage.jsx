@@ -17,6 +17,8 @@ function ApplicationFormPage({
   onProgress,
   onSave,
   onSignOut,
+  onToggleTheme,
+  themePreference,
   user,
 }) {
   const [formData, setFormData] = useState(() =>
@@ -42,6 +44,8 @@ function ApplicationFormPage({
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
+      onToggleTheme={onToggleTheme}
+      themePreference={themePreference}
       user={user}
     >
       <header className="app-header compact">

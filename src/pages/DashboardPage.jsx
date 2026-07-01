@@ -14,9 +14,11 @@ function DashboardPage({
   onDashboard,
   onEditApplication,
   onImportExcel,
+  onToggleTheme,
   onProfile,
   onProgress,
   onSignOut,
+  themePreference,
   user,
 }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -212,6 +214,8 @@ function DashboardPage({
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
+      onToggleTheme={onToggleTheme}
+      themePreference={themePreference}
       user={user}
     >
       <section className="dashboard-workspace" aria-label="Dashboard workspace">

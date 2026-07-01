@@ -2456,3 +2456,204 @@ button:focus-visible,
   }
 }
 
+/* User theme preference controls and light theme adjustments. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+.sidebar-footer {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.theme-toggle-button {
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-soft);
+}
+
+.theme-toggle-button:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-soft);
+  color: var(--text-h);
+}
+
+.theme-toggle-icon {
+  position: relative;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.theme-toggle-icon::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 7px 0 0 -2px var(--surface-soft);
+}
+
+.theme-toggle-label {
+  font-size: 0.84rem;
+}
+
+.sidebar-footer .sign-out-button {
+  margin-top: 0;
+}
+
+:root[data-theme='light'] .app-layout,
+:root[data-theme='light'] .auth-shell {
+  background:
+    linear-gradient(180deg, rgba(94, 106, 210, 0.06), transparent 260px),
+    var(--bg);
+}
+
+:root[data-theme='light'] .app-content {
+  background:
+    radial-gradient(circle at top right, rgba(94, 106, 210, 0.08), transparent 340px),
+    var(--bg);
+}
+
+:root[data-theme='light'] .sidebar {
+  border-right-color: var(--border);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text);
+}
+
+:root[data-theme='light'] .brand-mark {
+  border-color: rgba(94, 106, 210, 0.25);
+}
+
+:root[data-theme='light'] .sidebar-nav button,
+:root[data-theme='light'] .sidebar-actions button,
+:root[data-theme='light'] .sign-out-button {
+  color: var(--text);
+}
+
+:root[data-theme='light'] .sidebar-actions button {
+  color: #fff;
+}
+
+:root[data-theme='light'] .sidebar-nav button:hover,
+:root[data-theme='light'] .sidebar-nav .nav-active,
+:root[data-theme='light'] .theme-toggle-button:hover,
+:root[data-theme='light'] .sign-out-button:hover {
+  background: var(--surface-soft);
+  color: var(--text-h);
+}
+
+:root[data-theme='light'] .dashboard-command-panel,
+:root[data-theme='light'] .dashboard-workspace .tracker-section,
+:root[data-theme='light'] .auth-panel,
+:root[data-theme='light'] .application-form,
+:root[data-theme='light'] .import-panel,
+:root[data-theme='light'] .profile-card,
+:root[data-theme='light'] .profile-form,
+:root[data-theme='light'] .progress-chart-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), transparent 160px),
+    var(--surface);
+}
+
+:root[data-theme='light'] .metric-grid article,
+:root[data-theme='light'] .progress-summary article,
+:root[data-theme='light'] .application-card,
+:root[data-theme='light'] .toolbar,
+:root[data-theme='light'] .pagination-bar,
+:root[data-theme='light'] .empty-state {
+  background: var(--surface);
+}
+
+:root[data-theme='light'] .dashboard-workspace .metric-grid article,
+:root[data-theme='light'] .tracker-control-bar .toolbar,
+:root[data-theme='light'] .dashboard-workspace .pagination-bar,
+:root[data-theme='light'] .application-details div,
+:root[data-theme='light'] .notes-block,
+:root[data-theme='light'] .calendar-day li,
+:root[data-theme='light'] input,
+:root[data-theme='light'] select,
+:root[data-theme='light'] textarea {
+  background: var(--surface-soft);
+}
+
+:root[data-theme='light'] input:hover,
+:root[data-theme='light'] select:hover,
+:root[data-theme='light'] textarea:hover {
+  background: var(--surface-strong);
+}
+
+:root[data-theme='light'] .ghost-button,
+:root[data-theme='light'] .secondary-action,
+:root[data-theme='light'] .danger-action,
+:root[data-theme='light'] .icon-action,
+:root[data-theme='light'] .theme-toggle-button {
+  background: var(--surface);
+}
+
+:root[data-theme='light'] .ghost-button:hover,
+:root[data-theme='light'] .secondary-action:hover,
+:root[data-theme='light'] .icon-action:hover,
+:root[data-theme='light'] .icon-action-active {
+  background: var(--surface-soft);
+}
+
+:root[data-theme='light'] .status.offer,
+:root[data-theme='light'] .form-success {
+  color: #167b30;
+}
+
+:root[data-theme='light'] .status.rejected,
+:root[data-theme='light'] .danger-action,
+:root[data-theme='light'] .form-error {
+  color: var(--danger);
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    align-items: stretch;
+  }
+
+  .sidebar-footer {
+    grid-column: 2;
+    margin-top: 0;
+  }
+
+  .sidebar-footer .sign-out-button {
+    display: none;
+  }
+
+  .sidebar-nav {
+    grid-column: 1;
+  }
+
+  .theme-toggle-button {
+    display: grid;
+    justify-items: center;
+    width: 100%;
+    min-height: 46px;
+    padding: 6px 4px;
+    font-size: 0;
+  }
+
+  .theme-toggle-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+

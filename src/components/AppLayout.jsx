@@ -7,6 +7,8 @@ function AppLayout({
   onProfile,
   onProgress,
   onSignOut,
+  onToggleTheme = () => {},
+  themePreference = 'dark',
   user,
 }) {
   const navItems = [
@@ -49,9 +51,26 @@ function AppLayout({
           </button>
         </div>
 
-        <button className="ghost-button sign-out-button" type="button" onClick={onSignOut}>
-          Sign out
-        </button>
+        <div className="sidebar-footer">
+          <button
+            className="theme-toggle-button"
+            type="button"
+            aria-label={`Switch to ${
+              themePreference === 'dark' ? 'light' : 'dark'
+            } mode`}
+            aria-pressed={themePreference === 'light'}
+            onClick={onToggleTheme}
+          >
+            <span className="theme-toggle-icon" aria-hidden="true"></span>
+            <span className="theme-toggle-label">
+              {themePreference === 'dark' ? 'Dark mode' : 'Light mode'}
+            </span>
+          </button>
+
+          <button className="ghost-button sign-out-button" type="button" onClick={onSignOut}>
+            Sign out
+          </button>
+        </div>
       </aside>
 
       <section className="app-content">{children}</section>

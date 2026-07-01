@@ -9,6 +9,8 @@ function ImportExcelPage({
   onProfile,
   onProgress,
   onSignOut,
+  onToggleTheme,
+  themePreference,
   user,
 }) {
   return (
@@ -20,6 +22,8 @@ function ImportExcelPage({
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
+      onToggleTheme={onToggleTheme}
+      themePreference={themePreference}
       user={user}
     >
       <header className="app-header compact">

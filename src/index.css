@@ -33,6 +33,31 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root[data-theme='light'] {
+  --bg: #f7f8f8;
+  --surface: #ffffff;
+  --surface-soft: #f5f6f6;
+  --surface-strong: #edeff2;
+  --surface-lift: #e8ebef;
+  --text: #3f4652;
+  --text-h: #08090a;
+  --text-soft: #6b7280;
+  --text-tertiary: #8b919b;
+  --border: #d9dde4;
+  --border-strong: #b9c0cc;
+  --border-tertiary: #c7ced8;
+  --accent: #5e6ad2;
+  --accent-h: #4752b8;
+  --accent-focus: #5e69d1;
+  --accent-bg: rgba(94, 106, 210, 0.14);
+  --success: #168b35;
+  --success-bg: rgba(39, 166, 68, 0.12);
+  --energy: #6970a6;
+  --energy-bg: rgba(122, 127, 173, 0.14);
+  --danger: #a73737;
+  --danger-bg: rgba(167, 55, 55, 0.1);
+}
+
 * {
   box-sizing: border-box;
 }
