@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import AppLayout from '../components/AppLayout'
+import ApplicationBoard from '../components/ApplicationBoard'
 import ApplicationList from '../components/ApplicationList'
 import MetricGrid from '../components/MetricGrid'
 import { statuses } from '../data/applications'
@@ -28,6 +29,8 @@ function DashboardPage({
   const [statusFilter, setStatusFilter] = useState('All')
   const [pageSize, setPageSize] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
+  const [viewMode, setViewMode] = useState('list')
+  const [activeBoardStatus, setActiveBoardStatus] = useState('Applied')
 
   const statusCounts = useMemo(
     () =>
@@ -261,6 +264,23 @@ function DashboardPage({
           </div>
 
           <div className="tracker-control-bar">
+            <div className="view-toggle" aria-label="Application view">
+              <button
+                className={viewMode === 'list' ? 'active' : ''}
+                type="button"
+                onClick={() => setViewMode('list')}
+              >
+                List
+              </button>
+              <button
+                className={viewMode === 'board' ? 'active' : ''}
+                type="button"
+                onClick={() => setViewMode('board')}
+              >
+                Board
+              </button>
+            </div>
+
             <div className="toolbar" aria-label="Filter applications">
               <label>
                 Search
@@ -279,7 +299,11 @@ function DashboardPage({
                 <select
                   value={statusFilter}
                   onChange={(event) => {
-                    setStatusFilter(event.target.value)
+                    const nextStatusFilter = event.target.value
+                    setStatusFilter(nextStatusFilter)
+                    if (statuses.includes(nextStatusFilter)) {
+                      setActiveBoardStatus(nextStatusFilter)
+                    }
                     resetToFirstPage()
                   }}
                 >
@@ -360,18 +384,29 @@ function DashboardPage({
           {error && <p className="form-error">{error}</p>}
           {isLoading && <p className="loading-message">Loading applications...</p>}
 
-          {renderPaginationControls('Top')}
+          {viewMode === 'list' ? (
+            <>
+              {renderPaginationControls('Top')}
 
-          <ApplicationList
-            applications={pagedApplications}
-            selectedApplicationIds={selectedApplicationIds}
-            onDeleteApplication={handleDeleteApplication}
-            onEditApplication={onEditApplication}
-            onSelectApplication={handleSelectApplication}
-            selectionMode={isSelectionMode}
-          />
+              <ApplicationList
+                applications={pagedApplications}
+                selectedApplicationIds={selectedApplicationIds}
+                onDeleteApplication={handleDeleteApplication}
+                onEditApplication={onEditApplication}
+                onSelectApplication={handleSelectApplication}
+                selectionMode={isSelectionMode}
+              />
 
-          {renderPaginationControls('Bottom')}
+              {renderPaginationControls('Bottom')}
+            </>
+          ) : (
+            <ApplicationBoard
+              activeStatus={activeBoardStatus}
+              applications={filteredApplications}
+              onChangeActiveStatus={setActiveBoardStatus}
+              onEditApplication={onEditApplication}
+            />
+          )}
         </section>
       </section>
     </AppLayout>
