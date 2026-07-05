@@ -36,48 +36,50 @@ function ApplicationCard({
       )}
 
       <div className="application-main">
-        <div className="card-heading">
-          <div>
+        <div className="card-heading application-record-heading">
+          <div className="record-title-block">
             <p className="company">{application.company}</p>
             <h3>{application.role}</h3>
           </div>
-          <StatusBadge status={application.status} />
+          <div className="record-status-block">
+            <StatusBadge status={application.status} />
+          </div>
         </div>
 
-        <dl className="application-details">
-          <div>
+        <dl className="application-details application-record-details">
+          <div className="detail-location">
             <dt>Location</dt>
             <dd>{application.location}</dd>
           </div>
-          <div>
+          <div className="detail-applied">
             <dt>Applied</dt>
             <dd>{application.date || 'Not set'}</dd>
           </div>
-          <div>
+          <div className="detail-follow-up">
             <dt>Follow-up</dt>
             <dd>{application.followUp || 'Not set'}</dd>
           </div>
-          <div>
+          <div className="detail-interviews">
             <dt>Interviews</dt>
             <dd>{application.interviewCount}</dd>
           </div>
-          <div>
+          <div className="detail-contact">
             <dt>Contact</dt>
             <dd>{application.contact || 'Not set'}</dd>
           </div>
-          <div>
+          <div className="detail-salary">
             <dt>Salary</dt>
             <dd>{application.salary || 'Not set'}</dd>
           </div>
-          <div>
+          <div className="detail-cover-letter">
             <dt>Cover letter</dt>
             <dd>{application.coverLetter || 'No'}</dd>
           </div>
-          <div>
+          <div className="detail-referral">
             <dt>Referral</dt>
             <dd>{application.referral || 'No'}</dd>
           </div>
-          <div>
+          <div className="detail-updated">
             <dt>Last updated</dt>
             <dd>{application.lastUpdated || 'Not set'}</dd>
           </div>
@@ -92,23 +94,25 @@ function ApplicationCard({
       </div>
 
       <div className="card-actions">
-        {application.jobUrl && (
-          <a
+        <div className="record-action-group">
+          {application.jobUrl && (
+            <a
+              className="secondary-action"
+              href={application.jobUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open job
+            </a>
+          )}
+          <button
             className="secondary-action"
-            href={application.jobUrl}
-            target="_blank"
-            rel="noreferrer"
+            type="button"
+            onClick={() => onEditApplication(application.id)}
           >
-            Open job
-          </a>
-        )}
-        <button
-          className="secondary-action"
-          type="button"
-          onClick={() => onEditApplication(application.id)}
-        >
-          Edit
-        </button>
+            Edit
+          </button>
+        </div>
         <button
           className="danger-action"
           type="button"

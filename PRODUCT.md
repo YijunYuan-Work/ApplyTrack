@@ -28,6 +28,10 @@ Avoid marketing-site polish that gets in the way of the task, decorative control
 - Adapt structure across screen sizes instead of just scaling typography.
 - Preserve user trust around private job-search data and account recovery.
 
+## Current Visual Direction
+
+The current UI direction is documented in `DESIGN.md`. ApplyTrack uses a light professional workspace with a fixed desktop sidebar, transparent dashboard overview area, individual metric cards, a framed tracker panel, familiar toolbar controls, and status-colored board columns. Future dashboard changes should preserve the approved card information structure: company, role, status, applied date, follow-up, contact, and actions.
+
 ## Accessibility & Inclusion
 
 Target WCAG AA fundamentals: readable contrast, visible focus states, semantic controls, keyboard-accessible actions, and 44px minimum touch targets on coarse-pointer devices. Avoid color-only status communication and respect reduced-motion preferences.

@@ -1,4 +1,13 @@
 import { useMemo, useState } from 'react'
+import {
+  ArrowUpDown,
+  CalendarDays,
+  CheckSquare,
+  Columns3,
+  Filter,
+  List,
+  Search,
+} from 'lucide-react'
 import AppLayout from '../components/AppLayout'
 import ApplicationBoard from '../components/ApplicationBoard'
 import ApplicationList from '../components/ApplicationList'
@@ -29,7 +38,7 @@ function DashboardPage({
   const [statusFilter, setStatusFilter] = useState('All')
   const [pageSize, setPageSize] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
-  const [viewMode, setViewMode] = useState('list')
+  const [viewMode, setViewMode] = useState('board')
   const [activeBoardStatus, setActiveBoardStatus] = useState('Applied')
 
   const statusCounts = useMemo(
@@ -225,16 +234,17 @@ function DashboardPage({
         <section className="dashboard-command-panel" aria-label="Pipeline overview">
           <header className="app-header dashboard-header">
             <div>
-              <p className="eyebrow">Application dashboard</p>
-              <h1>Track your job search in one place.</h1>
+              <p className="eyebrow">Job search dashboard</p>
+              <h1>Applications that need your attention</h1>
               <p>
-                Review applications, interviews, offers, and recent updates from
-                a focused workspace.
+                Track applications, interviews, contacts, and follow-ups from
+                one focused workspace.
               </p>
             </div>
             <div className="header-actions">
-              <button type="button" onClick={onAddApplication}>
-                Add application
+              <button className="primary-action" type="button" onClick={onAddApplication}>
+                <span className="button-plus" aria-hidden="true"></span>
+                <span>Add application</span>
               </button>
               <button className="ghost-button" type="button" onClick={onProgress}>
                 View progress
@@ -270,20 +280,30 @@ function DashboardPage({
                 type="button"
                 onClick={() => setViewMode('list')}
               >
-                List
+                <List className="view-icon" aria-hidden="true" size={20} />
+                <span>List</span>
               </button>
               <button
                 className={viewMode === 'board' ? 'active' : ''}
                 type="button"
                 onClick={() => setViewMode('board')}
               >
-                Board
+                <Columns3 className="view-icon" aria-hidden="true" size={20} />
+                <span>Board</span>
+              </button>
+              <button
+                type="button"
+                onClick={onProgress}
+              >
+                <CalendarDays className="view-icon" aria-hidden="true" size={20} />
+                <span>Calendar</span>
               </button>
             </div>
 
             <div className="toolbar" aria-label="Filter applications">
-              <label>
-                Search
+              <label className="toolbar-search">
+                <Search className="toolbar-icon" aria-hidden="true" size={21} />
+                <span className="sr-only">Search</span>
                 <input
                   value={searchTerm}
                   onChange={(event) => {
@@ -295,7 +315,10 @@ function DashboardPage({
               </label>
 
               <label>
-                Status
+                <span className="toolbar-label">
+                  <Filter className="toolbar-icon" aria-hidden="true" size={20} />
+                  Status
+                </span>
                 <select
                   value={statusFilter}
                   onChange={(event) => {
@@ -315,7 +338,10 @@ function DashboardPage({
               </label>
 
               <label>
-                Sort by
+                <span className="toolbar-label">
+                  <ArrowUpDown className="toolbar-icon" aria-hidden="true" size={20} />
+                  Sort
+                </span>
                 <select
                   value={sortBy}
                   onChange={(event) => {
@@ -369,11 +395,7 @@ function DashboardPage({
                 type="button"
                 onClick={handleToggleSelectionMode}
               >
-                <span className="multi-select-glyph" aria-hidden="true">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </span>
+                <CheckSquare className="multi-select-glyph" aria-hidden="true" size={21} />
                 <span className="icon-action-label">
                   {isSelectionMode ? 'Done' : 'Select'}
                 </span>

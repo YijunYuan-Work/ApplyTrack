@@ -34,7 +34,7 @@ const THEME_STORAGE_KEY = 'applytrack-theme'
 
 function getInitialThemePreference() {
   if (typeof window === 'undefined') {
-    return 'dark'
+    return 'light'
   }
 
   const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
@@ -43,9 +43,7 @@ function getInitialThemePreference() {
     return storedTheme
   }
 
-  return window.matchMedia('(prefers-color-scheme: light)').matches
-    ? 'light'
-    : 'dark'
+  return 'light'
 }
 
 function getUserName(user) {

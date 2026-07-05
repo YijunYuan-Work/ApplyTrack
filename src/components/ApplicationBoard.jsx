@@ -1,3 +1,11 @@
+﻿import {
+  BriefcaseBusiness,
+  ExternalLink,
+  MoreVertical,
+  Pencil,
+} from 'lucide-react'
+import StatusBadge from './StatusBadge'
+
 const boardStatuses = ['Applied', 'Interview', 'Offer', 'Rejected']
 
 function groupApplicationsByStatus(applications) {
@@ -18,29 +26,39 @@ function getStageHint(status, applications) {
   }
 
   if (status === 'Interview') {
-    return 'Roles with interview activity'
+    return 'Interviews in progress'
   }
 
   if (status === 'Rejected') {
-    return 'Closed applications'
+    return 'Not moving forward'
   }
 
   if (status === 'Offer') {
-    return 'Wins in progress'
+    return 'Offers received'
   }
 
-  return 'Submitted applications'
+  return 'Application submitted'
 }
 
 function ApplicationBoardCard({ application, onEditApplication }) {
+  const statusClass = application.status.toLowerCase().replace(/\s+/g, '-')
+  const companyInitial = application.company.trim().charAt(0).toUpperCase() || 'A'
+
   return (
-    <article className="board-card">
-      <div>
-        <p className="company">{application.company}</p>
-        <h3>{application.role}</h3>
+    <article className={`board-card board-card-${statusClass}`}>
+      <div className="board-card-heading">
+        <span className={`company-logo company-logo-${statusClass}`} aria-hidden="true">
+          {companyInitial}
+        </span>
+        <div>
+          <p className="company">{application.company}</p>
+          <h3>{application.role}</h3>
+        </div>
       </div>
 
-      <dl>
+      <StatusBadge status={application.status} />
+
+      <dl className="board-card-meta">
         <div>
           <dt>Applied</dt>
           <dd>{application.date || 'Not set'}</dd>
@@ -50,8 +68,8 @@ function ApplicationBoardCard({ application, onEditApplication }) {
           <dd>{application.followUp || 'Not set'}</dd>
         </div>
         <div>
-          <dt>Interviews</dt>
-          <dd>{application.interviewCount}</dd>
+          <dt>Contact</dt>
+          <dd>{application.contact || 'Not set'}</dd>
         </div>
       </dl>
 
@@ -63,7 +81,8 @@ function ApplicationBoardCard({ application, onEditApplication }) {
             target="_blank"
             rel="noreferrer"
           >
-            Open job
+            <ExternalLink aria-hidden="true" size={15} />
+            Open
           </a>
         )}
         <button
@@ -71,7 +90,15 @@ function ApplicationBoardCard({ application, onEditApplication }) {
           type="button"
           onClick={() => onEditApplication(application.id)}
         >
+          <Pencil aria-hidden="true" size={15} />
           Edit
+        </button>
+        <button
+          className="card-menu-button"
+          type="button"
+          aria-label={`More actions for ${application.company}`}
+        >
+          <MoreVertical aria-hidden="true" size={18} />
         </button>
       </div>
     </article>
@@ -132,9 +159,13 @@ function ApplicationBoard({
                   />
                 ))}
 
-                {statusApplications.length === 0 && (
+                {statusApplications.length === 0 && status === 'Offer' && (
                   <div className="board-empty-state">
-                    <p>{getStageHint(status, statusApplications)}</p>
+                    <span className="board-empty-icon" aria-hidden="true">
+                      <BriefcaseBusiness size={34} strokeWidth={1.9} />
+                    </span>
+                    <strong>No offers yet</strong>
+                    <p>Keep going! Your next opportunity is ahead.</p>
                   </div>
                 )}
               </div>
