@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
   ArrowUpDown,
-  CalendarDays,
   CheckSquare,
   Columns3,
   Filter,
@@ -290,13 +289,6 @@ function DashboardPage({
               >
                 <Columns3 className="view-icon" aria-hidden="true" size={20} />
                 <span>Board</span>
-              </button>
-              <button
-                type="button"
-                onClick={onProgress}
-              >
-                <CalendarDays className="view-icon" aria-hidden="true" size={20} />
-                <span>Calendar</span>
               </button>
             </div>
 
