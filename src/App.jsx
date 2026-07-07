@@ -30,21 +30,6 @@ import './App.css'
 import './styles/theme.css'
 
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
-const THEME_STORAGE_KEY = 'applytrack-theme'
-
-function getInitialThemePreference() {
-  if (typeof window === 'undefined') {
-    return 'light'
-  }
-
-  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
-
-  if (storedTheme === 'light' || storedTheme === 'dark') {
-    return storedTheme
-  }
-
-  return 'light'
-}
 
 function getUserName(user) {
   return user?.user_metadata?.name || user?.email?.split('@')[0] || 'there'
@@ -70,7 +55,6 @@ function clearRecoveryQuery() {
 
 function App() {
   const [applications, setApplications] = useState([])
-  const [themePreference, setThemePreference] = useState(getInitialThemePreference)
   const [user, setUser] = useState(null)
   const [route, setRoute] = useState(getRoute)
   const [authLoading, setAuthLoading] = useState(hasSupabaseConfig)
@@ -79,10 +63,9 @@ function App() {
   const [dataError, setDataError] = useState('')
 
   useEffect(() => {
-    document.documentElement.dataset.theme = themePreference
-    document.documentElement.style.colorScheme = themePreference
-    window.localStorage.setItem(THEME_STORAGE_KEY, themePreference)
-  }, [themePreference])
+    document.documentElement.dataset.theme = 'light'
+    document.documentElement.style.colorScheme = 'light'
+  }, [])
 
   useEffect(() => {
     function syncRoute() {
@@ -349,12 +332,6 @@ function App() {
     }
   }
 
-  function handleToggleTheme() {
-    setThemePreference((currentTheme) =>
-      currentTheme === 'dark' ? 'light' : 'dark',
-    )
-  }
-
   if (!hasSupabaseConfig) {
     return <SetupPage />
   }
@@ -388,8 +365,6 @@ function App() {
     onProfile: () => navigate('/profile'),
     onProgress: () => navigate('/progress'),
     onSignOut: handleSignOut,
-    onToggleTheme: handleToggleTheme,
-    themePreference,
     user: appUser,
   }
 

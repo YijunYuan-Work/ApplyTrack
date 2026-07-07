@@ -1,7 +1,6 @@
 ﻿import {
   BriefcaseBusiness,
   ExternalLink,
-  MoreVertical,
   Pencil,
 } from 'lucide-react'
 import StatusBadge from './StatusBadge'
@@ -84,8 +83,8 @@ function ApplicationBoardCard({ application, onEditApplication }) {
     display: 'grid',
     gap: '12px',
     gridTemplateColumns: application.jobUrl
-      ? 'minmax(0, 1fr) minmax(0, 1fr) 30px'
-      : 'minmax(0, 1fr) 30px',
+      ? 'minmax(0, 1fr) minmax(0, 1fr)'
+      : 'minmax(0, 1fr)',
     marginTop: '4px',
     minWidth: 0,
   }
@@ -164,13 +163,6 @@ function ApplicationBoardCard({ application, onEditApplication }) {
         >
           <Pencil aria-hidden="true" size={15} />
           Edit
-        </button>
-        <button
-          className="card-menu-button"
-          type="button"
-          aria-label={`More actions for ${application.company}`}
-        >
-          <MoreVertical aria-hidden="true" size={18} />
         </button>
       </div>
     </article>

@@ -23,11 +23,9 @@ function DashboardPage({
   onDashboard,
   onEditApplication,
   onImportExcel,
-  onToggleTheme,
   onProfile,
   onProgress,
   onSignOut,
-  themePreference,
   user,
 }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -147,6 +145,12 @@ function DashboardPage({
     setSelectedApplicationIds([])
   }
 
+  function handleShowBoardView() {
+    setStatusFilter('All')
+    setViewMode('board')
+    resetToFirstPage()
+  }
+
   async function handleBulkDelete() {
     await onBulkDeleteApplications(selectedApplicationIds)
     setSelectedApplicationIds([])
@@ -225,8 +229,6 @@ function DashboardPage({
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
-      onToggleTheme={onToggleTheme}
-      themePreference={themePreference}
       user={user}
     >
       <section className="dashboard-workspace" aria-label="Dashboard workspace">
@@ -275,20 +277,20 @@ function DashboardPage({
           <div className="tracker-control-bar">
             <div className="view-toggle" aria-label="Application view">
               <button
+                className={viewMode === 'board' ? 'active' : ''}
+                type="button"
+                onClick={handleShowBoardView}
+              >
+                <Columns3 className="view-icon" aria-hidden="true" size={20} />
+                <span>Board</span>
+              </button>
+              <button
                 className={viewMode === 'list' ? 'active' : ''}
                 type="button"
                 onClick={() => setViewMode('list')}
               >
                 <List className="view-icon" aria-hidden="true" size={20} />
                 <span>List</span>
-              </button>
-              <button
-                className={viewMode === 'board' ? 'active' : ''}
-                type="button"
-                onClick={() => setViewMode('board')}
-              >
-                <Columns3 className="view-icon" aria-hidden="true" size={20} />
-                <span>Board</span>
               </button>
             </div>
 
@@ -316,6 +318,7 @@ function DashboardPage({
                   onChange={(event) => {
                     const nextStatusFilter = event.target.value
                     setStatusFilter(nextStatusFilter)
+                    setViewMode('list')
                     if (statuses.includes(nextStatusFilter)) {
                       setActiveBoardStatus(nextStatusFilter)
                     }

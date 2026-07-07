@@ -21,10 +21,8 @@ function ProfilePage({
   onProfile,
   onProgress,
   onSignOut,
-  onToggleTheme,
   onUpdatePassword,
   onUpdateProfileEmail,
-  themePreference,
   user,
 }) {
   const username = user.user_metadata?.username || user.name
@@ -96,8 +94,6 @@ function ProfilePage({
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
-      onToggleTheme={onToggleTheme}
-      themePreference={themePreference}
       user={user}
     >
       <header className="app-header compact">

@@ -4,7 +4,6 @@
   FileSpreadsheet,
   Grid2X2,
   LogOut,
-  Sun,
   User,
 } from 'lucide-react'
 
@@ -17,8 +16,6 @@ function AppLayout({
   onProfile,
   onProgress,
   onSignOut,
-  onToggleTheme = () => {},
-  themePreference = 'light',
   user,
 }) {
   const navIcons = {
@@ -77,21 +74,6 @@ function AppLayout({
 
         <div className="sidebar-footer">
           <p className="sidebar-footer-label">Account</p>
-          <button
-            className="theme-toggle-button"
-            type="button"
-            aria-label={`Switch to ${
-              themePreference === 'dark' ? 'light' : 'dark'
-            } mode`}
-            aria-pressed={themePreference === 'light'}
-            onClick={onToggleTheme}
-          >
-            <Sun className="theme-toggle-icon" aria-hidden="true" size={25} />
-            <span className="theme-toggle-label">
-              {themePreference === 'dark' ? 'Dark mode' : 'Light mode'}
-            </span>
-          </button>
-
           <button
             className="ghost-button sign-out-button"
             type="button"

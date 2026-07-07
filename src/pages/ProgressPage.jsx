@@ -257,8 +257,6 @@ function ProgressPage({
   onProfile,
   onProgress,
   onSignOut,
-  onToggleTheme,
-  themePreference,
   user,
 }) {
   const [activeView, setActiveView] = useState('map')
@@ -332,8 +330,6 @@ function ProgressPage({
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
-      onToggleTheme={onToggleTheme}
-      themePreference={themePreference}
       user={user}
     >
       <header className="app-header compact">

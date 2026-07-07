@@ -9,7 +9,7 @@ The current authenticated dashboard follows the approved visual mockup stored at
 
 `C:\Users\John\.codex\generated_images\019edc73-e978-7122-9bad-39f88264202b\ig_09d2d8fac4b6fe01016a49de871498819491a7e7c98a9eff86.png`
 
-When this document conflicts with older dark-mode or Linear-inspired notes, use this document. The app is a product workspace for job seekers, not a marketing page.
+When this document conflicts with older Linear-inspired notes, use this document. The app is a product workspace for job seekers, not a marketing page.
 
 ## Product Feel
 
@@ -26,7 +26,7 @@ Design goals:
 
 ## Color System
 
-Primary light theme:
+Primary theme:
 
 | Token | Value | Usage |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ Status accents:
 - Offer: green text on `#dcf6e7`.
 - Rejected: red text on `#ffe5e5`.
 
-Dark mode exists as a user preference, but the current dashboard visual reference is light mode. Future dark-mode work should preserve the same component structure rather than inventing a separate layout.
+ApplyTrack uses a single light theme. Do not add a dark-mode switch or alternate dark layout unless the product direction changes explicitly.
 
 ## Typography
 
@@ -137,7 +137,7 @@ Desktop sidebar:
 - Workspace row: user workspace label plus chevron.
 - Navigation items use Lucide icons and labels.
 - Active item uses pale blue background and a blue left rail.
-- Account controls are pinned near the bottom in a bordered two-row block: Light mode, Sign out.
+- Account controls are pinned near the bottom in a bordered block with Sign out.
 
 Do not put the primary Add application CTA in the desktop sidebar for this design. The primary CTA belongs in the dashboard header.
 
@@ -247,7 +247,7 @@ Do not show this offer empty state in the Interview column or other statuses.
 
 - Board/List segmented control must remain functional.
 - Search, Status, Sort, and Select controls must remain functional.
-- Add application, View progress, Open, Edit, More, Light mode, and Sign out must remain keyboard reachable.
+- Add application, View progress, Open, Edit, and Sign out must remain keyboard reachable.
 - Focus states must remain visible.
 - Do not use icons as decoration only when a text label is needed for clarity.
 

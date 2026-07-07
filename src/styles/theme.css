@@ -177,7 +177,6 @@
     display: none;
   }
 
-  .theme-toggle-button,
   .sign-out-button {
     min-height: 63px;
     padding: 0 21px;
@@ -188,39 +187,6 @@
     font-size: 1rem;
     font-weight: 500;
     box-shadow: none;
-  }
-
-  .theme-toggle-button {
-    border-bottom: 1px solid #e3eaf3;
-  }
-
-  .theme-toggle-icon {
-    width: 24px;
-    height: 24px;
-    margin-right: 12px;
-    border: 0;
-    background: transparent;
-  }
-
-  .theme-toggle-icon::before,
-  .theme-toggle-icon::after {
-    content: "";
-    position: absolute;
-    border-radius: 999px;
-  }
-
-  .theme-toggle-icon::before {
-    inset: 5px;
-    border: 2px solid #314158;
-  }
-
-  .theme-toggle-icon::after {
-    inset: 0;
-    background:
-      linear-gradient(#314158, #314158) 50% 0 / 2px 4px no-repeat,
-      linear-gradient(#314158, #314158) 50% 100% / 2px 4px no-repeat,
-      linear-gradient(#314158, #314158) 0 50% / 4px 2px no-repeat,
-      linear-gradient(#314158, #314158) 100% 50% / 4px 2px no-repeat;
   }
 
   .sign-out-button::before {
@@ -919,11 +885,6 @@ body {
   color: var(--text);
 }
 
-:root[data-theme='dark'] .app-layout,
-:root[data-theme='dark'] .auth-shell {
-  background: var(--bg);
-}
-
 .app-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
@@ -948,10 +909,6 @@ body {
   color: var(--text);
   backdrop-filter: blur(18px);
   box-shadow: 10px 0 40px rgba(37, 75, 105, 0.05);
-}
-
-:root[data-theme='dark'] .sidebar {
-  background: var(--surface);
 }
 
 .sidebar-identity {
@@ -1001,14 +958,6 @@ body {
 .sidebar-footer {
   display: grid;
   gap: 8px;
-}
-
-.sidebar-nav button,
-.sidebar-actions button,
-.sign-out-button,
-.theme-toggle-button {
-  justify-content: flex-start;
-  width: 100%;
 }
 
 .sidebar-nav button {
@@ -1109,41 +1058,6 @@ body {
   text-transform: uppercase;
 }
 
-.theme-toggle-button,
-.sign-out-button {
-  min-height: 38px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: none;
-}
-
-.theme-toggle-button:hover,
-.sign-out-button:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-soft);
-  color: var(--text-h);
-}
-
-.theme-toggle-icon {
-  position: relative;
-  width: 20px;
-  height: 20px;
-  margin-right: 8px;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  background: var(--surface-strong);
-}
-
-.theme-toggle-icon::after {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  border-radius: inherit;
-  background: #6470df;
-}
-
 .dashboard-workspace {
   display: grid;
   gap: 16px;
@@ -1234,32 +1148,6 @@ body {
   display: flex;
   gap: 8px;
   align-items: center;
-}
-
-button,
-.secondary-action,
-.danger-action,
-.ghost-button,
-.icon-action,
-.theme-toggle-button {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
-  padding: 0.62rem 0.95rem;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 850;
-  line-height: 1;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    box-shadow 160ms ease;
 }
 
 button {
@@ -1579,10 +1467,6 @@ textarea:focus {
   overflow: hidden;
 }
 
-:root[data-theme='dark'] .board-column {
-  background: var(--surface-soft);
-}
-
 .board-column > header {
   display: flex;
   gap: 10px;
@@ -1590,10 +1474,6 @@ textarea:focus {
   justify-content: space-between;
   padding-bottom: 10px;
   border-bottom: 1px solid #d8e6f0;
-}
-
-:root[data-theme='dark'] .board-column > header {
-  border-bottom-color: var(--border);
 }
 
 .board-column h3 {
@@ -2132,20 +2012,8 @@ dd {
   }
 
   .sidebar-footer-label,
-  .sidebar-footer .sign-out-button,
-  .theme-toggle-label {
+  .sidebar-footer .sign-out-button {
     display: none;
-  }
-
-  .theme-toggle-button {
-    width: 44px;
-    min-height: 42px;
-    justify-content: center;
-    padding: 0;
-  }
-
-  .theme-toggle-icon {
-    margin: 0;
   }
 
   .dashboard-workspace {
@@ -2371,7 +2239,6 @@ dd {
     display: none;
   }
 
-  .theme-toggle-button,
   .sign-out-button {
     min-height: 63px;
     padding: 0 21px;
@@ -2382,10 +2249,6 @@ dd {
     font-size: 1rem;
     font-weight: 500;
     box-shadow: none;
-  }
-
-  .theme-toggle-button {
-    border-bottom: 1px solid #e3eaf3;
   }
 
   .dashboard-workspace {
@@ -2893,7 +2756,6 @@ dd {
     display: none;
   }
 
-  .theme-toggle-button,
   .sign-out-button {
     min-height: 63px;
     padding: 0 21px;
@@ -2904,39 +2766,6 @@ dd {
     font-size: 1rem;
     font-weight: 500;
     box-shadow: none;
-  }
-
-  .theme-toggle-button {
-    border-bottom: 1px solid #e3eaf3;
-  }
-
-  .theme-toggle-icon {
-    width: 24px;
-    height: 24px;
-    margin-right: 12px;
-    border: 0;
-    background: transparent;
-  }
-
-  .theme-toggle-icon::before,
-  .theme-toggle-icon::after {
-    content: "";
-    position: absolute;
-    border-radius: 999px;
-  }
-
-  .theme-toggle-icon::before {
-    inset: 5px;
-    border: 2px solid #314158;
-  }
-
-  .theme-toggle-icon::after {
-    inset: 0;
-    background:
-      linear-gradient(#314158, #314158) 50% 0 / 2px 4px no-repeat,
-      linear-gradient(#314158, #314158) 50% 100% / 2px 4px no-repeat,
-      linear-gradient(#314158, #314158) 0 50% / 4px 2px no-repeat,
-      linear-gradient(#314158, #314158) 100% 50% / 4px 2px no-repeat;
   }
 
   .sign-out-button::before {
@@ -4858,9 +4687,9 @@ button:focus-visible,
   }
 }
 
-/* DESIGN.md implementation: Linear-style dark product workspace. */
+/* Legacy workspace layout layer. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -6273,7 +6102,7 @@ button:focus-visible,
   }
 }
 
-/* User theme preference controls and light theme adjustments. */
+/* Light theme adjustments. */
 :root[data-theme='light'] {
   color-scheme: light;
 }
@@ -6282,46 +6111,6 @@ button:focus-visible,
   display: grid;
   gap: 8px;
   margin-top: auto;
-}
-
-.theme-toggle-button {
-  justify-content: flex-start;
-  gap: 10px;
-  width: 100%;
-  min-height: 38px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-soft);
-}
-
-.theme-toggle-button:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-soft);
-  color: var(--text-h);
-}
-
-.theme-toggle-icon {
-  position: relative;
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  background: var(--surface-soft);
-}
-
-.theme-toggle-icon::before {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  border-radius: 999px;
-  background: var(--accent);
-  box-shadow: 7px 0 0 -2px var(--surface-soft);
-}
-
-.theme-toggle-label {
-  font-size: 0.84rem;
 }
 
 .sidebar-footer .sign-out-button {
@@ -6359,14 +6148,6 @@ button:focus-visible,
 
 :root[data-theme='light'] .sidebar-actions button {
   color: #fff;
-}
-
-:root[data-theme='light'] .sidebar-nav button:hover,
-:root[data-theme='light'] .sidebar-nav .nav-active,
-:root[data-theme='light'] .theme-toggle-button:hover,
-:root[data-theme='light'] .sign-out-button:hover {
-  background: var(--surface-soft);
-  color: var(--text-h);
 }
 
 :root[data-theme='light'] .dashboard-command-panel,
@@ -6407,14 +6188,6 @@ button:focus-visible,
 :root[data-theme='light'] select:hover,
 :root[data-theme='light'] textarea:hover {
   background: var(--surface-strong);
-}
-
-:root[data-theme='light'] .ghost-button,
-:root[data-theme='light'] .secondary-action,
-:root[data-theme='light'] .danger-action,
-:root[data-theme='light'] .icon-action,
-:root[data-theme='light'] .theme-toggle-button {
-  background: var(--surface);
 }
 
 :root[data-theme='light'] .ghost-button:hover,
@@ -6470,24 +6243,6 @@ button:focus-visible,
   .sidebar-nav {
     grid-column: 1;
   }
-
-  .theme-toggle-button {
-    display: grid;
-    justify-items: center;
-    width: 100%;
-    min-height: 46px;
-    padding: 6px 4px;
-    font-size: 0;
-  }
-
-  .theme-toggle-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
 }
 
 /* Final authoritative mockup layer. Keep this block last. */
@@ -6504,11 +6259,6 @@ body {
     linear-gradient(180deg, #eef8fd 0%, #f7fbfd 46%, #eef7fc 100%),
     var(--bg);
   color: var(--text);
-}
-
-:root[data-theme='dark'] .app-layout,
-:root[data-theme='dark'] .auth-shell {
-  background: var(--bg);
 }
 
 .app-layout {
@@ -6536,10 +6286,6 @@ body {
   color: var(--text);
   backdrop-filter: blur(18px);
   box-shadow: 10px 0 40px rgba(37, 75, 105, 0.05);
-}
-
-:root[data-theme='dark'] .sidebar {
-  background: var(--surface);
 }
 
 .sidebar-identity {
@@ -6589,14 +6335,6 @@ body {
 .sidebar-footer {
   display: grid;
   gap: 8px;
-}
-
-.sidebar-nav button,
-.sidebar-actions button,
-.sign-out-button,
-.theme-toggle-button {
-  justify-content: flex-start;
-  width: 100%;
 }
 
 .sidebar-nav button {
@@ -6697,41 +6435,6 @@ body {
   text-transform: uppercase;
 }
 
-.theme-toggle-button,
-.sign-out-button {
-  min-height: 38px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: none;
-}
-
-.theme-toggle-button:hover,
-.sign-out-button:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-soft);
-  color: var(--text-h);
-}
-
-.theme-toggle-icon {
-  position: relative;
-  width: 20px;
-  height: 20px;
-  margin-right: 8px;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  background: var(--surface-strong);
-}
-
-.theme-toggle-icon::after {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  border-radius: inherit;
-  background: #6470df;
-}
-
 .dashboard-workspace {
   display: grid;
   gap: 16px;
@@ -6822,32 +6525,6 @@ body {
   display: flex;
   gap: 8px;
   align-items: center;
-}
-
-button,
-.secondary-action,
-.danger-action,
-.ghost-button,
-.icon-action,
-.theme-toggle-button {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
-  padding: 0.62rem 0.95rem;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 850;
-  line-height: 1;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    box-shadow 160ms ease;
 }
 
 button {
@@ -7167,10 +6844,6 @@ textarea:focus {
   overflow: hidden;
 }
 
-:root[data-theme='dark'] .board-column {
-  background: var(--surface-soft);
-}
-
 .board-column > header {
   display: flex;
   gap: 10px;
@@ -7178,10 +6851,6 @@ textarea:focus {
   justify-content: space-between;
   padding-bottom: 10px;
   border-bottom: 1px solid #d8e6f0;
-}
-
-:root[data-theme='dark'] .board-column > header {
-  border-bottom-color: var(--border);
 }
 
 .board-column h3 {
@@ -7720,20 +7389,8 @@ dd {
   }
 
   .sidebar-footer-label,
-  .sidebar-footer .sign-out-button,
-  .theme-toggle-label {
+.sidebar-footer .sign-out-button {
     display: none;
-  }
-
-  .theme-toggle-button {
-    width: 44px;
-    min-height: 42px;
-    justify-content: center;
-    padding: 0;
-  }
-
-  .theme-toggle-icon {
-    margin: 0;
   }
 
   .dashboard-workspace {
@@ -7886,8 +7543,7 @@ dd {
   .sidebar-actions { display: none; }
   .sidebar-footer { overflow: hidden; gap: 0; margin-top: auto; padding-top: 0; border: 1px solid #dce5f0; border-radius: 6px; }
   .sidebar-footer-label { display: none; }
-  .theme-toggle-button, .sign-out-button { min-height: 63px; padding: 0 21px; border: 0; border-radius: 0; background: #fff; color: #314158; font-size: 1rem; font-weight: 500; box-shadow: none; }
-  .theme-toggle-button { border-bottom: 1px solid #e3eaf3; }
+  .sign-out-button { min-height: 63px; padding: 0 21px; border: 0; border-radius: 0; background: #fff; color: #314158; font-size: 1rem; font-weight: 500; box-shadow: none; }
   .dashboard-workspace { width: 100%; gap: 20px; padding-top: 0; }
   .dashboard-command-panel { gap: 25px; padding: 0; border: 0; background: transparent; box-shadow: none; }
   .dashboard-command-panel .app-header { align-items: start; }
@@ -8054,7 +7710,6 @@ dd {
     display: none;
   }
 
-  .theme-toggle-button,
   .sign-out-button {
     justify-content: flex-start;
     gap: 18px;
@@ -8069,21 +7724,14 @@ dd {
     box-shadow: none;
   }
 
-  .theme-toggle-button {
-    border-bottom: 1px solid #e3eaf3;
-  }
-
-  .theme-toggle-icon,
   .sign-out-icon {
     flex: 0 0 auto;
     color: #1f314a;
     margin: 0;
   }
 
-  .theme-toggle-button::before,
-  .theme-toggle-button::after,
   .sign-out-button::before,
-  .sign-out-button::after {
+.sign-out-button::after {
     content: none;
     display: none;
   }
@@ -9040,4 +8688,220 @@ dd {
 .dashboard-workspace .toolbar select {
   min-width: 0;
   width: auto;
+}
+
+/* Responsive correction layer: the screenshot-accurate desktop layout starts above laptop width. */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .app-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    width: 220px;
+    padding: 22px 12px;
+  }
+
+  .brand-lockup {
+    gap: 12px;
+  }
+
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    font-size: 1.25rem;
+  }
+
+  .sidebar-brand {
+    font-size: 1.28rem;
+  }
+
+  .sidebar-user-row {
+    margin: 20px 8px 18px;
+    font-size: 0.9rem;
+  }
+
+  .sidebar-nav {
+    gap: 10px;
+  }
+
+  .sidebar-nav button {
+    gap: 12px;
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 0.9rem;
+  }
+
+  .sidebar-footer {
+    border-radius: 8px;
+  }
+
+  .sign-out-button,
+  .ghost-button.sign-out-button {
+    min-height: 52px;
+    padding: 0 16px;
+    font-size: 0.92rem;
+  }
+
+  .app-content {
+    padding: 26px 24px 36px;
+  }
+
+  .dashboard-workspace {
+    gap: 18px;
+    max-width: 100%;
+  }
+
+  .dashboard-command-panel {
+    gap: 18px;
+  }
+
+  .dashboard-command-panel .app-header {
+    align-items: start;
+    gap: 18px;
+  }
+
+  .dashboard-header h1 {
+    max-width: 600px;
+    font-size: clamp(2rem, 3.2vw, 2.4rem);
+    line-height: 1.08;
+  }
+
+  .dashboard-header p {
+    max-width: 640px;
+    font-size: 0.98rem;
+  }
+
+  .header-actions {
+    flex: 0 0 auto;
+    gap: 10px;
+  }
+
+  .header-actions .primary-action,
+  .header-actions .ghost-button {
+    min-height: 44px;
+    padding-inline: 16px;
+    white-space: nowrap;
+  }
+
+  .dashboard-workspace .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .dashboard-workspace .metric-grid .metric-card {
+    min-width: 0;
+    padding: 18px;
+  }
+
+  .dashboard-workspace .tracker-section {
+    gap: 16px;
+    height: auto;
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .dashboard-workspace .tracker-control-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 14px;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .dashboard-workspace .view-toggle {
+    width: min(100%, 260px);
+    min-width: 0;
+    justify-self: start;
+  }
+
+  .dashboard-workspace .toolbar {
+    width: 100%;
+    grid-template-columns: minmax(260px, 1fr) minmax(170px, 0.55fr) minmax(210px, 0.8fr);
+    gap: 10px;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .dashboard-workspace .toolbar label,
+  .dashboard-workspace .toolbar select,
+  .dashboard-workspace .icon-action {
+    min-width: 0;
+  }
+
+  .dashboard-workspace .list-action-bar {
+    height: auto;
+    min-height: 0;
+    justify-self: start;
+  }
+
+  .application-board {
+    margin-top: 2px;
+  }
+
+  .board-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .board-column {
+    min-width: 0;
+    min-height: 520px;
+    max-height: none;
+    padding: 18px 12px 14px;
+  }
+
+  .board-card-list {
+    max-height: 500px;
+    padding-right: 3px;
+    overflow-x: hidden;
+  }
+
+  .board-card:has(.board-card-dates),
+  .board-card {
+    min-height: 238px;
+    padding: 12px;
+  }
+
+  .board-card-heading {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .company {
+    font-size: 0.78rem;
+  }
+
+  .board-card h3 {
+    font-size: 0.88rem;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1040px) {
+  .dashboard-command-panel .app-header {
+    display: grid;
+  }
+
+  .header-actions {
+    justify-self: start;
+  }
+
+  .dashboard-workspace .toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-workspace .toolbar label {
+    width: 100%;
+  }
+
+  .dashboard-workspace .tracker-control-bar {
+    gap: 12px;
+  }
+
+  .application-board {
+    margin-top: 8px;
+  }
 }
