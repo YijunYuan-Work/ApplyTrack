@@ -7,6 +7,7 @@ ApplyTrack is a job application tracker built with React, Vite, and Supabase. It
 - Username and password sign-up with optional recovery email
 - Supabase-backed application storage with row-level security
 - Dashboard with search, status filtering, sorting, pagination, and bulk delete
+- Public demo dashboard route with sample data for portfolio previews
 - Add and edit application details, including follow-up dates and interview count
 - Excel import flow with preview and per-row selection
 - Profile page for recovery email and password updates
@@ -70,6 +71,12 @@ The app will usually be available at:
 
 ```text
 http://127.0.0.1:5173
+```
+
+The public demo dashboard is available without signing in:
+
+```text
+http://127.0.0.1:5173/#/demo
 ```
 
 ## Password Recovery Setup

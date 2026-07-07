@@ -9,6 +9,8 @@
 function AppLayout({
   children,
   currentPage,
+  isDemo = false,
+  isReadOnly = false,
   onAddApplication,
   onDashboard,
   onImportExcel,
@@ -40,7 +42,7 @@ function AppLayout({
             <p className="sidebar-brand">ApplyTrack</p>
           </div>
           <p className="sidebar-user-row">
-            <span>{user.name}'s workspace</span>
+            <span>{isDemo ? 'Public demo workspace' : `${user.name}'s workspace`}</span>
           </p>
         </div>
 
@@ -63,23 +65,34 @@ function AppLayout({
           })}
         </nav>
 
-        <div className="sidebar-actions">
-          <button className="sidebar-primary-action" type="button" onClick={onAddApplication}>
-            <span className="button-plus" aria-hidden="true"></span>
-            <span>Add application</span>
-          </button>
-        </div>
+        {!isReadOnly && (
+          <div className="sidebar-actions">
+            <button className="sidebar-primary-action" type="button" onClick={onAddApplication}>
+              <span className="button-plus" aria-hidden="true"></span>
+              <span>Add application</span>
+            </button>
+          </div>
+        )}
 
         <div className="sidebar-footer">
-          <p className="sidebar-footer-label">Account</p>
-          <button
-            className="ghost-button sign-out-button"
-            type="button"
-            onClick={onSignOut}
-          >
-            <LogOut className="sign-out-icon" aria-hidden="true" size={23} />
-            Sign out
-          </button>
+          {isDemo ? (
+            <>
+              <p className="sidebar-footer-label">Demo mode</p>
+              <p className="sidebar-demo-note">Sample data only</p>
+            </>
+          ) : (
+            <>
+              <p className="sidebar-footer-label">Account</p>
+              <button
+                className="ghost-button sign-out-button"
+                type="button"
+                onClick={onSignOut}
+              >
+                <LogOut className="sign-out-icon" aria-hidden="true" size={23} />
+                Sign out
+              </button>
+            </>
+          )}
         </div>
       </aside>
 

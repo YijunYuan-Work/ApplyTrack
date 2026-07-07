@@ -3,6 +3,7 @@ import StatusBadge from './StatusBadge'
 function ApplicationCard({
   application,
   isSelected = false,
+  isReadOnly = false,
   onSelectApplication,
   onDeleteApplication,
   onEditApplication,
@@ -93,34 +94,36 @@ function ApplicationCard({
         )}
       </div>
 
-      <div className="card-actions">
-        <div className="record-action-group">
-          {application.jobUrl && (
-            <a
+      {!isReadOnly && (
+        <div className="card-actions">
+          <div className="record-action-group">
+            {application.jobUrl && (
+              <a
+                className="secondary-action"
+                href={application.jobUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open job
+              </a>
+            )}
+            <button
               className="secondary-action"
-              href={application.jobUrl}
-              target="_blank"
-              rel="noreferrer"
+              type="button"
+              onClick={() => onEditApplication(application.id)}
             >
-              Open job
-            </a>
-          )}
+              Edit
+            </button>
+          </div>
           <button
-            className="secondary-action"
+            className="danger-action"
             type="button"
-            onClick={() => onEditApplication(application.id)}
+            onClick={() => onDeleteApplication(application.id)}
           >
-            Edit
+            Delete
           </button>
         </div>
-        <button
-          className="danger-action"
-          type="button"
-          onClick={() => onDeleteApplication(application.id)}
-        >
-          Delete
-        </button>
-      </div>
+      )}
     </article>
   )
 }

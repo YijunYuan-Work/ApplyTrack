@@ -16,7 +16,9 @@ import { statuses } from '../data/applications'
 function DashboardPage({
   applications,
   error,
+  isDemo = false,
   isLoading,
+  isReadOnly = false,
   onAddApplication,
   onBulkDeleteApplications,
   onDeleteApplication,
@@ -223,6 +225,8 @@ function DashboardPage({
   return (
     <AppLayout
       currentPage="dashboard"
+      isDemo={isDemo}
+      isReadOnly={isReadOnly}
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
@@ -238,15 +242,21 @@ function DashboardPage({
               <p className="eyebrow">Job application track dashboard</p>
               <h1>Applications that need your attention</h1>
             </div>
-            <div className="header-actions">
-              <button className="primary-action" type="button" onClick={onAddApplication}>
-                <span className="button-plus" aria-hidden="true"></span>
-                <span>Add application</span>
-              </button>
-              <button className="ghost-button" type="button" onClick={onProgress}>
-                View progress
-              </button>
-            </div>
+            {isReadOnly ? (
+              <div className="header-actions">
+                <span className="demo-badge">Public demo</span>
+              </div>
+            ) : (
+              <div className="header-actions">
+                <button className="primary-action" type="button" onClick={onAddApplication}>
+                  <span className="button-plus" aria-hidden="true"></span>
+                  <span>Add application</span>
+                </button>
+                <button className="ghost-button" type="button" onClick={onProgress}>
+                  View progress
+                </button>
+              </div>
+            )}
           </header>
 
           <MetricGrid
@@ -346,52 +356,54 @@ function DashboardPage({
               </label>
             </div>
 
-            <div className="list-action-bar" aria-label="Application list actions">
-              {isSelectionMode && (
-                <div className="bulk-toolbar" aria-label="Bulk application actions">
-                  <span>{selectedApplicationIds.length} selected</span>
-                  <button
-                    className="ghost-button"
-                    disabled={pagedApplications.length === 0}
-                    type="button"
-                    onClick={handleSelectAllVisible}
-                  >
-                    {allVisibleSelected ? 'Unselect all' : 'Select all'}
-                  </button>
-                  <button
-                    className="danger-action"
-                    disabled={selectedApplicationIds.length === 0}
-                    type="button"
-                    onClick={handleBulkDelete}
-                  >
-                    Delete selected
-                  </button>
-                  {selectedApplicationIds.length > 0 && (
+            {!isReadOnly && (
+              <div className="list-action-bar" aria-label="Application list actions">
+                {isSelectionMode && (
+                  <div className="bulk-toolbar" aria-label="Bulk application actions">
+                    <span>{selectedApplicationIds.length} selected</span>
                     <button
                       className="ghost-button"
+                      disabled={pagedApplications.length === 0}
                       type="button"
-                      onClick={handleClearSelection}
+                      onClick={handleSelectAllVisible}
                     >
-                      Clear
+                      {allVisibleSelected ? 'Unselect all' : 'Select all'}
                     </button>
-                  )}
-                </div>
-              )}
+                    <button
+                      className="danger-action"
+                      disabled={selectedApplicationIds.length === 0}
+                      type="button"
+                      onClick={handleBulkDelete}
+                    >
+                      Delete selected
+                    </button>
+                    {selectedApplicationIds.length > 0 && (
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={handleClearSelection}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                )}
 
-              <button
-                aria-label={isSelectionMode ? 'Exit multi-select' : 'Enter multi-select'}
-                className={`icon-action ${isSelectionMode ? 'icon-action-active' : ''}`}
-                disabled={filteredApplications.length === 0}
-                title={isSelectionMode ? 'Exit multi-select' : 'Multi-select'}
-                type="button"
-                onClick={handleToggleSelectionMode}
-              >
-                <CheckSquare className="multi-select-glyph" aria-hidden="true" size={21} />
-                <span className="icon-action-label">
-                  {isSelectionMode ? 'Done' : 'Select'}
-                </span>
-              </button>
-            </div>
+                <button
+                  aria-label={isSelectionMode ? 'Exit multi-select' : 'Enter multi-select'}
+                  className={`icon-action ${isSelectionMode ? 'icon-action-active' : ''}`}
+                  disabled={filteredApplications.length === 0}
+                  title={isSelectionMode ? 'Exit multi-select' : 'Multi-select'}
+                  type="button"
+                  onClick={handleToggleSelectionMode}
+                >
+                  <CheckSquare className="multi-select-glyph" aria-hidden="true" size={21} />
+                  <span className="icon-action-label">
+                    {isSelectionMode ? 'Done' : 'Select'}
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
 
           {error && <p className="form-error">{error}</p>}
@@ -403,6 +415,7 @@ function DashboardPage({
 
               <ApplicationList
                 applications={pagedApplications}
+                isReadOnly={isReadOnly}
                 selectedApplicationIds={selectedApplicationIds}
                 onDeleteApplication={handleDeleteApplication}
                 onEditApplication={onEditApplication}
@@ -416,6 +429,7 @@ function DashboardPage({
             <ApplicationBoard
               activeStatus={activeBoardStatus}
               applications={filteredApplications}
+              isReadOnly={isReadOnly}
               onChangeActiveStatus={setActiveBoardStatus}
               onEditApplication={onEditApplication}
             />

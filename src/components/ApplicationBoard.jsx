@@ -39,7 +39,7 @@ function getStageHint(status, applications) {
   return 'Application submitted'
 }
 
-function ApplicationBoardCard({ application, onEditApplication }) {
+function ApplicationBoardCard({ application, isReadOnly, onEditApplication }) {
   const statusClass = application.status.toLowerCase().replace(/\s+/g, '-')
   const companyInitial = application.company.trim().charAt(0).toUpperCase() || 'A'
 
@@ -72,31 +72,33 @@ function ApplicationBoardCard({ application, onEditApplication }) {
         </div>
       </div>
 
-      <div
-        className={`board-card-actions ${
-          application.jobUrl ? '' : 'board-card-actions-single'
-        }`}
-      >
-        {application.jobUrl && (
-          <a
-            className="secondary-action"
-            href={application.jobUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <ExternalLink aria-hidden="true" size={15} />
-            Open
-          </a>
-        )}
-        <button
-          className="secondary-action"
-          type="button"
-          onClick={() => onEditApplication(application.id)}
+      {!isReadOnly && (
+        <div
+          className={`board-card-actions ${
+            application.jobUrl ? '' : 'board-card-actions-single'
+          }`}
         >
-          <Pencil aria-hidden="true" size={15} />
-          Edit
-        </button>
-      </div>
+          {application.jobUrl && (
+            <a
+              className="secondary-action"
+              href={application.jobUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <ExternalLink aria-hidden="true" size={15} />
+              Open
+            </a>
+          )}
+          <button
+            className="secondary-action"
+            type="button"
+            onClick={() => onEditApplication(application.id)}
+          >
+            <Pencil aria-hidden="true" size={15} />
+            Edit
+          </button>
+        </div>
+      )}
     </article>
   )
 }
@@ -104,6 +106,7 @@ function ApplicationBoardCard({ application, onEditApplication }) {
 function ApplicationBoard({
   activeStatus,
   applications,
+  isReadOnly = false,
   onChangeActiveStatus,
   onEditApplication,
 }) {
@@ -150,6 +153,7 @@ function ApplicationBoard({
                 {statusApplications.map((application) => (
                   <ApplicationBoardCard
                     application={application}
+                    isReadOnly={isReadOnly}
                     key={application.id}
                     onEditApplication={onEditApplication}
                   />

@@ -2,6 +2,7 @@ import ApplicationCard from './ApplicationCard'
 
 function ApplicationList({
   applications,
+  isReadOnly = false,
   selectedApplicationIds = [],
   onDeleteApplication,
   onEditApplication,
@@ -13,6 +14,7 @@ function ApplicationList({
       {applications.map((application) => (
         <ApplicationCard
           application={application}
+          isReadOnly={isReadOnly}
           isSelected={selectedApplicationIds.includes(application.id)}
           key={application.id}
           onDeleteApplication={onDeleteApplication}

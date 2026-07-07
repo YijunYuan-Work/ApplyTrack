@@ -16,7 +16,11 @@ import {
   updatePassword,
   updateProfileEmail,
 } from './api/auth'
-import { getTodayIsoDate, normalizeApplication } from './data/applications'
+import {
+  demoApplications,
+  getTodayIsoDate,
+  normalizeApplication,
+} from './data/applications'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
 import ApplicationFormPage from './pages/ApplicationFormPage'
 import DashboardPage from './pages/DashboardPage'
@@ -118,7 +122,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (!hasSupabaseConfig || authLoading) {
+    if (route === '/demo' || !hasSupabaseConfig || authLoading) {
       return
     }
 
@@ -330,6 +334,31 @@ function App() {
       setDataError(message)
       throw new Error(message, { cause: error })
     }
+  }
+
+  if (route === '/demo') {
+    const demoUser = { name: 'Demo' }
+    const stayOnDemo = () => navigate('/demo')
+
+    return (
+      <DashboardPage
+        applications={demoApplications}
+        error=""
+        isDemo
+        isLoading={false}
+        isReadOnly
+        onAddApplication={stayOnDemo}
+        onBulkDeleteApplications={async () => {}}
+        onDashboard={stayOnDemo}
+        onDeleteApplication={async () => {}}
+        onEditApplication={stayOnDemo}
+        onImportExcel={stayOnDemo}
+        onProfile={stayOnDemo}
+        onProgress={stayOnDemo}
+        onSignOut={stayOnDemo}
+        user={demoUser}
+      />
+    )
   }
 
   if (!hasSupabaseConfig) {
