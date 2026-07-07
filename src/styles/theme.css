@@ -2202,16 +2202,16 @@ dd {
 }
 
 .board-card .board-card-title {
-  display: -webkit-box;
-  min-height: calc(2 * 1.5em + 4px);
-  max-height: calc(2 * 1.5em + 4px);
-  overflow: hidden;
+  display: block;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
   overflow-wrap: anywhere;
-  padding-bottom: 4px;
-  line-height: 1.5;
+  padding-bottom: 0;
+  line-height: 1.35;
   white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
 }
 
 .board-card .board-card-actions {
@@ -2473,4 +2473,43 @@ dd {
   .application-board {
     margin-top: 8px;
   }
+}
+
+/* Let job cards expand for long company names and job titles. */
+.board-card,
+.board-card:has(.board-card-dates),
+.application-card {
+  height: auto;
+  min-height: auto;
+  overflow: visible;
+}
+
+.board-card-heading > div,
+.card-heading > div {
+  min-width: 0;
+}
+
+.board-card .company,
+.board-card .board-card-title,
+.application-card .company,
+.application-card h3 {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.board-card .company,
+.application-card .company {
+  line-height: 1.3;
+}
+
+.board-card .board-card-title,
+.application-card h3 {
+  display: block;
+  min-height: 0;
+  max-height: none;
+  line-height: 1.35;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
 }

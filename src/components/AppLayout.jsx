@@ -1,6 +1,5 @@
 ﻿import {
   BarChart3,
-  ChevronDown,
   FileSpreadsheet,
   Grid2X2,
   LogOut,
