@@ -1,0 +1,5 @@
+2026/07/06-13:45:24.028 84f4 Creating DB C:\Work\SideProject\ApplyTrack\.codex-edge-profile\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/07/06-13:45:24.037 84f4 Reusing MANIFEST C:\Work\SideProject\ApplyTrack\.codex-edge-profile\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/07/06-13:45:24.203 20bc Level-0 table #5: started
+2026/07/06-13:45:24.206 20bc Level-0 table #5: 682901 bytes OK
+2026/07/06-13:45:24.207 20bc Delete type=0 #3

@@ -60,12 +60,6 @@
   font-weight: 900;
 }
 
-.sidebar-user {
-  margin: 6px 0 0;
-  color: var(--text);
-  overflow-wrap: anywhere;
-}
-
 .sidebar-nav,
 .sidebar-actions {
   display: grid;
@@ -86,24 +80,10 @@
   color: var(--text-h);
 }
 
-.nav-dot {
-  flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
-  margin-right: 10px;
-  border-radius: 999px;
-  background: var(--border);
-}
-
 .sidebar-nav button:hover,
 .sidebar-nav .nav-active {
   border-color: var(--border);
   background: #fff;
-}
-
-.sidebar-nav button:hover .nav-dot,
-.sidebar-nav .nav-active .nav-dot {
-  background: var(--accent);
 }
 
 .button-plus {
@@ -119,29 +99,6 @@
 .button-plus::before {
   content: "+";
   line-height: 1;
-}
-
-.sidebar-momentum {
-  display: grid;
-  gap: 6px;
-  margin-top: auto;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(47, 117, 104, 0.08);
-}
-
-.sidebar-momentum span {
-  color: var(--accent);
-  font-size: 0.72rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.sidebar-momentum strong {
-  color: var(--text-h);
-  font-size: 0.9rem;
-  line-height: 1.35;
 }
 
 .sign-out-button {
@@ -1258,10 +1215,6 @@ button:disabled {
     font-size: 1.12rem;
   }
 
-  .sidebar-user {
-    font-size: 0.82rem;
-  }
-
   .sidebar-nav,
   .sidebar-actions {
     grid-template-columns: 1fr;
@@ -1319,11 +1272,6 @@ button:disabled {
 
   .sidebar-brand {
     font-size: 1.12rem;
-  }
-
-  .sidebar-user {
-    margin: 0;
-    font-size: 0.78rem;
   }
 
   .sidebar-nav,
@@ -1400,11 +1348,6 @@ button:disabled {
     width: 30px;
     height: 30px;
     border-radius: 8px;
-  }
-
-  .sidebar-user,
-  .sidebar-momentum {
-    display: none;
   }
 
   .sidebar-nav {

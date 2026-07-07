@@ -1,7 +1,7 @@
 export const applicationsKey = 'applytrack-applications'
 export const userKey = 'applytrack-user'
 
-export const statuses = ['Wishlist', 'Applied', 'Interview', 'Offer', 'Rejected']
+export const statuses = ['Applied', 'Interview', 'Offer', 'Rejected']
 
 export function getTodayIsoDate() {
   const today = new Date()
