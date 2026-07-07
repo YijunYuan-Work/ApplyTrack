@@ -42,7 +42,6 @@ function AppLayout({
           </div>
           <p className="sidebar-user-row">
             <span>{user.name}'s workspace</span>
-            <ChevronDown className="sidebar-user-chevron" aria-hidden="true" size={18} />
           </p>
         </div>
 

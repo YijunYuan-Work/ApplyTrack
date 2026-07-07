@@ -235,12 +235,8 @@ function DashboardPage({
         <section className="dashboard-command-panel" aria-label="Pipeline overview">
           <header className="app-header dashboard-header">
             <div>
-              <p className="eyebrow">Job search dashboard</p>
+              <p className="eyebrow">Job application track dashboard</p>
               <h1>Applications that need your attention</h1>
-              <p>
-                Track applications, interviews, contacts, and follow-ups from
-                one focused workspace.
-              </p>
             </div>
             <div className="header-actions">
               <button className="primary-action" type="button" onClick={onAddApplication}>

@@ -42,65 +42,10 @@ function getStageHint(status, applications) {
 function ApplicationBoardCard({ application, onEditApplication }) {
   const statusClass = application.status.toLowerCase().replace(/\s+/g, '-')
   const companyInitial = application.company.trim().charAt(0).toUpperCase() || 'A'
-  const dateRowStyle = {
-    display: 'grid',
-    gap: '2px',
-    gridTemplateColumns: 'minmax(0, 1fr)',
-    minWidth: 0,
-  }
-  const dateLabelStyle = {
-    color: '#647084',
-    display: 'block',
-    fontSize: '0.7rem',
-    fontWeight: 850,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  }
-  const dateValueStyle = {
-    color: '#33445d',
-    display: 'block',
-    fontSize: '0.74rem',
-    fontWeight: 750,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  }
-  const roleTitleStyle = {
-    display: '-webkit-box',
-    lineHeight: 1.5,
-    maxHeight: 'calc(2 * 1.5em + 4px)',
-    minHeight: 'calc(2 * 1.5em + 4px)',
-    overflow: 'hidden',
-    overflowWrap: 'anywhere',
-    paddingBottom: '4px',
-    WebkitBoxOrient: 'vertical',
-    WebkitLineClamp: 2,
-    whiteSpace: 'normal',
-  }
-  const actionRowStyle = {
-    alignItems: 'center',
-    display: 'grid',
-    gap: '12px',
-    gridTemplateColumns: application.jobUrl
-      ? 'minmax(0, 1fr) minmax(0, 1fr)'
-      : 'minmax(0, 1fr)',
-    marginTop: '4px',
-    minWidth: 0,
-  }
 
   return (
     <article
       className={`board-card board-card-${statusClass}`}
-      style={{
-        alignContent: 'start',
-        display: 'grid',
-        gap: '10px',
-        gridTemplateRows: 'auto auto auto auto',
-        height: 'auto',
-        minHeight: '260px',
-        overflow: 'visible',
-      }}
     >
       <div className="board-card-heading">
         <span className={`company-logo company-logo-${statusClass}`} aria-hidden="true">
@@ -108,43 +53,30 @@ function ApplicationBoardCard({ application, onEditApplication }) {
         </span>
         <div>
           <p className="company">{application.company}</p>
-          <h3 style={roleTitleStyle}>{application.role}</h3>
+          <h3 className="board-card-title">{application.role}</h3>
         </div>
       </div>
 
       <StatusBadge status={application.status} />
 
-      <div
-        className="board-card-dates"
-        aria-label="Application dates"
-        style={{
-          borderTop: '1px solid #dbe5f0',
-          display: 'grid',
-          gap: '7px',
-          gridTemplateColumns: 'minmax(0, 1fr)',
-          minWidth: 0,
-          paddingTop: '8px',
-        }}
-      >
-        <div className="board-card-date-row" style={dateRowStyle}>
-          <div className="board-card-date-label" style={dateLabelStyle}>
-            Applied
-          </div>
-          <div className="board-card-date-value" style={dateValueStyle}>
-            {application.date || 'Not set'}
-          </div>
+      <div className="board-card-dates" aria-label="Application dates">
+        <div className="board-card-date-row">
+          <div className="board-card-date-label">Applied</div>
+          <div className="board-card-date-value">{application.date || 'Not set'}</div>
         </div>
-        <div className="board-card-date-row" style={dateRowStyle}>
-          <div className="board-card-date-label" style={dateLabelStyle}>
-            Last updated
-          </div>
-          <div className="board-card-date-value" style={dateValueStyle}>
+        <div className="board-card-date-row">
+          <div className="board-card-date-label">Last updated</div>
+          <div className="board-card-date-value">
             {application.lastUpdated || 'Not set'}
           </div>
         </div>
       </div>
 
-      <div className="board-card-actions" style={actionRowStyle}>
+      <div
+        className={`board-card-actions ${
+          application.jobUrl ? '' : 'board-card-actions-single'
+        }`}
+      >
         {application.jobUrl && (
           <a
             className="secondary-action"
