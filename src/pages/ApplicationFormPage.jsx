@@ -25,7 +25,19 @@ function ApplicationFormPage({
 
   function handleChange(event) {
     const { name, value } = event.target
-    setFormData((currentData) => ({ ...currentData, [name]: value }))
+    setFormData((currentData) => {
+      const nextData = { ...currentData, [name]: value }
+
+      if (
+        name === 'status' &&
+        value === 'Interview' &&
+        Number(currentData.interviewCount || 0) === 0
+      ) {
+        nextData.interviewCount = 1
+      }
+
+      return nextData
+    })
   }
 
   function handleSubmit(event) {

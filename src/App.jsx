@@ -222,6 +222,11 @@ function App() {
 
   async function handleSaveApplication(applicationData, applicationId) {
     const today = getTodayIsoDate()
+    const interviewCount = Number(applicationData.interviewCount) || 0
+    const normalizedInterviewCount =
+      applicationData.status === 'Interview' && interviewCount === 0
+        ? 1
+        : interviewCount
     const preparedApplication = normalizeApplication({
       ...applicationData,
       company: applicationData.company.trim(),
@@ -232,7 +237,7 @@ function App() {
       salary: applicationData.salary.trim(),
       coverLetter: applicationData.coverLetter.trim(),
       referral: applicationData.referral.trim(),
-      interviewCount: Number(applicationData.interviewCount) || 0,
+      interviewCount: normalizedInterviewCount,
       lastUpdated: applicationId ? today : applicationData.lastUpdated || today,
       notes: applicationData.notes.trim(),
     })
