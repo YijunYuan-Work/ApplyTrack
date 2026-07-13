@@ -13,6 +13,21 @@ dist-ssr
 *.local
 supabase/functions/.env
 
+# Local AI coding tools and generated working files
+/.agents/
+/.codex/
+/.codex-*-profile/
+/.impeccable/
+/AGENTS.md
+/PRODUCT.md
+/DESIGN.md
+/design-qa.md
+/docs/superpowers/
+/codex-*-dashboard-*.png
+
+# Local Supabase CLI state
+/supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
