@@ -239,8 +239,14 @@ function DashboardPage({
         <section className="dashboard-command-panel" aria-label="Pipeline overview">
           <header className="app-header dashboard-header">
             <div>
-              <p className="eyebrow">Job application track dashboard</p>
-              <h1>Applications that need your attention</h1>
+              <p className="eyebrow desktop-dashboard-copy">Job application track dashboard</p>
+              <h1 className="desktop-dashboard-copy">Applications that need your attention</h1>
+              <h1 className="mobile-dashboard-copy mobile-dashboard-title">
+                Your application flow.
+              </h1>
+              <p className="mobile-dashboard-copy mobile-dashboard-subtitle">
+                Real-time tracking of your career journey.
+              </p>
             </div>
             {isReadOnly ? (
               <div className="header-actions">
@@ -268,8 +274,12 @@ function DashboardPage({
         <section className="tracker-section" aria-label="Application tracker">
           <div className="section-header">
             <div>
-              <p className="eyebrow">Pipeline</p>
-              <h2>Your applications</h2>
+              <p className="eyebrow desktop-dashboard-copy">Pipeline</p>
+              <h2 className="desktop-dashboard-copy">Your applications</h2>
+              <p className="mobile-dashboard-copy mobile-section-eyebrow">Pipeline</p>
+              <h2 className="mobile-dashboard-copy mobile-pipeline-title">
+                Your applications
+              </h2>
             </div>
             <div className="status-summary">
               {statusCounts.map((item) => (

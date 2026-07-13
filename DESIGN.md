@@ -1,6 +1,6 @@
 ﻿# ApplyTrack Design System
 
-Last updated: 2026-07-05
+Last updated: 2026-07-10
 Status: current product UI reference
 
 ## Source Of Truth
@@ -10,6 +10,18 @@ The current authenticated dashboard follows the approved visual mockup stored at
 `C:\Users\John\.codex\generated_images\019edc73-e978-7122-9bad-39f88264202b\ig_09d2d8fac4b6fe01016a49de871498819491a7e7c98a9eff86.png`
 
 When this document conflicts with older Linear-inspired notes, use this document. The app is a product workspace for job seekers, not a marketing page.
+
+## Mobile Source Of Truth
+
+At viewport widths of `720px` and below, the production UI follows the Stitch
+reference in `applytrack-mobile/`. The production app retains its existing hash
+routes, Supabase data, forms, imports, and calculations; mock data and local
+storage from the reference are not used.
+
+The phone layout uses a fixed 56px ApplyTrack app bar, a fixed four-destination
+bottom navigation, two-column summary metrics, and single-column task surfaces.
+Layouts at `721px` and above retain the approved tablet and desktop design
+described in this document.
 
 ## Product Feel
 
@@ -114,16 +126,24 @@ Requirements:
 - Board cards stay readable and show the same information types as the mockup.
 - Columns may become slightly narrower, but cards must not collapse into unreadable strips.
 
-### Tablet And Phone
+### Tablet
 
-At widths below desktop:
+From `721px` through the existing tablet range:
 
-- Sidebar becomes top navigation.
-- No document-level horizontal overflow.
-- Metric cards use a readable stacked layout.
-- Filters and actions stack instead of shrinking beyond readable width.
-- Board columns adapt to the available width; mobile should prioritize one active/status view at a time where needed.
-- Touch targets should remain at least `44px` high.
+- Preserve the approved tablet layout and top navigation behavior.
+- Keep metric cards, filters, actions, and content panels readable without document-level horizontal overflow.
+- Do not apply the Stitch phone shell or bottom navigation.
+
+### Phone
+
+At `720px` and below:
+
+- Hide the desktop/tablet sidebar and show the fixed Stitch-style app bar and bottom navigation.
+- Keep 16px page gutters and fixed-bar clearance around all routed content.
+- Use two-column summary metrics and single-column content cards.
+- Stack or pair filters and actions instead of shrinking labels beyond readable width.
+- Show one active board stage at a time while retaining Board and List behavior.
+- Keep all touch targets at least `44px` high and prevent document-level horizontal overflow.
 
 ## Components
 
