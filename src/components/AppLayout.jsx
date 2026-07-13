@@ -35,6 +35,13 @@ function AppLayout({
 
   return (
     <main className="app-layout">
+      <header className="mobile-app-bar">
+        <div className="mobile-brand-lockup" aria-label="ApplyTrack">
+          <span className="mobile-brand-mark" aria-hidden="true">A</span>
+          <span>ApplyTrack</span>
+        </div>
+      </header>
+
       <aside className="sidebar">
         <div className="sidebar-identity">
           <div className="brand-lockup" aria-label="ApplyTrack">
@@ -97,6 +104,26 @@ function AppLayout({
       </aside>
 
       <section className="app-content">{children}</section>
+
+      <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+        {navItems.map((item) => {
+          const Icon = navIcons[item.key]
+          const isActive = currentPage === item.key
+
+          return (
+            <button
+              aria-current={isActive ? 'page' : undefined}
+              className={`mobile-nav-item ${isActive ? 'mobile-nav-item-active' : ''}`}
+              key={item.key}
+              type="button"
+              onClick={item.onClick}
+            >
+              <Icon aria-hidden="true" size={20} />
+              <span>{item.key === 'import' ? 'Import' : item.label}</span>
+            </button>
+          )
+        })}
+      </nav>
     </main>
   )
 }

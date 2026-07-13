@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { LogOut } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
 
 function getProfileEmail(user) {
@@ -177,6 +178,15 @@ function ProfilePage({
             {passwordError && <p className="form-error">{passwordError}</p>}
           </form>
         </div>
+
+        <button
+          className="mobile-profile-sign-out ghost-button"
+          type="button"
+          onClick={onSignOut}
+        >
+          <LogOut aria-hidden="true" size={20} />
+          Sign out
+        </button>
       </section>
     </AppLayout>
   )
