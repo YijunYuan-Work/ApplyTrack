@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
+import { statuses } from '../data/applications'
 import StatusBadge from './StatusBadge'
 
 function ApplicationCard({
@@ -7,16 +10,18 @@ function ApplicationCard({
   onSelectApplication,
   onDeleteApplication,
   onEditApplication,
+  onStatusChange,
   selectionMode = false,
 }) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const statusClass = application.status.toLowerCase().replace(/\s+/g, '-')
 
   return (
     <article
       className={`application-card application-card-${statusClass} ${
         selectionMode ? 'selection-card' : ''
-      } ${
-        isSelected ? 'selected-card' : ''
+      } ${isSelected ? 'selected-card' : ''} ${
+        isExpanded ? 'card-expanded' : ''
       }`}
     >
       {selectionMode && (
@@ -43,7 +48,24 @@ function ApplicationCard({
             <h3>{application.role}</h3>
           </div>
           <div className="record-status-block">
-            <StatusBadge status={application.status} />
+            {isReadOnly ? (
+              <StatusBadge status={application.status} />
+            ) : (
+              <label className="card-status-control">
+                <span className="sr-only">Status for {application.company}</span>
+                <select
+                  className={`status-select status-select-${statusClass}`}
+                  value={application.status}
+                  onChange={(event) =>
+                    onStatusChange(application.id, event.target.value)
+                  }
+                >
+                  {statuses.map((status) => (
+                    <option key={status}>{status}</option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
         </div>
 
@@ -92,6 +114,20 @@ function ApplicationCard({
             <p>{application.notes}</p>
           </div>
         )}
+
+        <button
+          aria-expanded={isExpanded}
+          className="card-details-toggle ghost-button"
+          type="button"
+          onClick={() => setIsExpanded((current) => !current)}
+        >
+          {isExpanded ? (
+            <ChevronUp aria-hidden="true" size={18} />
+          ) : (
+            <ChevronDown aria-hidden="true" size={18} />
+          )}
+          {isExpanded ? 'Hide details' : 'View details'}
+        </button>
       </div>
 
       {!isReadOnly && (

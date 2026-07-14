@@ -2,6 +2,7 @@ import AppLayout from '../components/AppLayout'
 import ExcelImportPanel from '../components/ExcelImportPanel'
 
 function ImportExcelPage({
+  applications,
   onAddApplication,
   onDashboard,
   onImportExcel,
@@ -31,7 +32,10 @@ function ImportExcelPage({
       </header>
 
       <section className="form-page">
-        <ExcelImportPanel onImportApplications={onImportApplications} />
+        <ExcelImportPanel
+          applications={applications}
+          onImportApplications={onImportApplications}
+        />
       </section>
     </AppLayout>
   )

@@ -3,6 +3,7 @@
   ExternalLink,
   Pencil,
 } from 'lucide-react'
+import { getTodayIsoDate, statuses } from '../data/applications'
 import StatusBadge from './StatusBadge'
 
 const boardStatuses = ['Applied', 'Interview', 'Offer', 'Rejected']
@@ -39,9 +40,37 @@ function getStageHint(status, applications) {
   return 'Application submitted'
 }
 
-function ApplicationBoardCard({ application, isReadOnly, onEditApplication }) {
+function getFollowUpState(application) {
+  if (!application.followUp) {
+    return { label: 'Not set', state: 'unset' }
+  }
+
+  if (application.status === 'Rejected' || application.status === 'Offer') {
+    return { label: application.followUp, state: 'scheduled' }
+  }
+
+  const today = getTodayIsoDate()
+
+  if (application.followUp < today) {
+    return { label: `${application.followUp} - Overdue`, state: 'overdue' }
+  }
+
+  if (application.followUp === today) {
+    return { label: `${application.followUp} - Due today`, state: 'due' }
+  }
+
+  return { label: application.followUp, state: 'scheduled' }
+}
+
+function ApplicationBoardCard({
+  application,
+  isReadOnly,
+  onEditApplication,
+  onStatusChange,
+}) {
   const statusClass = application.status.toLowerCase().replace(/\s+/g, '-')
   const companyInitial = application.company.trim().charAt(0).toUpperCase() || 'A'
+  const followUp = getFollowUpState(application)
 
   return (
     <article
@@ -57,12 +86,35 @@ function ApplicationBoardCard({ application, isReadOnly, onEditApplication }) {
         </div>
       </div>
 
-      <StatusBadge status={application.status} />
+      {isReadOnly ? (
+        <StatusBadge status={application.status} />
+      ) : (
+        <label className="card-status-control">
+          <span className="sr-only">Status for {application.company}</span>
+          <select
+            className={`status-select status-select-${statusClass}`}
+            value={application.status}
+            onChange={(event) =>
+              onStatusChange(application.id, event.target.value)
+            }
+          >
+            {statuses.map((status) => (
+              <option key={status}>{status}</option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <div className="board-card-dates" aria-label="Application dates">
         <div className="board-card-date-row">
           <div className="board-card-date-label">Applied</div>
           <div className="board-card-date-value">{application.date || 'Not set'}</div>
+        </div>
+        <div className="board-card-date-row">
+          <div className="board-card-date-label">Follow-up</div>
+          <div className={`board-card-date-value follow-up-${followUp.state}`}>
+            {followUp.label}
+          </div>
         </div>
         <div className="board-card-date-row">
           <div className="board-card-date-label">Last updated</div>
@@ -108,7 +160,9 @@ function ApplicationBoard({
   applications,
   isReadOnly = false,
   onChangeActiveStatus,
+  onClearFilters,
   onEditApplication,
+  onStatusChange,
 }) {
   const groupedApplications = groupApplicationsByStatus(applications)
   const activeApplications = groupedApplications[activeStatus] || []
@@ -156,6 +210,7 @@ function ApplicationBoard({
                     isReadOnly={isReadOnly}
                     key={application.id}
                     onEditApplication={onEditApplication}
+                    onStatusChange={onStatusChange}
                   />
                 ))}
 
@@ -178,6 +233,9 @@ function ApplicationBoard({
         <div className="empty-state board-search-empty">
           <h3>No applications found</h3>
           <p>Try a different search or status filter.</p>
+          <button className="ghost-button" type="button" onClick={onClearFilters}>
+            Clear filters
+          </button>
         </div>
       )}
     </section>

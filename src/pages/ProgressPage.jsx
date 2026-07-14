@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ResponsiveContainer, Sankey, Tooltip } from 'recharts'
 import AppLayout from '../components/AppLayout'
 
@@ -261,6 +262,7 @@ function ProgressPage({
 }) {
   const [activeView, setActiveView] = useState('map')
   const [visibleWeekOverride, setVisibleWeekOverride] = useState('')
+  const [expandedDays, setExpandedDays] = useState(new Set())
   const isCompactViewport = useCompactViewport()
   const latestEventWeek = useMemo(() => {
     const latestDateKey = applications
@@ -320,6 +322,28 @@ function ProgressPage({
     (total, day) => total + day.events.length,
     0,
   )
+  const outcomes = data.nodes.slice(1)
+
+  function toggleExpandedDay(dateKey) {
+    setExpandedDays((currentDays) => {
+      const nextDays = new Set(currentDays)
+
+      if (nextDays.has(dateKey)) {
+        nextDays.delete(dateKey)
+      } else {
+        nextDays.add(dateKey)
+      }
+
+      return nextDays
+    })
+  }
+
+  function shiftVisibleWeek(offset) {
+    setExpandedDays(new Set())
+    setVisibleWeekOverride((currentWeek) =>
+      shiftWeek(currentWeek || visibleWeek, offset),
+    )
+  }
 
   return (
     <AppLayout
@@ -343,15 +367,19 @@ function ProgressPage({
       <section className="progress-section" aria-label="Application progress">
         <div className="progress-summary">
           <article>
-            <span>Applications</span>
+            <span title="Every application in your tracker">Applications</span>
             <strong>{summary.applications}</strong>
           </article>
           <article>
-            <span>Interviews held</span>
+            <span title="Total interview rounds completed across all applications">
+              Interviews held
+            </span>
             <strong>{summary.interviewEvents}</strong>
           </article>
           <article>
-            <span>Reached interview</span>
+            <span title="Applications that reached at least one interview">
+              Reached interview
+            </span>
             <strong>{summary.interviewedApplications}</strong>
           </article>
           <article>
@@ -373,8 +401,13 @@ function ProgressPage({
               </h2>
             </div>
 
-            <div className="progress-tabs" aria-label="Progress views">
+            <div
+              className="progress-tabs"
+              aria-label="Progress views"
+            >
               <button
+                aria-controls="progress-map-panel"
+                aria-pressed={activeView === 'map'}
                 className={activeView === 'map' ? 'progress-tab-active' : ''}
                 type="button"
                 onClick={() => setActiveView('map')}
@@ -382,6 +415,8 @@ function ProgressPage({
                 Pipeline map
               </button>
               <button
+                aria-controls="progress-calendar-panel"
+                aria-pressed={activeView === 'calendar'}
                 className={activeView === 'calendar' ? 'progress-tab-active' : ''}
                 type="button"
                 onClick={() => setActiveView('calendar')}
@@ -397,57 +432,103 @@ function ProgressPage({
               <p>Add an application and your progress views will appear here.</p>
             </div>
           ) : activeView === 'map' ? (
-            <div className="progress-chart-scroll">
-              <div className="progress-chart">
-                <ResponsiveContainer height="100%" width="100%">
-                  <Sankey
-                    data={data}
-                    link={{ stroke: '#94a3b8', strokeOpacity: 0.42 }}
-                    linkCurvature={0.55}
-                    margin={
-                      isCompactViewport
-                        ? { bottom: 36, left: 78, right: 78, top: 62 }
-                        : { bottom: 48, left: 188, right: 188, top: 48 }
-                    }
-                    node={<ProgressNode compact={isCompactViewport} />}
-                    nodePadding={isCompactViewport ? 28 : 42}
-                    nodeWidth={isCompactViewport ? 12 : 14}
-                    verticalAlign="top"
-                  >
-                    <Tooltip formatter={(value) => [`${value} applications`, 'Flow']} />
-                  </Sankey>
-                </ResponsiveContainer>
-              </div>
+            <div id="progress-map-panel">
+              {isCompactViewport ? (
+                <div
+                  className="compact-progress-list"
+                  aria-label="Application outcomes"
+                >
+                  {outcomes.map((outcome) => {
+                    const percentage = summary.applications
+                      ? Math.round((outcome.count / summary.applications) * 100)
+                      : 0
+
+                    return (
+                      <div className="compact-progress-row" key={outcome.name}>
+                        <div>
+                          <span>{compactNodeLabels[outcome.name] || outcome.name}</span>
+                          <strong>{outcome.count}</strong>
+                        </div>
+                        <span
+                          aria-label={`${percentage}% of applications`}
+                          className="compact-progress-bar"
+                          role="img"
+                        >
+                          <span
+                            style={{
+                              backgroundColor: outcome.color,
+                              width: `${percentage}%`,
+                            }}
+                          />
+                        </span>
+                        <small>{percentage}% of applications</small>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div
+                  aria-label={`Application flow: ${summary.applications} applications, ${summary.interviewedApplications} reached an interview, and ${summary.offers} received an offer.`}
+                  className="progress-chart-scroll"
+                  role="img"
+                >
+                  <div className="progress-chart">
+                    <ResponsiveContainer
+                      height="100%"
+                      initialDimension={{ height: 500, width: 760 }}
+                      minHeight={360}
+                      minWidth={0}
+                      width="100%"
+                    >
+                      <Sankey
+                        data={data}
+                        link={{ stroke: '#94a3b8', strokeOpacity: 0.42 }}
+                        linkCurvature={0.55}
+                        margin={{ bottom: 48, left: 188, right: 188, top: 48 }}
+                        node={<ProgressNode />}
+                        nodePadding={42}
+                        nodeWidth={14}
+                        verticalAlign="top"
+                      >
+                        <Tooltip
+                          formatter={(value) => [`${value} applications`, 'Flow']}
+                        />
+                      </Sankey>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="progress-calendar">
+            <div
+              className="progress-calendar"
+              id="progress-calendar-panel"
+            >
               <div className="calendar-toolbar">
-                <button
-                  className="ghost-button"
-                  type="button"
-                  onClick={() =>
-                    setVisibleWeekOverride((currentWeek) =>
-                      shiftWeek(currentWeek || visibleWeek, -1),
-                    )
-                  }
-                >
-                  Previous week
-                </button>
-                <div>
+                <div className="calendar-range">
                   <h3>{getWeekRangeLabel(visibleWeek)}</h3>
                   <p>{visibleWeekTotal} events this week</p>
                 </div>
-                <button
-                  className="ghost-button"
-                  type="button"
-                  onClick={() =>
-                    setVisibleWeekOverride((currentWeek) =>
-                      shiftWeek(currentWeek || visibleWeek, 1),
-                    )
-                  }
-                >
-                  Next week
-                </button>
+                <div className="calendar-actions">
+                  <button
+                    aria-label="Previous week"
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => shiftVisibleWeek(-1)}
+                  >
+                    <ChevronLeft aria-hidden="true" size={18} />
+                    <span>Previous</span>
+                  </button>
+                  <button
+                    aria-label="Next week"
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => shiftVisibleWeek(1)}
+                  >
+                    <span>Next</span>
+                    <ChevronRight aria-hidden="true" size={18} />
+                  </button>
+                </div>
               </div>
 
               <div className="calendar-grid" aria-label="Application calendar">
@@ -463,7 +544,7 @@ function ProgressPage({
                     key={day.dateKey}
                   >
                     <div className="calendar-day-header">
-                      <span>{day.date.getDate()}</span>
+                      <time dateTime={day.dateKey}>{day.date.getDate()}</time>
                       {day.events.length > 0 && (
                         <strong>{day.events.length}</strong>
                       )}
@@ -471,7 +552,10 @@ function ProgressPage({
 
                     {day.events.length > 0 ? (
                       <ul>
-                        {day.events.map((event) => (
+                        {(isCompactViewport && !expandedDays.has(day.dateKey)
+                          ? day.events.slice(0, 3)
+                          : day.events
+                        ).map((event) => (
                           <li
                             className={event.type === 'Rejected' ? 'calendar-event-rejected' : ''}
                             key={event.key}
@@ -481,6 +565,19 @@ function ProgressPage({
                             <strong>{event.application.role}</strong>
                           </li>
                         ))}
+                        {isCompactViewport && day.events.length > 3 && (
+                          <li className="calendar-show-more-row">
+                            <button
+                              className="ghost-button"
+                              type="button"
+                              onClick={() => toggleExpandedDay(day.dateKey)}
+                            >
+                              {expandedDays.has(day.dateKey)
+                                ? 'Show fewer'
+                                : `Show ${day.events.length - 3} more`}
+                            </button>
+                          </li>
+                        )}
                       </ul>
                     ) : (
                       <p>No events</p>

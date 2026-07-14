@@ -13,10 +13,9 @@ function MetricGrid({ applications, statusCounts }) {
   const offerTotal = statusCounts.find((item) => item.status === 'Offer').count
   const appliedTotal = statusCounts.find((item) => item.status === 'Applied').count
   const rejectedTotal = statusCounts.find((item) => item.status === 'Rejected').count
-  const interviewRate =
-    applications.length === 0
-      ? 0
-      : Math.round((interviewTotal / applications.length) * 100)
+  const interviewApplicationTotal = applications.filter(
+    (application) => Number(application.interviewCount || 0) > 0,
+  ).length
 
   return (
     <section className="metric-grid" aria-label="Application summary">
@@ -35,9 +34,12 @@ function MetricGrid({ applications, statusCounts }) {
           <UsersRound size={31} strokeWidth={2.1} />
         </span>
         <div>
-          <span>Interviews</span>
+          <span>Interview rounds</span>
           <strong>{interviewTotal}</strong>
-          <small>{interviewRate}% interview motion</small>
+          <small>
+            {interviewApplicationTotal}{' '}
+            {interviewApplicationTotal === 1 ? 'application' : 'applications'} reached interview
+          </small>
         </div>
       </article>
       <article className="metric-card metric-card-offers">

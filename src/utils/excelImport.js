@@ -138,6 +138,32 @@ function buildNotes(row, headerMap) {
   return notes.join('\n')
 }
 
+export async function downloadExcelTemplate() {
+  const XLSX = await import('xlsx')
+  const worksheet = XLSX.utils.aoa_to_sheet([
+    [
+      'Company',
+      'Role',
+      'Location',
+      'Status',
+      'Applied Date',
+      'Follow Up',
+      'Job Link',
+      'Contact',
+      'Salary',
+      'Cover Letter',
+      'Referral',
+      'Interview Stage',
+      'Last Updated',
+      'Notes',
+    ],
+  ])
+  const workbook = XLSX.utils.book_new()
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Applications')
+  XLSX.writeFile(workbook, 'ApplyTrack-import-template.xlsx')
+}
+
 export async function parseExcelApplications(file) {
   const XLSX = await import('xlsx')
   const buffer = await file.arrayBuffer()

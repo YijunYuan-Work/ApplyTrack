@@ -21,6 +21,7 @@ import {
   getTodayIsoDate,
   normalizeApplication,
 } from './data/applications'
+import AppLayout from './components/AppLayout'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
 import ApplicationFormPage from './pages/ApplicationFormPage'
 import DashboardPage from './pages/DashboardPage'
@@ -79,6 +80,10 @@ function App() {
     window.addEventListener('hashchange', syncRoute)
     return () => window.removeEventListener('hashchange', syncRoute)
   }, [])
+
+  useEffect(() => {
+    window.scrollTo({ behavior: 'auto', left: 0, top: 0 })
+  }, [route])
 
   useEffect(() => {
     if (!hasSupabaseConfig) {
@@ -275,6 +280,45 @@ function App() {
     }
   }
 
+  async function handleQuickStatusChange(applicationId, nextStatus) {
+    const currentApplication = applications.find(
+      (application) => application.id === applicationId,
+    )
+
+    if (!currentApplication || currentApplication.status === nextStatus) {
+      return
+    }
+
+    const interviewCount = Number(currentApplication.interviewCount) || 0
+    const preparedApplication = normalizeApplication({
+      ...currentApplication,
+      status: nextStatus,
+      interviewCount:
+        nextStatus === 'Interview' && interviewCount === 0
+          ? 1
+          : interviewCount,
+      lastUpdated: getTodayIsoDate(),
+    })
+
+    setDataError('')
+
+    try {
+      const savedApplication = await updateApplication(
+        applicationId,
+        preparedApplication,
+        user.id,
+      )
+
+      setApplications((currentApplications) =>
+        currentApplications.map((application) =>
+          application.id === applicationId ? savedApplication : application,
+        ),
+      )
+    } catch (error) {
+      setDataError(getFriendlyErrorMessage(error.message))
+    }
+  }
+
   async function handleDeleteApplication(applicationId) {
     const confirmed = window.confirm(
       'Delete this application? This cannot be undone.',
@@ -361,6 +405,7 @@ function App() {
         onProfile={stayOnDemo}
         onProgress={stayOnDemo}
         onSignOut={stayOnDemo}
+        onStatusChange={async () => {}}
         user={demoUser}
       />
     )
@@ -460,12 +505,12 @@ function App() {
     return (
       <Suspense
         fallback={
-          <main className="auth-shell">
-            <section className="auth-panel">
-              <p className="eyebrow">ApplyTrack</p>
+          <AppLayout {...sharedPageProps} currentPage="progress">
+            <section className="page-loading-state" role="status">
+              <p className="eyebrow">Progress</p>
               <h1>Loading your progress.</h1>
             </section>
-          </main>
+          </AppLayout>
         }
       >
         <ProgressPage
@@ -480,6 +525,7 @@ function App() {
     return (
       <ImportExcelPage
         {...sharedPageProps}
+        applications={applications}
         onImportApplications={handleImportApplications}
       />
     )
@@ -496,6 +542,7 @@ function App() {
       onEditApplication={(applicationId) =>
         navigate(`/applications/${applicationId}/edit`)
       }
+      onStatusChange={handleQuickStatusChange}
     />
   )
 }

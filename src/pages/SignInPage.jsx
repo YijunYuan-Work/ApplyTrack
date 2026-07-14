@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
+import { navigate } from '../utils/routes'
 
 function SignInPage({
   error,
@@ -10,6 +12,7 @@ function SignInPage({
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [isRecoveryMode, setIsRecoveryMode] = useState(false)
   const [isRequestingReset, setIsRequestingReset] = useState(false)
   const [recoveryError, setRecoveryError] = useState('')
@@ -57,7 +60,7 @@ function SignInPage({
                 ? 'Create your workspace.'
                 : 'Sign in to your workspace.'}
           </h1>
-          <p>Pick up where your applications, interviews, and follow-ups left off.</p>
+          <p>Manage applications, interviews, and follow-ups in one focused workspace.</p>
         </div>
 
         {isRecoveryMode ? (
@@ -141,14 +144,39 @@ function SignInPage({
 
             <label>
               Password
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="At least 6 characters"
-                required
-              />
+              <span className="password-field">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="At least 6 characters"
+                  required
+                />
+                <button
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="password-visibility"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                >
+                  {showPassword ? (
+                    <EyeOff aria-hidden="true" size={20} />
+                  ) : (
+                    <Eye aria-hidden="true" size={20} />
+                  )}
+                </button>
+              </span>
             </label>
+
+            {error && <p className="form-error">{error}</p>}
+
+            <button type="submit" disabled={isLoading}>
+              {isLoading
+                ? 'Working...'
+                : isSignUp
+                  ? 'Create account'
+                  : 'Sign in'}
+            </button>
 
             {!isSignUp && (
               <button
@@ -160,14 +188,15 @@ function SignInPage({
               </button>
             )}
 
-            {error && <p className="form-error">{error}</p>}
-
-            <button type="submit" disabled={isLoading}>
-              {isLoading
-                ? 'Working...'
-                : isSignUp
-                  ? 'Create account'
-                  : 'Sign in'}
+            <div className="auth-divider" aria-hidden="true">
+              <span>or</span>
+            </div>
+            <button
+              className="ghost-button auth-demo-button"
+              type="button"
+              onClick={() => navigate('/demo')}
+            >
+              View public demo
             </button>
           </form>
         )}

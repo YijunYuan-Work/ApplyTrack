@@ -5,6 +5,7 @@ import {
   Columns3,
   Filter,
   List,
+  RotateCcw,
   Search,
 } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
@@ -28,6 +29,7 @@ function DashboardPage({
   onProfile,
   onProgress,
   onSignOut,
+  onStatusChange,
   user,
 }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -153,6 +155,14 @@ function DashboardPage({
     resetToFirstPage()
   }
 
+  function handleClearFilters() {
+    setSearchTerm('')
+    setStatusFilter('All')
+    setSortBy('applied')
+    setActiveBoardStatus('Applied')
+    resetToFirstPage()
+  }
+
   async function handleBulkDelete() {
     await onBulkDeleteApplications(selectedApplicationIds)
     setSelectedApplicationIds([])
@@ -166,13 +176,13 @@ function DashboardPage({
   }
 
   function renderPaginationControls(position) {
-    if (filteredApplications.length === 0) {
+    if (filteredApplications.length === 0 || totalPages <= 1) {
       return null
     }
 
     return (
       <div
-        className="pagination-bar"
+        className={`pagination-bar pagination-bar-${position.toLowerCase()}`}
         aria-label={`${position} pagination controls`}
       >
         <p>
@@ -239,13 +249,13 @@ function DashboardPage({
         <section className="dashboard-command-panel" aria-label="Pipeline overview">
           <header className="app-header dashboard-header">
             <div>
-              <p className="eyebrow desktop-dashboard-copy">Job application track dashboard</p>
-              <h1 className="desktop-dashboard-copy">Applications that need your attention</h1>
+              <p className="eyebrow desktop-dashboard-copy">Dashboard</p>
+              <h1 className="desktop-dashboard-copy">Your application pipeline</h1>
               <h1 className="mobile-dashboard-copy mobile-dashboard-title">
-                Your application flow.
+                Your application pipeline
               </h1>
               <p className="mobile-dashboard-copy mobile-dashboard-subtitle">
-                Real-time tracking of your career journey.
+                Review and update your applications.
               </p>
             </div>
             {isReadOnly ? (
@@ -416,6 +426,20 @@ function DashboardPage({
             )}
           </div>
 
+          {(searchTerm.trim() || statusFilter !== 'All' || sortBy !== 'applied') && (
+            <div className="active-filter-bar" aria-label="Active filters">
+              <div className="active-filter-list">
+                {searchTerm.trim() && <span>Search: {searchTerm.trim()}</span>}
+                {statusFilter !== 'All' && <span>Status: {statusFilter}</span>}
+                {sortBy !== 'applied' && <span>Sort: Last updated</span>}
+              </div>
+              <button className="filter-reset" type="button" onClick={handleClearFilters}>
+                <RotateCcw aria-hidden="true" size={16} />
+                Clear filters
+              </button>
+            </div>
+          )}
+
           {error && <p className="form-error">{error}</p>}
           {isLoading && <p className="loading-message">Loading applications...</p>}
 
@@ -426,10 +450,12 @@ function DashboardPage({
               <ApplicationList
                 applications={pagedApplications}
                 isReadOnly={isReadOnly}
+                onClearFilters={handleClearFilters}
                 selectedApplicationIds={selectedApplicationIds}
                 onDeleteApplication={handleDeleteApplication}
                 onEditApplication={onEditApplication}
                 onSelectApplication={handleSelectApplication}
+                onStatusChange={onStatusChange}
                 selectionMode={isSelectionMode}
               />
 
@@ -441,7 +467,9 @@ function DashboardPage({
               applications={filteredApplications}
               isReadOnly={isReadOnly}
               onChangeActiveStatus={setActiveBoardStatus}
+              onClearFilters={handleClearFilters}
               onEditApplication={onEditApplication}
+              onStatusChange={onStatusChange}
             />
           )}
         </section>

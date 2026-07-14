@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LogOut } from 'lucide-react'
+import { Eye, EyeOff, LogOut } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
 
 function getProfileEmail(user) {
@@ -27,15 +27,19 @@ function ProfilePage({
   user,
 }) {
   const username = user.user_metadata?.username || user.name
-  const [email, setEmail] = useState(() => getProfileEmail(user))
+  const savedEmail = getProfileEmail(user)
+  const [email, setEmail] = useState(savedEmail)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [emailError, setEmailError] = useState('')
   const [emailSuccess, setEmailSuccess] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [isSavingEmail, setIsSavingEmail] = useState(false)
   const [isSavingPassword, setIsSavingPassword] = useState(false)
+  const hasEmailChanges = email.trim() !== savedEmail.trim()
 
   async function handleEmailSubmit(event) {
     event.preventDefault()
@@ -106,13 +110,6 @@ function ProfilePage({
       </header>
 
       <section className="profile-section">
-        <article className="profile-card">
-          <div>
-            <span>Username</span>
-            <strong>{username}</strong>
-          </div>
-        </article>
-
         <div className="profile-settings-grid">
           <form className="profile-form" onSubmit={handleEmailSubmit}>
             <div>
@@ -124,19 +121,35 @@ function ProfilePage({
             <label>
               Recovery email
               <input
+                autoComplete="email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => {
+                  setEmail(event.target.value)
+                  setEmailError('')
+                  setEmailSuccess('')
+                }}
                 placeholder="jane@example.com"
               />
             </label>
 
-            <button type="submit" disabled={isSavingEmail}>
+            <button
+              type="submit"
+              disabled={isSavingEmail || !hasEmailChanges}
+            >
               {isSavingEmail ? 'Saving...' : 'Save recovery email'}
             </button>
 
-            {emailSuccess && <p className="form-success">{emailSuccess}</p>}
-            {emailError && <p className="form-error">{emailError}</p>}
+            {emailSuccess && (
+              <p className="form-success" role="status">
+                {emailSuccess}
+              </p>
+            )}
+            {emailError && (
+              <p className="form-error" role="alert">
+                {emailError}
+              </p>
+            )}
           </form>
 
           <form className="profile-form" onSubmit={handlePasswordSubmit}>
@@ -146,36 +159,95 @@ function ProfilePage({
               <p>Choose a new password for your account.</p>
             </div>
 
-            <label>
-              New password
-              <input
-                minLength="6"
-                type="password"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                placeholder="At least 6 characters"
-                required
-              />
-            </label>
+            <div className="profile-field">
+              <label htmlFor="new-password">New password</label>
+              <span className="password-input-wrap">
+                <input
+                  autoComplete="new-password"
+                  id="new-password"
+                  minLength="6"
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(event) => {
+                    setNewPassword(event.target.value)
+                    setPasswordError('')
+                    setPasswordSuccess('')
+                  }}
+                  placeholder="At least 6 characters"
+                  required
+                />
+                <button
+                  aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                  className="password-visibility-button"
+                  type="button"
+                  onClick={() => setShowNewPassword((isVisible) => !isVisible)}
+                >
+                  {showNewPassword ? (
+                    <EyeOff aria-hidden="true" size={19} />
+                  ) : (
+                    <Eye aria-hidden="true" size={19} />
+                  )}
+                </button>
+              </span>
+            </div>
 
-            <label>
-              Confirm password
-              <input
-                minLength="6"
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Repeat your new password"
-                required
-              />
-            </label>
+            <div className="profile-field">
+              <label htmlFor="confirm-password">Confirm password</label>
+              <span className="password-input-wrap">
+                <input
+                  autoComplete="new-password"
+                  id="confirm-password"
+                  minLength="6"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value)
+                    setPasswordError('')
+                    setPasswordSuccess('')
+                  }}
+                  placeholder="Repeat your new password"
+                  required
+                />
+                <button
+                  aria-label={
+                    showConfirmPassword
+                      ? 'Hide confirmed password'
+                      : 'Show confirmed password'
+                  }
+                  className="password-visibility-button"
+                  type="button"
+                  onClick={() =>
+                    setShowConfirmPassword((isVisible) => !isVisible)
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff aria-hidden="true" size={19} />
+                  ) : (
+                    <Eye aria-hidden="true" size={19} />
+                  )}
+                </button>
+              </span>
+            </div>
 
-            <button type="submit" disabled={isSavingPassword}>
+            <button
+              type="submit"
+              disabled={
+                isSavingPassword || !newPassword || !confirmPassword
+              }
+            >
               {isSavingPassword ? 'Saving...' : 'Update password'}
             </button>
 
-            {passwordSuccess && <p className="form-success">{passwordSuccess}</p>}
-            {passwordError && <p className="form-error">{passwordError}</p>}
+            {passwordSuccess && (
+              <p className="form-success" role="status">
+                {passwordSuccess}
+              </p>
+            )}
+            {passwordError && (
+              <p className="form-error" role="alert">
+                {passwordError}
+              </p>
+            )}
           </form>
         </div>
 

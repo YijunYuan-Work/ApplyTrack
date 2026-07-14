@@ -3,6 +3,7 @@
   FileSpreadsheet,
   Grid2X2,
   LogOut,
+  Plus,
   User,
 } from 'lucide-react'
 
@@ -17,6 +18,7 @@ function AppLayout({
   onProfile,
   onProgress,
   onSignOut,
+  showAddApplication = true,
   user,
 }) {
   const navIcons = {
@@ -40,6 +42,17 @@ function AppLayout({
           <span className="mobile-brand-mark" aria-hidden="true">A</span>
           <span>ApplyTrack</span>
         </div>
+        {!isReadOnly && showAddApplication && (
+          <button
+            aria-label="Add application"
+            className="mobile-add-action"
+            title="Add application"
+            type="button"
+            onClick={onAddApplication}
+          >
+            <Plus aria-hidden="true" size={22} />
+          </button>
+        )}
       </header>
 
       <aside className="sidebar">
@@ -72,7 +85,7 @@ function AppLayout({
           })}
         </nav>
 
-        {!isReadOnly && (
+        {!isReadOnly && showAddApplication && (
           <div className="sidebar-actions">
             <button className="sidebar-primary-action" type="button" onClick={onAddApplication}>
               <span className="button-plus" aria-hidden="true"></span>

@@ -4,9 +4,11 @@ function ApplicationList({
   applications,
   isReadOnly = false,
   selectedApplicationIds = [],
+  onClearFilters,
   onDeleteApplication,
   onEditApplication,
   onSelectApplication,
+  onStatusChange,
   selectionMode = false,
 }) {
   return (
@@ -20,6 +22,7 @@ function ApplicationList({
           onDeleteApplication={onDeleteApplication}
           onEditApplication={onEditApplication}
           onSelectApplication={onSelectApplication}
+          onStatusChange={onStatusChange}
           selectionMode={selectionMode}
         />
       ))}
@@ -28,6 +31,9 @@ function ApplicationList({
         <div className="empty-state">
           <h3>No applications found</h3>
           <p>Try a different search or status filter.</p>
+          <button className="ghost-button" type="button" onClick={onClearFilters}>
+            Clear filters
+          </button>
         </div>
       )}
     </div>
