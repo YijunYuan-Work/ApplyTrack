@@ -16,7 +16,7 @@ supabase/functions/.env
 # Local AI coding tools and generated working files
 /.agents/
 /.codex/
-/.codex-*-profile/
+/.codex-*-profile*/
 /.impeccable/
 /AGENTS.md
 /PRODUCT.md
@@ -27,6 +27,16 @@ supabase/functions/.env
 
 # Local Supabase CLI state
 /supabase/.temp/
+
+# Generated test, deployment, and temporary output
+/coverage/
+/playwright-report/
+/test-results/
+/.vercel/
+/tmp/
+/.temp/
+*.tmp
+*.temp
 
 # Editor directories and files
 .vscode/*
