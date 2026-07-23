@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react'
 import { SearchCheck, Settings2 } from 'lucide-react'
 import {
+  completeJobLeadApplication,
   createJobAlertInbox,
   deleteResume,
   downloadResumeFile,
   fetchJobAgentWorkspace,
+  removeJobLead,
   saveJobAgentProfile,
-  saveJobSearch,
   updateJobAlertInbox,
-  updateJobLeadStates,
   updateResumeText,
   uploadResume,
 } from '../api/jobAgent'
 import AppLayout from '../components/AppLayout'
 import JobAgentSetup from '../components/JobAgentSetup'
 import JobMatches from '../components/JobMatches'
+import { getTodayIsoDate } from '../data/applications'
 import { extractResumeText } from '../utils/resumeParser'
 
 function JobAgentPage({
@@ -22,6 +23,8 @@ function JobAgentPage({
   onDashboard,
   onImportExcel,
   onJobAgent,
+  onApplicationCreated,
+  onJobLeadRemoved,
   onProfile,
   onProgress,
   onSignOut,
@@ -67,19 +70,15 @@ function JobAgentPage({
     }
   }, [user.id])
 
-  async function handleSave(profile, search) {
+  async function handleSave(profile) {
     setIsSaving(true)
     setPageError('')
 
     try {
-      const [savedProfile, savedSearch] = await Promise.all([
-        saveJobAgentProfile(profile, user.id),
-        saveJobSearch(search, user.id),
-      ])
+      const savedProfile = await saveJobAgentProfile(profile, user.id)
       setWorkspace((current) => ({
         ...current,
         profile: savedProfile,
-        search: savedSearch,
       }))
     } finally {
       setIsSaving(false)
@@ -120,7 +119,7 @@ function JobAgentPage({
 
   async function handleDeleteResume(resume) {
     const confirmed = window.confirm(
-      `Delete ${resume.fileName}? Job matching will be paused until another resume is uploaded.`,
+      `Delete ${resume.fileName}? You can upload another resume later.`,
     )
 
     if (!confirmed) {
@@ -128,17 +127,9 @@ function JobAgentPage({
     }
 
     await deleteResume(resume)
-    const pausedProfile = workspace.profile
-      ? await saveJobAgentProfile({ ...workspace.profile, enabled: false }, user.id)
-      : null
-    const pausedSearch = workspace.search
-      ? await saveJobSearch({ ...workspace.search, enabled: false }, user.id)
-      : null
     setWorkspace((current) => ({
       ...current,
-      profile: pausedProfile,
       resumes: current.resumes.filter((item) => item.id !== resume.id),
-      search: pausedSearch,
     }))
     return true
   }
@@ -198,21 +189,66 @@ function JobAgentPage({
     }
   }
 
-  async function handleUpdateStates(leadIds, state) {
-    if (leadIds.length === 0) {
+  async function handleFinishApplying(lead) {
+    const confirmed = window.confirm(
+      `Confirm that you submitted your application for ${lead.title} at ${lead.company}? ApplyTrack will add it to your pipeline.`,
+    )
+
+    if (!confirmed) {
       return
     }
 
     setIsUpdating(true)
     setPageError('')
+    setPageNotice('')
 
     try {
-      const updated = await updateJobLeadStates(leadIds, state)
-      const updatedById = new Map(updated.map((lead) => [lead.id, lead]))
+      const application = await completeJobLeadApplication(
+        lead.id,
+        getTodayIsoDate(),
+      )
       setWorkspace((current) => ({
         ...current,
-        leads: current.leads.map((lead) => updatedById.get(lead.id) || lead),
+        leads: current.leads.map((currentLead) =>
+          currentLead.id === lead.id
+            ? {
+                ...currentLead,
+                applicationId: application.id,
+                state: 'applied',
+              }
+            : currentLead,
+        ),
       }))
+      onApplicationCreated(application)
+      setPageNotice(`${application.role} at ${application.company} was added to your pipeline.`)
+    } catch (error) {
+      setPageError(error.message)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  async function handleRemoveLead(lead) {
+    const confirmed = window.confirm(
+      `Remove ${lead.title} at ${lead.company} from your application queue?`,
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setIsUpdating(true)
+    setPageError('')
+    setPageNotice('')
+
+    try {
+      await removeJobLead(lead.id, user.id)
+      setWorkspace((current) => ({
+        ...current,
+        leads: current.leads.filter((currentLead) => currentLead.id !== lead.id),
+      }))
+      onJobLeadRemoved()
+      setPageNotice(`${lead.title} at ${lead.company} was removed from your queue.`)
     } catch (error) {
       setPageError(error.message)
     } finally {
@@ -236,8 +272,8 @@ function JobAgentPage({
         <header className="job-agent-header">
           <div>
             <p className="eyebrow">Job Agent</p>
-            <h1>Turn job alerts into a focused review queue.</h1>
-            <p>Bring in LinkedIn and Indeed alerts, rank each role, and decide what deserves your time.</p>
+            <h1>Turn job alerts into an application queue.</h1>
+            <p>Bring in LinkedIn and Indeed alerts, apply on the source site, and move finished applications into your pipeline.</p>
           </div>
         </header>
 
@@ -262,7 +298,11 @@ function JobAgentPage({
             <SearchCheck aria-hidden="true" size={19} />
             Matches
             {workspace?.leads && (
-              <span>{workspace.leads.filter((lead) => lead.state === 'new' && !lead.filtered).length}</span>
+              <span>
+                {workspace.leads.filter(
+                  (lead) => lead.state !== 'applied' && lead.state !== 'expired',
+                ).length}
+              </span>
             )}
           </button>
         </div>
@@ -281,14 +321,13 @@ function JobAgentPage({
             isUpdating={isUpdating}
             leads={workspace.leads}
             messages={workspace.messages}
-            search={workspace.search}
-            onUpdateStates={handleUpdateStates}
+            onFinishApplying={handleFinishApplying}
+            onRemove={handleRemoveLead}
           />
         ) : workspace ? (
           <JobAgentSetup
             inbox={workspace.inbox}
             initialProfile={workspace.profile}
-            initialSearch={workspace.search}
             isManagingAlerts={isManagingAlerts}
             isSaving={isSaving}
             messages={workspace.messages}

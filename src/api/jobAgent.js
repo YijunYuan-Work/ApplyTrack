@@ -1,3 +1,4 @@
+import { fromApplicationRow } from './applications'
 import { supabase } from '../lib/supabase'
 
 function throwIfError(error) {
@@ -64,30 +65,6 @@ function mapProfile(row) {
   }
 }
 
-function mapSearch(row) {
-  if (!row) {
-    return null
-  }
-
-  return {
-    countryCode: row.country_code,
-    employmentTypes: row.employment_types || [],
-    enabled: row.enabled,
-    excludedCompanies: row.excluded_companies || [],
-    excludedKeywords: row.excluded_keywords || [],
-    id: row.id,
-    keywords: row.keywords || [],
-    locations: row.locations || [],
-    remotePreference: row.remote_preference,
-    salaryCurrency: row.salary_currency || 'CAD',
-    salaryMax: row.salary_max ?? '',
-    salaryMin: row.salary_min ?? '',
-    seniorityLevels: row.seniority_levels || [],
-    titles: row.titles || [],
-    workArrangements: row.work_arrangements || [],
-  }
-}
-
 function mapResume(row) {
   return {
     createdAt: row.created_at,
@@ -104,6 +81,7 @@ function mapResume(row) {
 
 function mapLead(row) {
   return {
+    applicationId: row.application_id,
     applyUrl: row.apply_url,
     canonicalUrl: row.canonical_url,
     category: row.category,
@@ -160,7 +138,6 @@ export async function fetchJobAgentWorkspace(userId) {
   const [
     profileResult,
     resumesResult,
-    searchResult,
     inboxResult,
     messagesResult,
     leadsResult,
@@ -168,7 +145,6 @@ export async function fetchJobAgentWorkspace(userId) {
     await Promise.all([
       supabase.from('job_agent_profiles').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('resumes').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-      supabase.from('job_searches').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('job_alert_inboxes').select('*').eq('user_id', userId).maybeSingle(),
       supabase
         .from('job_alert_messages')
@@ -188,7 +164,6 @@ export async function fetchJobAgentWorkspace(userId) {
   ;[
     profileResult,
     resumesResult,
-    searchResult,
     inboxResult,
     messagesResult,
     leadsResult,
@@ -200,20 +175,14 @@ export async function fetchJobAgentWorkspace(userId) {
     messages: (messagesResult.data || []).map(mapAlertMessage),
     profile: mapProfile(profileResult.data),
     resumes: (resumesResult.data || []).map(mapResume),
-    search: mapSearch(searchResult.data),
   }
 }
 
 export async function fetchJobAgentSummary(userId) {
-  const [profileResult, searchResult, inboxResult, messagesResult, leadsResult] = await Promise.all([
+  const [profileResult, inboxResult, messagesResult, leadsResult] = await Promise.all([
     supabase
       .from('job_agent_profiles')
       .select('approved_at, enabled')
-      .eq('user_id', userId)
-      .maybeSingle(),
-    supabase
-      .from('job_searches')
-      .select('enabled')
       .eq('user_id', userId)
       .maybeSingle(),
     supabase
@@ -230,7 +199,7 @@ export async function fetchJobAgentSummary(userId) {
     supabase.from('job_leads').select('filtered, source, state').eq('user_id', userId),
   ])
 
-  ;[profileResult, searchResult, inboxResult, messagesResult, leadsResult].forEach(({ error }) =>
+  ;[profileResult, inboxResult, messagesResult, leadsResult].forEach(({ error }) =>
     throwIfError(error),
   )
 
@@ -242,19 +211,17 @@ export async function fetchJobAgentSummary(userId) {
 
   return {
     alertEnabled: Boolean(inboxResult.data?.enabled),
+    appliedCount: alertLeads.filter((lead) => lead.state === 'applied').length,
     available: true,
-    enabled: Boolean(
-      profileResult.data?.enabled &&
-      searchResult.data?.enabled &&
-      inboxResult.data?.enabled,
-    ),
+    enabled: Boolean(inboxResult.data?.enabled),
     failedAlertCount: messages.filter((message) => message.status === 'failed').length,
     indeedConnected: messages.some((message) => message.provider === 'indeed'),
     lastAlertAt: inboxResult.data?.last_received_at || null,
     linkedInConnected: messages.some((message) => message.provider === 'linkedin'),
-    newCount: alertLeads.filter((lead) => lead.state === 'new' && !lead.filtered).length,
+    pendingCount: alertLeads.filter(
+      (lead) => lead.state !== 'applied' && lead.state !== 'expired',
+    ).length,
     ready: Boolean(profileResult.data?.approved_at),
-    savedCount: alertLeads.filter((lead) => lead.state === 'shortlisted').length,
   }
 }
 
@@ -312,37 +279,6 @@ export async function saveJobAgentProfile(profile, userId) {
 
   throwIfError(error)
   return mapProfile(data)
-}
-
-export async function saveJobSearch(search, userId) {
-  const payload = {
-    country_code: search.countryCode,
-    employment_types: search.employmentTypes,
-    enabled: Boolean(search.enabled),
-    excluded_companies: search.excludedCompanies,
-    excluded_keywords: search.excludedKeywords,
-    keywords: search.keywords,
-    locations: search.locations,
-    remote_preference:
-      search.workArrangements.length === 1
-        ? search.workArrangements[0]
-        : 'any',
-    salary_currency: search.salaryCurrency,
-    salary_max: search.salaryMax === '' ? null : Number(search.salaryMax),
-    salary_min: search.salaryMin === '' ? null : Number(search.salaryMin),
-    seniority_levels: search.seniorityLevels,
-    titles: search.titles,
-    user_id: userId,
-    work_arrangements: search.workArrangements,
-  }
-  const { data, error } = await supabase
-    .from('job_searches')
-    .upsert(payload, { onConflict: 'user_id' })
-    .select('*')
-    .single()
-
-  throwIfError(error)
-  return mapSearch(data)
 }
 
 export async function createJobAlertInbox(userId) {
@@ -466,13 +402,27 @@ export async function deleteResume(resume) {
   throwIfError(error)
 }
 
-export async function updateJobLeadStates(leadIds, state) {
+export async function completeJobLeadApplication(leadId, appliedDate) {
   const { data, error } = await supabase
-    .from('job_leads')
-    .update({ state })
-    .in('id', leadIds)
-    .select('*')
+    .rpc('complete_job_lead_application', {
+      p_applied_date: appliedDate,
+      p_job_lead_id: leadId,
+    })
+    .single()
 
   throwIfError(error)
-  return (data || []).map(mapLead)
+  return fromApplicationRow(data)
+}
+
+export async function removeJobLead(leadId, userId) {
+  const { data, error } = await supabase
+    .from('job_leads')
+    .delete()
+    .eq('id', leadId)
+    .eq('user_id', userId)
+    .select('id')
+    .single()
+
+  throwIfError(error)
+  return data.id
 }

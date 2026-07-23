@@ -296,17 +296,17 @@ function DashboardPage({
               <p className="eyebrow">Job Agent</p>
               <h2>
                 {jobAgentSummary.enabled
-                  ? `${jobAgentSummary.newCount} new matches to review`
+                  ? `${jobAgentSummary.pendingCount} jobs waiting to be applied`
                   : 'Connect your LinkedIn and Indeed alerts'}
               </h2>
               <p>
                 {jobAgentSummary.enabled
-                  ? `Last alert ${formatJobAgentDate(jobAgentSummary.lastAlertAt)}. ${jobAgentSummary.savedCount} saved.`
-                  : 'Create a private forwarding address, then review every imported match before applying.'}
+                  ? `Last alert ${formatJobAgentDate(jobAgentSummary.lastAlertAt)}. ${jobAgentSummary.appliedCount} moved to your pipeline.`
+                  : 'Create a private forwarding address, then work through every imported job in one queue.'}
               </p>
             </div>
             <button className="secondary-action" type="button" onClick={onJobAgent}>
-              {jobAgentSummary.enabled ? 'Review matches' : 'Set up Job Agent'}
+              {jobAgentSummary.enabled ? 'View application queue' : 'Set up Job Agent'}
               <ArrowRight aria-hidden="true" size={17} />
             </button>
           </section>

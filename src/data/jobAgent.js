@@ -153,7 +153,7 @@ export function formatSalary(minimum, maximum, currency = 'CAD') {
   })
 
   if (minimum && maximum) {
-    return `${formatter.format(minimum)}-${formatter.format(maximum)}`
+    return `${formatter.format(minimum)} - ${formatter.format(maximum)}`
   }
 
   if (minimum || maximum) {
@@ -161,4 +161,99 @@ export function formatSalary(minimum, maximum, currency = 'CAD') {
   }
 
   return 'Salary not listed'
+}
+
+function cleanLeadText(value) {
+  return String(value || '')
+    .replace(/Â·|â€¢/g, '·')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function parseSalaryFromText(value) {
+  const match = cleanLeadText(value).match(
+    /\$\s*([\d,.]+)(?:\s*(?:-|–|—|to)\s*\$?\s*([\d,.]+))?\s*(?:(?:a|per)\s*)?(year|yr|hour|hr|week|month)?/i,
+  )
+
+  if (!match) {
+    return null
+  }
+
+  const minimum = Number(match[1].replace(/,/g, ''))
+  const maximum = match[2] ? Number(match[2].replace(/,/g, '')) : null
+  const period = String(match[3] || '').toLowerCase()
+  const isAnnual = !period || period === 'year' || period === 'yr'
+
+  if (!Number.isFinite(minimum) || (maximum !== null && !Number.isFinite(maximum))) {
+    return null
+  }
+
+  return {
+    annualMaximum: isAnnual ? maximum : null,
+    annualMinimum: isAnnual ? minimum : null,
+    label: cleanLeadText(match[0]),
+    matchedText: match[0],
+  }
+}
+
+export function getJobLeadPresentation(lead) {
+  const text = cleanLeadText(lead?.description)
+  const salary = parseSalaryFromText(text)
+  const highlights = []
+
+  function addHighlight(value) {
+    if (value && !highlights.some((item) => item.toLowerCase() === value.toLowerCase())) {
+      highlights.push(value)
+    }
+  }
+
+  for (const match of text.matchAll(/\b(\d+)\s+company\s+(?:alum|alumni)\b/gi)) {
+    const count = Number(match[1])
+    addHighlight(`${count} company ${count === 1 ? 'alum' : 'alumni'}`)
+  }
+
+  if (/\b(?:easy|easily) apply\b/i.test(text)) {
+    addHighlight('Easy Apply')
+  }
+
+  if (/\bactively recruiting\b/i.test(text)) {
+    addHighlight('Actively recruiting')
+  }
+
+  const summaryParts = text
+    .split(/\s*(?:·|\|)\s*/)
+    .map((part) => {
+      let cleaned = cleanLeadText(part)
+        .replace(/\b\d+\s+company\s+(?:alum|alumni)\b/gi, '')
+        .replace(/\b(?:easy|easily) apply\b/gi, '')
+        .replace(/\bactively recruiting\b/gi, '')
+
+      if (salary?.matchedText) {
+        cleaned = cleaned.replace(salary.matchedText, '')
+      }
+
+      cleaned = cleanLeadText(cleaned).replace(/^[-–—:;,.\s]+|[-–—:;,.\s]+$/g, '')
+
+      if (/^remote$/i.test(cleaned)) {
+        addHighlight('Remote')
+        return ''
+      }
+
+      return cleaned
+    })
+    .filter((part, index, parts) =>
+      part &&
+      parts.findIndex((candidate) => candidate.toLowerCase() === part.toLowerCase()) === index
+    )
+
+  return {
+    highlights,
+    salaryLabel:
+      lead?.salaryMin || lead?.salaryMax
+        ? formatSalary(lead.salaryMin, lead.salaryMax)
+        : salary?.annualMinimum
+          ? formatSalary(salary.annualMinimum, salary.annualMaximum)
+          : salary?.label || null,
+    summary: summaryParts.join(' · '),
+  }
 }

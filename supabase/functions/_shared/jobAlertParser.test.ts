@@ -64,6 +64,24 @@ test('parses Indeed tracking links and ignores unrelated links', () => {
   assert.equal(result.jobs[0].contractType, 'contract')
 })
 
+test('extracts annual salary from an Indeed preview', () => {
+  const anchors = anchorsFromHtml(`
+    <section>
+      <a href="https://ca.indeed.com/rc/clk?jk=salary123&amp;from=jobalert">
+        Power Platform Solutions Consultant
+      </a>
+      <p>Osserva</p>
+      <p>Remote</p>
+      <p>$90,000 - $120,000 a year · Easily apply · Build business applications.</p>
+    </section>
+  `)
+  const result = parseJobAlert({ anchors, subject: 'Indeed Job Alert' })
+
+  assert.equal(result.jobs.length, 1)
+  assert.equal(result.jobs[0].salaryMin, 90000)
+  assert.equal(result.jobs[0].salaryMax, 120000)
+})
+
 test('rejects Indeed footer links even when nearby text resembles job metadata', () => {
   const anchors = anchorsFromHtml(`
     <footer>

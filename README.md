@@ -15,7 +15,7 @@ ApplyTrack is a job application tracker built with React, Vite, and Supabase. It
 - Opt-in Job Agent setup with private resume storage and reusable answers
 - LinkedIn and Indeed job-alert ingestion through a private forwarding address
 - Signed Resend inbound webhooks with message and job deduplication
-- Transparent job matching with filters, scores, reasons, and bulk review actions
+- Single application queue with source links, one-click pipeline recording, and removal of unsuitable jobs
 - Password recovery through a Supabase Edge Function and Resend
 
 ## Tech Stack
@@ -90,9 +90,9 @@ http://127.0.0.1:5173/#/demo
 
 ## Job Agent Setup
 
-Phases 1-4 provide profile and resume setup, LinkedIn and Indeed alert ingestion, transparent matching, and a review queue. They do not scrape job sites, store job-site credentials, or submit applications. Resume text is extracted in the browser before the file and approved text are stored in the user's private Supabase records.
+The current Job Agent provides profile and resume setup, LinkedIn and Indeed alert ingestion, and one queue of jobs waiting to be applied to. ApplyTrack does not scrape job sites, store job-site credentials, or submit applications. After applying on LinkedIn or Indeed, use **Finished applying** to create a populated pipeline record. Use **Remove** to permanently delete an unsuitable job from the user's queue. Resume text is extracted in the browser before the file and approved text are stored in the user's private Supabase records.
 
-The Job Agent profile stores separate legal and preferred names, a structured mailing address, work authorization, sponsorship needs, notice period in days, and professional links. Targeting preferences support multiple roles and locations, remote/hybrid/on-site work arrangements, seniority levels, employment types, and a salary range.
+The Job Agent profile stores separate legal and preferred names, a structured mailing address, work authorization, sponsorship needs, notice period in days, and professional links. Role, location, work-arrangement, and compensation filtering is configured in LinkedIn and Indeed when the user creates each job alert.
 
 ### Optional Address Suggestions
 
@@ -134,7 +134,7 @@ npx supabase functions deploy ingest-job-alert --no-verify-jwt
 
 The endpoint is public so Resend can call it, but it verifies every Resend signature before processing. It stores ingestion metadata only, not raw email bodies or attachments. Replayed webhook events and repeated jobs are deduplicated.
 
-After deployment, open Job Agent > Setup, create the private forwarding address, and forward LinkedIn and Indeed job-alert emails to it. The Matches page shows source-specific status and imported jobs. Delivery timing is controlled by LinkedIn and Indeed; ApplyTrack processes alerts when they arrive.
+After deployment, open Job Agent > Setup, create the private forwarding address, and forward LinkedIn and Indeed job-alert emails to it. The Matches page shows every imported job that has not yet been marked as applied. Delivery timing is controlled by LinkedIn and Indeed; ApplyTrack processes alerts when they arrive.
 
 ## Password Recovery Setup
 
@@ -203,7 +203,7 @@ Runs ESLint.
 npm test
 ```
 
-Runs the Job Agent parsing and matching utility tests.
+Runs the Job Agent alert-parser, profile-data, and resume-parser tests.
 
 ```powershell
 npm run preview

@@ -7,9 +7,9 @@ Last updated: 2026-07-22
 
 Use user-authorized ingestion of LinkedIn and Indeed job-alert emails as the Job Agent discovery source.
 
-ApplyTrack will not scrape LinkedIn or Indeed, automate their websites, store their login credentials, or claim to search either platform directly. Users will create alerts on those platforms and forward the resulting emails to a private ApplyTrack inbox. ApplyTrack will extract the job cards and links from those emails, deduplicate them, score them with the existing profile and resume, and place them in the existing Matches workflow.
+ApplyTrack will not scrape LinkedIn or Indeed, automate their websites, store their login credentials, or claim to search either platform directly. Users create alerts on those platforms and forward the resulting emails to a private ApplyTrack inbox. ApplyTrack extracts the job cards and links, deduplicates them, and places them in one queue of jobs waiting to be applied to.
 
-The resume, profile, targeting preferences, deterministic matching, filters, review states, and private Supabase storage already implemented remain useful and should be preserved.
+The resume, application profile, and private Supabase storage remain useful for pipeline recording and future browser-assisted applications. Job targeting stays in LinkedIn and Indeed alert settings.
 
 ## Product Truths
 
@@ -22,14 +22,14 @@ The resume, profile, targeting preferences, deterministic matching, filters, rev
 
 ## Target Experience
 
-1. The user completes the existing Job Agent profile, resume, and targeting preferences.
+1. The user configures focused job alerts in LinkedIn and Indeed.
 2. ApplyTrack generates a private forwarding address for that user.
 3. The user creates LinkedIn and Indeed alerts and enables email delivery.
 4. The user creates an email forwarding rule for those alert emails.
 5. A Resend inbound webhook notifies a Supabase Edge Function when an alert arrives.
 6. The function verifies the webhook, retrieves the email, identifies its platform, and parses its job cards.
-7. Jobs are normalized, deduplicated, scored, and added to Matches.
-8. The user saves, dismisses, or opens the listing on its source platform.
+7. Jobs are normalized, deduplicated, and added to Matches.
+8. The user opens the listing, applies manually, and confirms completion in ApplyTrack.
 
 ```mermaid
 flowchart LR
@@ -39,8 +39,10 @@ flowchart LR
   Resend -->|"Signed email.received webhook"| Function["Supabase ingest-job-alert function"]
   Function --> Parse["Provider-specific parser"]
   Parse --> Normalize["Normalize and deduplicate"]
-  Normalize --> Match["Existing filters and scoring"]
-  Match --> Review["ApplyTrack Matches"]
+  Normalize --> Review["Waiting to apply"]
+  Review --> Source["LinkedIn or Indeed"]
+  Source --> Confirm["Finished applying"]
+  Confirm --> Pipeline["Application pipeline"]
 ```
 
 ## Accounts And Services
@@ -79,7 +81,7 @@ flowchart LR
 - Supabase SQL Editor for production migration review and verification.
 - Resend dashboard and SDK/API for Inbound configuration and email retrieval.
 - A DOM-based HTML parser compatible with the Supabase Deno runtime. Do not parse alert HTML with broad regular expressions.
-- Existing Node test runner for parser, normalization, deduplication, and matching tests.
+- Existing Node test runner for parser, normalization, and deduplication tests.
 - Sanitized LinkedIn and Indeed alert-email fixtures supplied by the developer's own accounts.
 
 ## Required Secrets And Configuration
@@ -128,19 +130,20 @@ The browser may read only its owner's safe status rows. Insert and processing up
 
 ### `job_leads`
 
-Keep the existing table and matching fields. Adapt it as follows:
+Keep the existing table for normalized alert jobs. Adapt it as follows:
 
 - `source` becomes `linkedin` or `indeed` for new alert-derived records.
 - `external_id` uses the platform job ID where available; otherwise use a deterministic URL fingerprint.
 - `canonical_url` stores a normalized LinkedIn or Indeed listing URL.
 - `apply_url` stores the best link present in the alert.
 - Add `source_message_id` as a nullable foreign key for traceability.
-- Preserve `match_score`, reasons, filter state, review state, and user ownership.
+- Keep legacy match columns at neutral values for migration compatibility.
+- Add a nullable `application_id` link and use states `new`, `applied`, or `expired`.
 - Keep the unique `(user_id, source, external_id)` constraint.
 
 ### `job_searches`
 
-Keep targeting preferences because they drive scoring and filtering. Alert-source connection status replaces provider scheduling fields in the UI.
+Retain the legacy table for migration compatibility, but do not require it during ingestion. LinkedIn and Indeed alert settings own targeting and filtering.
 
 ### Ingestion history
 
@@ -188,20 +191,14 @@ Each parser should:
 
 Do not follow links to crawl LinkedIn or Indeed. The email itself is the complete ingestion boundary.
 
-## Deduplication And Matching
+## Deduplication And Queueing
 
 Use two deduplication layers:
 
 1. Exact platform identity: `(user_id, source, external_id)`.
 2. Cross-alert fallback: normalized source URL fingerprint when the platform ID is unavailable.
 
-After deduplication, reuse the existing deterministic matcher:
-
-- hard filters for exclusions, location, arrangement, seniority, employment type, and salary when available
-- relevance scoring using titles, keywords, skills, and resume/profile data
-- visible match and filter reasons
-
-Email alerts often omit salary, full descriptions, and employment type. Missing values must remain unknown rather than being inferred as facts.
+After deduplication, add every supported job to the waiting queue. Email alerts often omit salary, full descriptions, and employment type; missing values remain unknown rather than being inferred as facts.
 
 ## Product Changes
 
@@ -225,13 +222,15 @@ Use a **Connect job alerts** section:
 - Add source filters for LinkedIn and Indeed.
 - Label actions **View on LinkedIn** and **View on Indeed**.
 - Show an ingestion warning when a parser partially fails.
-- Keep search, pagination, save, dismiss, restore, and match explanations.
+- Keep search, source filtering, and pagination.
+- Add **Finished applying** to create a linked pipeline record after user confirmation.
 
 ### Dashboard
 
 Show a compact status:
 
-- New matches
+- Waiting to be applied
+- Added to pipeline
 - LinkedIn alerts connected/not connected
 - Indeed alerts connected/not connected
 - Last alert received
@@ -275,7 +274,7 @@ Exit criteria: valid test webhooks are accepted once; invalid, replayed, or unkn
 - Implement provider detection and versioned parsers.
 - Canonicalize links and extract job IDs.
 - Normalize and deduplicate parsed jobs.
-- Reuse the current matcher.
+- Add every supported parsed job to the waiting queue.
 
 Exit criteria: repeated delivery of the same email or job creates no duplicate lead, and parser failures are visible without losing other valid jobs in the message.
 
@@ -309,7 +308,7 @@ Exit criteria: all new leads originate from LinkedIn or Indeed alert emails and 
 - Platform job ID extraction.
 - Partial-card handling.
 - Duplicate email and duplicate job handling.
-- Existing matching behavior with sparse email fields.
+- Queue behavior with sparse email fields.
 
 ### Security Tests
 
@@ -337,7 +336,7 @@ Track:
 - messages received, completed, partial, ignored, and failed
 - jobs parsed, created, updated, and deduplicated by source
 - parser version and failure rate
-- time from email receipt to visible match
+- time from email receipt to visible queue item
 - last successful alert per user and provider
 - webhook signature and replay failures without storing message content
 

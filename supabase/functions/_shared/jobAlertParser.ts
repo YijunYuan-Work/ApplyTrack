@@ -1,5 +1,3 @@
-import type { NormalizedJob } from './jobMatching.ts'
-
 export type AlertProvider = 'linkedin' | 'indeed' | 'unknown'
 
 export type EmailAnchor = {
@@ -8,8 +6,19 @@ export type EmailAnchor = {
   text: string
 }
 
-export type ParsedAlertJob = NormalizedJob & {
+export type ParsedAlertJob = {
+  category: string
+  company: string
+  contractType: string
+  description: string
+  externalId: string
+  location: string
+  postedAt: string | null
+  salaryMax: number | null
+  salaryMin: number | null
   source: Exclude<AlertProvider, 'unknown'>
+  title: string
+  url: string
 }
 
 const genericLinkText = /^(apply|apply now|details|learn more|see job|see jobs|view|view job|view jobs|view posting)$/i
@@ -154,6 +163,31 @@ function inferContractType(content: string) {
   return ''
 }
 
+function inferAnnualSalary(content: string) {
+  const match = cleanText(content).match(
+    /\$\s*([\d,.]+)(?:\s*(?:-|–|—|to)\s*\$?\s*([\d,.]+))?\s*(?:(?:a|per)\s*)?(year|yr|hour|hr|week|month)?/i,
+  )
+
+  if (!match) {
+    return { salaryMax: null, salaryMin: null }
+  }
+
+  const salaryMin = Number(match[1].replace(/,/g, ''))
+  const salaryMax = match[2] ? Number(match[2].replace(/,/g, '')) : null
+  const period = String(match[3] || '').toLowerCase()
+  const isAnnual = !period || period === 'year' || period === 'yr'
+
+  if (
+    !isAnnual ||
+    !Number.isFinite(salaryMin) ||
+    (salaryMax !== null && !Number.isFinite(salaryMax))
+  ) {
+    return { salaryMax: null, salaryMin: null }
+  }
+
+  return { salaryMax, salaryMin }
+}
+
 function jobFromAnchor(anchor: EmailAnchor, expectedSource: AlertProvider) {
   const url = unwrapUrl(anchor.href)
 
@@ -187,6 +221,7 @@ function jobFromAnchor(anchor: EmailAnchor, expectedSource: AlertProvider) {
   }
 
   const canonicalUrl = url.href
+  const salary = inferAnnualSalary(details.slice(2).join(' '))
   const description = unique(details.slice(2)).join(' · ')
 
   return {
@@ -197,8 +232,8 @@ function jobFromAnchor(anchor: EmailAnchor, expectedSource: AlertProvider) {
     externalId: externalIdFor(source, url),
     location,
     postedAt: null,
-    salaryMax: null,
-    salaryMin: null,
+    salaryMax: salary.salaryMax,
+    salaryMin: salary.salaryMin,
     source,
     title,
     url: canonicalUrl,

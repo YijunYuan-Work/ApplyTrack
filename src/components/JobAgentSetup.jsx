@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
 import {
-  Check,
   CheckCircle2,
   Download,
   FileText,
@@ -11,69 +10,17 @@ import {
 } from 'lucide-react'
 import {
   countryOptions,
-  employmentTypeOptions,
   emptyJobAgentProfile,
-  emptyJobSearch,
   formatList,
   parseList,
-  seniorityOptions,
-  workArrangementOptions,
   workAuthorizationOptions,
 } from '../data/jobAgent'
-import {
-  AddressSearchInput,
-  PreferredLocationInput,
-} from './LocationInputs'
+import { AddressSearchInput } from './LocationInputs'
 import JobAlertConnection from './JobAlertConnection'
-import TagInput from './TagInput'
-
-function ToggleGroup({ ariaLabel, onChange, options, values }) {
-  function toggle(value) {
-    onChange(
-      values.includes(value)
-        ? values.filter((item) => item !== value)
-        : [...values, value],
-    )
-  }
-
-  return (
-    <div className="agent-toggle-group" aria-label={ariaLabel} role="group">
-      {options.map((option) => {
-        const selected = values.includes(option.value)
-
-        return (
-          <button
-            aria-pressed={selected}
-            className={selected ? 'selected' : ''}
-            key={option.value}
-            type="button"
-            onClick={() => toggle(option.value)}
-          >
-            {selected && <Check aria-hidden="true" size={16} />}
-            {option.label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function PreferenceRow({ children, description, title }) {
-  return (
-    <div className="agent-preference-row">
-      <div className="agent-preference-copy">
-        <strong>{title}</strong>
-        {description && <span>{description}</span>}
-      </div>
-      <div className="agent-preference-control">{children}</div>
-    </div>
-  )
-}
 
 function JobAgentSetup({
   inbox,
   initialProfile,
-  initialSearch,
   isManagingAlerts,
   isSaving,
   messages = [],
@@ -93,25 +40,10 @@ function JobAgentSetup({
     displayName: user.name || '',
     preferredName: user.name || '',
   }
-  const search = initialSearch || emptyJobSearch
   const [profileFields, setProfileFields] = useState({
     ...profile,
     reusableAnswers: { ...(profile.reusableAnswers || {}) },
     skills: formatList(profile.skills),
-  })
-  const [searchFields, setSearchFields] = useState({
-    ...search,
-    employmentTypes: [...(search.employmentTypes || [])],
-    excludedCompanies: [...(search.excludedCompanies || [])],
-    excludedKeywords: [...(search.excludedKeywords || [])],
-    keywords: [...(search.keywords || [])],
-    locations: [...(search.locations || [])],
-    seniorityLevels: [...(search.seniorityLevels || [])],
-    titles: [...(search.titles || [])],
-    workArrangements:
-      search.workArrangements?.length > 0
-        ? [...search.workArrangements]
-        : [...emptyJobSearch.workArrangements],
   })
   const primaryResume = resumes.find((resume) => resume.isPrimary) || resumes[0] || null
   const [resumeDraft, setResumeDraft] = useState(() => ({
@@ -131,10 +63,6 @@ function JobAgentSetup({
   const readiness = useMemo(
     () => [
       { complete: Boolean(primaryResume), label: 'Primary resume uploaded' },
-      {
-        complete: searchFields.titles.length > 0,
-        label: 'At least one target title',
-      },
       { complete: Boolean(profileFields.approved), label: 'Profile reviewed and approved' },
       {
         complete: Boolean(inbox?.enabled),
@@ -145,7 +73,7 @@ function JobAgentSetup({
         label: 'First LinkedIn or Indeed alert received',
       },
     ],
-    [inbox?.enabled, messages.length, primaryResume, profileFields.approved, searchFields.titles.length],
+    [inbox?.enabled, messages.length, primaryResume, profileFields.approved],
   )
 
   function clearMessages() {
@@ -155,11 +83,6 @@ function JobAgentSetup({
 
   function updateProfile(field, value) {
     setProfileFields((current) => ({ ...current, [field]: value }))
-    clearMessages()
-  }
-
-  function updateSearch(field, value) {
-    setSearchFields((current) => ({ ...current, [field]: value }))
     clearMessages()
   }
 
@@ -189,69 +112,27 @@ function JobAgentSetup({
     clearMessages()
   }
 
-  function handleSearchCountryChange(countryCode) {
-    const country = countryOptions.find((item) => item.code === countryCode)
-    setSearchFields((current) => ({
-      ...current,
-      countryCode,
-      salaryCurrency: country?.currency || current.salaryCurrency,
-    }))
-    clearMessages()
-  }
-
   async function handleSubmit(event) {
     event.preventDefault()
     clearMessages()
-    const enablingDiscovery = profileFields.enabled || searchFields.enabled
-    const salaryMin = searchFields.salaryMin === '' ? null : Number(searchFields.salaryMin)
-    const salaryMax = searchFields.salaryMax === '' ? null : Number(searchFields.salaryMax)
 
     if (!profileFields.firstName.trim() || !profileFields.lastName.trim()) {
       setError('Add your first and last name before saving.')
       return
     }
 
-    if (searchFields.titles.length === 0) {
-      setError('Add at least one target job title.')
-      return
-    }
-
-    if (searchFields.workArrangements.length === 0) {
-      setError('Choose at least one work arrangement.')
-      return
-    }
-
-    if (salaryMin !== null && salaryMax !== null && salaryMax < salaryMin) {
-      setError('Maximum salary must be greater than or equal to minimum salary.')
-      return
-    }
-
-    if (enablingDiscovery && !primaryResume) {
-      setError('Upload a resume before enabling alert matching.')
-      return
-    }
-
-    if (enablingDiscovery && !profileFields.approved) {
-      setError('Review and approve your profile before enabling alert matching.')
-      return
-    }
-
     try {
-      await onSave(
-        {
-          ...profileFields,
-          enabled: enablingDiscovery,
-          reusableAnswers: profileFields.reusableAnswers || {},
-          skills: parseList(profileFields.skills),
-        },
-        {
-          ...searchFields,
-          enabled: enablingDiscovery,
-        },
-      )
-      setProfileFields((current) => ({ ...current, enabled: enablingDiscovery }))
-      setSearchFields((current) => ({ ...current, enabled: enablingDiscovery }))
-      setSuccess('Job Agent settings saved.')
+      await onSave({
+        ...profileFields,
+        enabled: profileFields.approved,
+        reusableAnswers: profileFields.reusableAnswers || {},
+        skills: parseList(profileFields.skills),
+      })
+      setProfileFields((current) => ({
+        ...current,
+        enabled: current.approved,
+      }))
+      setSuccess('Application profile saved.')
     } catch (saveError) {
       setError(saveError.message)
     }
@@ -281,7 +162,7 @@ function JobAgentSetup({
           [...new Set([...parseList(current.skills), ...resume.skills])],
         ),
       }))
-      setSuccess('Resume uploaded and ready for matching.')
+      setSuccess('Resume uploaded and ready for future application assistance.')
     } catch (uploadError) {
       setError(uploadError.message)
     } finally {
@@ -324,9 +205,7 @@ function JobAgentSetup({
       }
 
       setResumeDraft({ id: null, skills: '', text: '' })
-      setProfileFields((current) => ({ ...current, enabled: false }))
-      setSearchFields((current) => ({ ...current, enabled: false }))
-      setSuccess('Resume removed. Discovery has been paused.')
+      setSuccess('Resume removed.')
     } catch (deleteError) {
       setError(deleteError.message)
     }
@@ -355,7 +234,7 @@ function JobAgentSetup({
       <aside className="agent-readiness" aria-label="Job Agent readiness">
         <div>
           <p className="eyebrow">Readiness</p>
-          <h2>Before the first alert</h2>
+          <h2>Application readiness</h2>
         </div>
         <ul>
           {readiness.map((item) => (
@@ -460,7 +339,7 @@ function JobAgentSetup({
           ) : (
             <div className="agent-empty-inline">
               <FileText aria-hidden="true" size={24} />
-              <span>Upload your resume to improve job match scores.</span>
+              <span>Upload your resume so it is ready for future assisted applications.</span>
             </div>
           )}
         </section>
@@ -686,119 +565,7 @@ function JobAgentSetup({
                   onChange={(event) => updateProfile('skills', event.target.value)}
                   placeholder="React, JavaScript, SQL"
                 />
-                <small>These skills contribute to job-match scores.</small>
-              </label>
-            </div>
-          </section>
-
-          <section className="agent-panel">
-            <div className="agent-panel-heading">
-              <div>
-                <p className="eyebrow">Search goals</p>
-                <h2>Targeting preferences</h2>
-                <p>Choose the roles and working conditions that fit your search.</p>
-              </div>
-            </div>
-            <div className="agent-preference-list">
-              <PreferenceRow
-                description="Add every title you want included in matching."
-                title="Target roles"
-              >
-                <TagInput
-                  ariaLabel="Target roles"
-                  placeholder="Add another role"
-                  values={searchFields.titles}
-                  onChange={(values) => updateSearch('titles', values)}
-                />
-              </PreferenceRow>
-              <PreferenceRow
-                description="Select locations and acceptable work arrangements."
-                title="Preferred locations"
-              >
-                <PreferredLocationInput
-                  countryCode={searchFields.countryCode}
-                  values={searchFields.locations}
-                  onChange={(values) => updateSearch('locations', values)}
-                />
-                <ToggleGroup
-                  ariaLabel="Work arrangements"
-                  options={workArrangementOptions}
-                  values={searchFields.workArrangements}
-                  onChange={(values) => updateSearch('workArrangements', values)}
-                />
-              </PreferenceRow>
-              <PreferenceRow title="Seniority level">
-                <ToggleGroup
-                  ariaLabel="Seniority levels"
-                  options={seniorityOptions}
-                  values={searchFields.seniorityLevels}
-                  onChange={(values) => updateSearch('seniorityLevels', values)}
-                />
-              </PreferenceRow>
-              <PreferenceRow title="Employment type">
-                <ToggleGroup
-                  ariaLabel="Employment types"
-                  options={employmentTypeOptions}
-                  values={searchFields.employmentTypes}
-                  onChange={(values) => updateSearch('employmentTypes', values)}
-                />
-              </PreferenceRow>
-            </div>
-          </section>
-
-          <section className="agent-panel">
-            <div className="agent-panel-heading">
-              <div>
-                <p className="eyebrow">Compensation</p>
-                <h2>Expected salary range</h2>
-                <p>The minimum can filter low-paying roles. The maximum is treated as a preference.</p>
-              </div>
-            </div>
-            <div className="agent-compensation-grid">
-              <label>
-                Minimum annual salary
-                <input
-                  min="0"
-                  step="1000"
-                  type="number"
-                  value={searchFields.salaryMin}
-                  onChange={(event) => updateSearch('salaryMin', event.target.value)}
-                  placeholder="60000"
-                />
-              </label>
-              <label>
-                Desired maximum
-                <input
-                  min="0"
-                  step="1000"
-                  type="number"
-                  value={searchFields.salaryMax}
-                  onChange={(event) => updateSearch('salaryMax', event.target.value)}
-                  placeholder="100000"
-                />
-              </label>
-              <label>
-                Currency
-                <select
-                  value={searchFields.salaryCurrency}
-                  onChange={(event) => updateSearch('salaryCurrency', event.target.value)}
-                >
-                  <option value="CAD">CAD</option>
-                  <option value="USD">USD</option>
-                  <option value="GBP">GBP</option>
-                  <option value="AUD">AUD</option>
-                </select>
-              </label>
-              <label>
-                Job market
-                <select
-                  value={searchFields.countryCode}
-                  onChange={(event) => handleSearchCountryChange(event.target.value)}
-                >
-                  {countryOptions.map((country) => (
-                    <option key={country.code} value={country.code}>{country.label}</option>
-                  ))}
-                </select>
+                <small>These skills will support future application assistance.</small>
               </label>
             </div>
           </section>
@@ -854,48 +621,11 @@ function JobAgentSetup({
             </div>
           </section>
 
-          <details className="agent-panel agent-advanced-panel">
-            <summary>Advanced search preferences</summary>
-            <div className="agent-preference-list">
-              <PreferenceRow title="Priority keywords">
-                <TagInput
-                  ariaLabel="Priority keywords"
-                  placeholder="Add a skill or keyword"
-                  values={searchFields.keywords}
-                  onChange={(values) => updateSearch('keywords', values)}
-                />
-              </PreferenceRow>
-              <PreferenceRow title="Excluded companies">
-                <TagInput
-                  ariaLabel="Excluded companies"
-                  placeholder="Add a company to skip"
-                  values={searchFields.excludedCompanies}
-                  onChange={(values) => updateSearch('excludedCompanies', values)}
-                />
-              </PreferenceRow>
-              <PreferenceRow title="Excluded keywords">
-                <TagInput
-                  ariaLabel="Excluded keywords"
-                  placeholder="Add a keyword to exclude"
-                  values={searchFields.excludedKeywords}
-                  onChange={(values) => updateSearch('excludedKeywords', values)}
-                />
-              </PreferenceRow>
-              <PreferenceRow title="Additional approved context">
-                <textarea
-                  value={profileFields.reusableAnswers.additionalContext || ''}
-                  onChange={(event) => updateReusableAnswer('additionalContext', event.target.value)}
-                  placeholder="Optional facts for future application review"
-                />
-              </PreferenceRow>
-            </div>
-          </details>
-
           <section className="agent-panel agent-control-panel">
             <div>
               <p className="eyebrow">Control</p>
-              <h2>Review before apply</h2>
-              <p>ApplyTrack imports and ranks alert jobs. It does not submit applications.</p>
+              <h2>Application profile</h2>
+              <p>ApplyTrack imports your alerts and keeps this information ready for future assisted applications.</p>
             </div>
             <label className="agent-check-row">
               <input
@@ -904,17 +634,6 @@ function JobAgentSetup({
                 onChange={(event) => updateProfile('approved', event.target.checked)}
               />
               <span>I reviewed this profile and confirm the information is accurate.</span>
-            </label>
-            <label className="agent-check-row">
-              <input
-                checked={profileFields.enabled || searchFields.enabled}
-                type="checkbox"
-                onChange={(event) => {
-                  updateProfile('enabled', event.target.checked)
-                  updateSearch('enabled', event.target.checked)
-                }}
-              />
-              <span>Enable matching for incoming job alerts.</span>
             </label>
           </section>
 
@@ -925,7 +644,7 @@ function JobAgentSetup({
             </div>
             <button className="primary-action" disabled={isSaving} type="submit">
               <Save aria-hidden="true" size={18} />
-              {isSaving ? 'Saving settings...' : 'Save Job Agent'}
+              {isSaving ? 'Saving profile...' : 'Save profile'}
             </button>
           </div>
         </form>

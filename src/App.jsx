@@ -39,14 +39,14 @@ const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const JobAgentPage = lazy(() => import('./pages/JobAgentPage'))
 const demoJobAgentSummary = {
   alertEnabled: true,
+  appliedCount: 4,
   available: true,
   enabled: true,
   indeedConnected: true,
   lastAlertAt: '2026-07-22T12:00:00.000Z',
   linkedInConnected: true,
-  newCount: 8,
+  pendingCount: 8,
   ready: true,
-  savedCount: 3,
 }
 
 function getUserName(user) {
@@ -564,6 +564,34 @@ function App() {
     )
   }
 
+  function handleJobLeadApplicationCreated(application) {
+    setApplications((currentApplications) =>
+      currentApplications.some((item) => item.id === application.id)
+        ? currentApplications
+        : [application, ...currentApplications],
+    )
+    setJobAgentSummary((current) =>
+      current
+        ? {
+            ...current,
+            appliedCount: (current.appliedCount || 0) + 1,
+            pendingCount: Math.max(0, (current.pendingCount || 0) - 1),
+          }
+        : current,
+    )
+  }
+
+  function handleJobLeadRemoved() {
+    setJobAgentSummary((current) =>
+      current
+        ? {
+            ...current,
+            pendingCount: Math.max(0, (current.pendingCount || 0) - 1),
+          }
+        : current,
+    )
+  }
+
   if (route === '/job-agent' || route === '/job-agent/matches') {
     return (
       <Suspense
@@ -578,6 +606,8 @@ function App() {
       >
         <JobAgentPage
           {...sharedPageProps}
+          onApplicationCreated={handleJobLeadApplicationCreated}
+          onJobLeadRemoved={handleJobLeadRemoved}
           onViewMatches={() => navigate('/job-agent/matches')}
           view={route.endsWith('/matches') ? 'matches' : 'setup'}
         />
@@ -606,6 +636,9 @@ function App() {
       onDeleteApplication={handleDeleteApplication}
       onEditApplication={(applicationId) =>
         navigate(`/applications/${applicationId}/edit`)
+      }
+      onJobAgent={() =>
+        navigate(jobAgentSummary?.enabled ? '/job-agent/matches' : '/job-agent')
       }
       onStatusChange={handleQuickStatusChange}
     />

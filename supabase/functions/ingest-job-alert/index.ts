@@ -5,13 +5,8 @@ import {
   parseJobAlert,
   type EmailAnchor,
 } from '../_shared/jobAlertParser.ts'
-import {
-  evaluateJob,
-  type JobProfile,
-  type JobSearch,
-} from '../_shared/jobMatching.ts'
 
-const parserVersion = 'v1'
+const parserVersion = 'v2'
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -237,20 +232,6 @@ Deno.serve(async (request) => {
       return jsonResponse({ ignored: true, ok: true })
     }
 
-    const [{ data: search, error: searchError }, { data: profile, error: profileError }] =
-      await Promise.all([
-        admin.from('job_searches').select('*').eq('user_id', inbox.user_id).maybeSingle(),
-        admin
-          .from('job_agent_profiles')
-          .select('skills, years_experience')
-          .eq('user_id', inbox.user_id)
-          .maybeSingle(),
-      ])
-
-    if (searchError || profileError || !search || !profile) {
-      throw new Error('Complete the Job Agent profile and search preferences before forwarding alerts.')
-    }
-
     const externalIds = parsed.jobs.map((job) => job.externalId)
     const { data: existing, error: existingError } = externalIds.length
       ? await admin
@@ -268,13 +249,8 @@ Deno.serve(async (request) => {
     const existingById = new Map(
       (existing || []).map((lead) => [`${lead.source}:${lead.external_id}`, lead]),
     )
-    const profileForMatching: JobProfile = {
-      skills: profile.skills || [],
-      years_experience: profile.years_experience,
-    }
     const rows = parsed.jobs.map((job) => {
       const prior = existingById.get(`${job.source}:${job.externalId}`)
-      const evaluation = evaluateJob(job, search as JobSearch, profileForMatching)
 
       return {
         apply_url: job.url,
@@ -285,12 +261,12 @@ Deno.serve(async (request) => {
         description: job.description,
         discovered_at: prior?.discovered_at || new Date().toISOString(),
         external_id: job.externalId,
-        filter_reasons: evaluation.filterReasons,
-        filtered: evaluation.filtered,
-        job_search_id: search.id,
+        filter_reasons: [],
+        filtered: false,
+        job_search_id: null,
         location: job.location,
-        match_reasons: evaluation.matchReasons,
-        match_score: evaluation.score,
+        match_reasons: [],
+        match_score: 0,
         posted_at: job.postedAt,
         salary_max: job.salaryMax,
         salary_min: job.salaryMin,
