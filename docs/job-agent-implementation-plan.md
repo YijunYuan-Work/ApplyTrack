@@ -1,6 +1,8 @@
 # ApplyTrack Job Agent Implementation Plan
 
-Status: Proposed for review  
+> Discovery uses user-authorized LinkedIn and Indeed alert emails. See `docs/linkedin-indeed-alert-ingestion-plan.md` for the active ingestion architecture.
+
+Status: Profile, resume, alert ingestion, matching, and review implemented
 Last updated: 2026-07-22
 
 ## Objective
@@ -8,7 +10,7 @@ Last updated: 2026-07-22
 Add an opt-in job agent that can:
 
 1. Store a user's resume, job preferences, and reusable application answers.
-2. Search supported job sources every three hours.
+2. Ingest jobs from LinkedIn and Indeed alert emails as they arrive.
 3. Normalize, deduplicate, and rank new jobs against the user's goals.
 4. Apply through supported portals when the user has explicitly enabled automation.
 5. Record every discovered job, application attempt, answer, result, and failure in ApplyTrack.
@@ -29,8 +31,9 @@ Any job that needs a new account, CAPTCHA, MFA, assessment, unsupported question
 
 ```mermaid
 flowchart LR
-  Cron["Supabase Cron every 3 hours"] --> Discover["Job discovery function"]
-  Discover --> Sources["Job source adapters"]
+  Alerts["LinkedIn and Indeed alerts"] --> Mailbox["Private forwarding address"]
+  Mailbox --> Ingest["Signed inbound email function"]
+  Ingest --> Sources["Provider-specific parsers"]
   Sources --> Leads["Normalized job leads"]
   Leads --> Match["Rule and relevance scoring"]
   Match --> Queue["Application queue"]
@@ -42,7 +45,7 @@ flowchart LR
   Events --> Tracker["ApplyTrack applications"]
 ```
 
-The React client remains the control surface. Scheduled discovery and browser automation must run server-side so they do not depend on the user's tab being open and do not expose privileged credentials in Vite variables.
+The React client remains the control surface. Inbound email processing and future browser automation run server-side so they do not depend on the user's tab being open and do not expose privileged credentials in Vite variables.
 
 ## Proposed Data Model
 
@@ -74,8 +77,6 @@ Resume files should live in a private Supabase Storage bucket. Generate short-li
 - titles, locations, remote preference
 - salary floor, employment types, keywords
 - excluded companies and keywords
-- source configuration
-- last scan timestamp and next scan timestamp
 - enabled flag
 
 ### `job_leads`
@@ -118,13 +119,13 @@ Events form the audit trail. Do not store passwords, session cookies, resume con
 - Extract text in a server-side function and let the user correct the resulting profile.
 - Require the user to approve the data before it can be used for submissions.
 
-### 2. Job discovery service
+### 2. Job alert ingestion service
 
-- Start with one documented job API or aggregator rather than scraping many sites.
-- Put each source behind a small adapter with a common normalized result shape.
-- Fetch incrementally using source IDs or posted timestamps.
+- Receive user-forwarded LinkedIn and Indeed job-alert emails through Resend Inbound.
+- Put each provider parser behind a common normalized result shape.
+- Process each signed webhook once and retain safe ingestion metadata.
 - Deduplicate before scoring.
-- Record source failures without failing the full scan.
+- Record parser failures without discarding other valid jobs in the same alert.
 
 Potential later adapters can include official employer feeds and ATS job-board APIs such as Greenhouse or Lever where their public endpoints permit it. Provider terms and rate limits must be reviewed before production use.
 
@@ -172,15 +173,15 @@ For account-based portals:
 - Pause for the user when MFA, CAPTCHA, email verification, or changed terms appear.
 - Never attempt to bypass anti-bot controls.
 
-## Scheduling And Deployment
+## Ingestion And Deployment
 
-- Use Supabase Cron to invoke a protected discovery Edge Function every three hours.
-- The function should enqueue work and return quickly rather than perform long browser sessions itself.
+- Use a public Supabase Edge Function that verifies Resend webhook signatures before processing.
+- Process alerts immediately when they arrive rather than polling on a schedule.
 - Run browser automation in a worker environment designed for longer jobs, such as a managed browser service or a dedicated worker.
 - Use signed requests between Supabase and the worker.
 - Keep service-role keys, job-provider keys, automation credentials, and encryption keys server-side only.
 
-Every scheduled run should be safe to retry. Add per-user and global limits so a faulty search cannot create an application flood.
+Every inbound event should be idempotent and safe to retry. Add per-user and global limits so malformed or repeated messages cannot create an application flood.
 
 ## User Experience
 
@@ -197,7 +198,7 @@ The existing dashboard should show a compact agent summary, not a second full jo
 - Awaiting review
 - Submitted automatically
 - Needs input
-- Last scan and next scheduled scan
+- Last alert received and latest import status
 
 ## Safety And Trust Rules
 
@@ -213,6 +214,15 @@ The existing dashboard should show a compact agent summary, not a second full jo
 - Publish a privacy and data-retention explanation before enabling production automation.
 
 ## Implementation Phases
+
+### Current implementation status
+
+- **Phase 1 complete:** user-scoped profile, resume, search, alert-message, and lead tables; private Storage policies; grants hardened after a live advisor audit.
+- **Phase 2 complete:** setup UI, reusable answers, resume upload, local PDF/DOCX/TXT extraction, approval, and readiness checks.
+- **Phase 3 complete:** signed Resend inbound webhook, LinkedIn and Indeed parsers, normalization, deduplication, and ingestion history.
+- **Phase 4 complete:** deterministic hard filters, a 0-100 relevance score, match explanations, filtered reasons, search, tabs, selection, and bulk save/dismiss/restore actions.
+
+Resume extraction runs locally in the browser instead of in an Edge Function. This keeps the raw document processing on the user's device while the original file and user-approved text remain protected by private Storage and RLS.
 
 ### Phase 1: Foundation and schema
 
@@ -231,13 +241,13 @@ Exit criteria: authenticated users can create isolated profiles and searches; cr
 
 Exit criteria: a user can complete and approve a reusable job-agent profile without exposing private files publicly.
 
-### Phase 3: Scheduled discovery
+### Phase 3: Alert ingestion
 
-- Integrate one job source.
-- Add three-hour scheduling, normalization, deduplication, and scan history.
+- Integrate LinkedIn and Indeed email alerts.
+- Add signed webhook processing, normalization, deduplication, and ingestion history.
 - Build the Matches view.
 
-Exit criteria: repeated scans add only genuinely new leads and explain failures clearly.
+Exit criteria: repeated alerts add only genuinely new leads and explain parser failures clearly.
 
 ### Phase 4: Matching and review queue
 
@@ -285,7 +295,7 @@ Exit criteria: each new adapter passes the same fixture, sandbox, idempotency, a
 
 Track:
 
-- scans started, completed, and failed
+- alert imports received, completed, partially processed, and failed
 - jobs fetched, deduplicated, filtered, and matched
 - applications queued, paused, submitted, and failed
 - duplicate-prevention events
@@ -296,7 +306,7 @@ Logs must use IDs and redacted metadata rather than personal answers or resume t
 
 ## Initial Delivery Recommendation
 
-The first useful release should stop at Phase 4: profile, resume, scheduled discovery, transparent matching, and a review queue. This validates job quality before the project takes on the cost and fragility of portal automation.
+The first useful release stops at Phase 4: profile, resume, alert ingestion, transparent matching, and a review queue. This validates job quality before the project takes on the cost and fragility of portal automation.
 
 The first automation milestone should then support one portal in assisted mode. Fully automatic submissions should be enabled only after that adapter proves reliable and the duplicate, consent, and audit controls are in place.
 
@@ -309,4 +319,3 @@ The first automation milestone should then support one portal in assisted mode. 
 5. Resume retention and deletion policy.
 6. Whether a managed browser provider or a dedicated worker will run automation.
 7. Which answers always require manual confirmation.
-

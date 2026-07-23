@@ -4,6 +4,7 @@
   Grid2X2,
   LogOut,
   Plus,
+  SearchCheck,
   User,
 } from 'lucide-react'
 
@@ -15,6 +16,7 @@ function AppLayout({
   onAddApplication,
   onDashboard,
   onImportExcel,
+  onJobAgent,
   onProfile,
   onProgress,
   onSignOut,
@@ -22,6 +24,7 @@ function AppLayout({
   user,
 }) {
   const navIcons = {
+    agent: SearchCheck,
     dashboard: Grid2X2,
     profile: User,
     progress: BarChart3,
@@ -32,6 +35,7 @@ function AppLayout({
     { key: 'dashboard', label: 'Dashboard', onClick: onDashboard },
     { key: 'profile', label: 'Profile', onClick: onProfile },
     { key: 'progress', label: 'Progress', onClick: onProgress },
+    { key: 'agent', label: 'Job Agent', onClick: onJobAgent },
     { key: 'import', label: 'Import Excel', onClick: onImportExcel },
   ]
 
@@ -132,7 +136,13 @@ function AppLayout({
               onClick={item.onClick}
             >
               <Icon aria-hidden="true" size={20} />
-              <span>{item.key === 'import' ? 'Import' : item.label}</span>
+              <span>
+                {item.key === 'import'
+                  ? 'Import'
+                  : item.key === 'agent'
+                    ? 'Agent'
+                    : item.label}
+              </span>
             </button>
           )
         })}

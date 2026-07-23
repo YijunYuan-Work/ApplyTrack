@@ -16,6 +16,7 @@ import {
   updatePassword,
   updateProfileEmail,
 } from './api/auth'
+import { fetchJobAgentSummary } from './api/jobAgent'
 import {
   demoApplications,
   getTodayIsoDate,
@@ -35,6 +36,18 @@ import './App.css'
 import './styles/theme.css'
 
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
+const JobAgentPage = lazy(() => import('./pages/JobAgentPage'))
+const demoJobAgentSummary = {
+  alertEnabled: true,
+  available: true,
+  enabled: true,
+  indeedConnected: true,
+  lastAlertAt: '2026-07-22T12:00:00.000Z',
+  linkedInConnected: true,
+  newCount: 8,
+  ready: true,
+  savedCount: 3,
+}
 
 function getUserName(user) {
   return user?.user_metadata?.name || user?.email?.split('@')[0] || 'there'
@@ -66,6 +79,7 @@ function App() {
   const [authError, setAuthError] = useState('')
   const [dataLoading, setDataLoading] = useState(false)
   const [dataError, setDataError] = useState('')
+  const [jobAgentSummary, setJobAgentSummary] = useState(null)
 
   useEffect(() => {
     document.documentElement.dataset.theme = 'light'
@@ -117,6 +131,7 @@ function App() {
 
       if (!sessionUser) {
         setApplications([])
+        setJobAgentSummary(null)
       }
     })
 
@@ -161,10 +176,14 @@ function App() {
       setDataError('')
 
       try {
-        const savedApplications = await fetchApplications()
+        const [savedApplications, savedJobAgentSummary] = await Promise.all([
+          fetchApplications(),
+          fetchJobAgentSummary(user.id).catch(() => null),
+        ])
 
         if (isMounted) {
           setApplications(savedApplications)
+          setJobAgentSummary(savedJobAgentSummary)
         }
       } catch (error) {
         if (isMounted) {
@@ -183,6 +202,26 @@ function App() {
       isMounted = false
     }
   }, [user])
+
+  useEffect(() => {
+    if (!user || route !== '/dashboard') {
+      return undefined
+    }
+
+    let isMounted = true
+
+    fetchJobAgentSummary(user.id)
+      .then((summary) => {
+        if (isMounted) {
+          setJobAgentSummary(summary)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      isMounted = false
+    }
+  }, [route, user])
 
   async function handleAuthSubmit({ email, mode, password, username }) {
     setAuthLoading(true)
@@ -208,6 +247,7 @@ function App() {
     await signOut()
     setUser(null)
     setApplications([])
+    setJobAgentSummary(null)
     navigate('/sign-in')
   }
 
@@ -402,10 +442,12 @@ function App() {
         onDeleteApplication={async () => {}}
         onEditApplication={stayOnDemo}
         onImportExcel={stayOnDemo}
+        onJobAgent={stayOnDemo}
         onProfile={stayOnDemo}
         onProgress={stayOnDemo}
         onSignOut={stayOnDemo}
         onStatusChange={async () => {}}
+        jobAgentSummary={demoJobAgentSummary}
         user={demoUser}
       />
     )
@@ -441,6 +483,7 @@ function App() {
     onAddApplication: () => navigate('/applications/new'),
     onDashboard: () => navigate('/dashboard'),
     onImportExcel: () => navigate('/import'),
+    onJobAgent: () => navigate('/job-agent'),
     onProfile: () => navigate('/profile'),
     onProgress: () => navigate('/progress'),
     onSignOut: handleSignOut,
@@ -521,6 +564,27 @@ function App() {
     )
   }
 
+  if (route === '/job-agent' || route === '/job-agent/matches') {
+    return (
+      <Suspense
+        fallback={
+          <AppLayout {...sharedPageProps} currentPage="agent">
+            <section className="page-loading-state" role="status">
+              <p className="eyebrow">Job Agent</p>
+              <h1>Loading your Job Agent.</h1>
+            </section>
+          </AppLayout>
+        }
+      >
+        <JobAgentPage
+          {...sharedPageProps}
+          onViewMatches={() => navigate('/job-agent/matches')}
+          view={route.endsWith('/matches') ? 'matches' : 'setup'}
+        />
+      </Suspense>
+    )
+  }
+
   if (route === '/import') {
     return (
       <ImportExcelPage
@@ -537,6 +601,7 @@ function App() {
       applications={applications}
       error={dataError}
       isLoading={dataLoading}
+      jobAgentSummary={jobAgentSummary}
       onBulkDeleteApplications={handleBulkDeleteApplications}
       onDeleteApplication={handleDeleteApplication}
       onEditApplication={(applicationId) =>

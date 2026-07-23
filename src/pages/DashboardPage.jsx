@@ -1,18 +1,21 @@
 import { useMemo, useState } from 'react'
 import {
   ArrowUpDown,
+  ArrowRight,
   CheckSquare,
   Columns3,
   Filter,
   List,
   RotateCcw,
   Search,
+  SearchCheck,
 } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
 import ApplicationBoard from '../components/ApplicationBoard'
 import ApplicationList from '../components/ApplicationList'
 import MetricGrid from '../components/MetricGrid'
 import { statuses } from '../data/applications'
+import { formatJobAgentDate } from '../data/jobAgent'
 
 function DashboardPage({
   applications,
@@ -20,12 +23,14 @@ function DashboardPage({
   isDemo = false,
   isLoading,
   isReadOnly = false,
+  jobAgentSummary,
   onAddApplication,
   onBulkDeleteApplications,
   onDeleteApplication,
   onDashboard,
   onEditApplication,
   onImportExcel,
+  onJobAgent,
   onProfile,
   onProgress,
   onSignOut,
@@ -240,6 +245,7 @@ function DashboardPage({
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
+      onJobAgent={onJobAgent}
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
@@ -280,6 +286,31 @@ function DashboardPage({
             statusCounts={statusCounts}
           />
         </section>
+
+        {jobAgentSummary?.available && (
+          <section className="agent-dashboard-strip" aria-label="Job Agent summary">
+            <span className="agent-dashboard-icon" aria-hidden="true">
+              <SearchCheck size={22} />
+            </span>
+            <div className="agent-dashboard-copy">
+              <p className="eyebrow">Job Agent</p>
+              <h2>
+                {jobAgentSummary.enabled
+                  ? `${jobAgentSummary.newCount} new matches to review`
+                  : 'Connect your LinkedIn and Indeed alerts'}
+              </h2>
+              <p>
+                {jobAgentSummary.enabled
+                  ? `Last alert ${formatJobAgentDate(jobAgentSummary.lastAlertAt)}. ${jobAgentSummary.savedCount} saved.`
+                  : 'Create a private forwarding address, then review every imported match before applying.'}
+              </p>
+            </div>
+            <button className="secondary-action" type="button" onClick={onJobAgent}>
+              {jobAgentSummary.enabled ? 'Review matches' : 'Set up Job Agent'}
+              <ArrowRight aria-hidden="true" size={17} />
+            </button>
+          </section>
+        )}
 
         <section className="tracker-section" aria-label="Application tracker">
           <div className="section-header">

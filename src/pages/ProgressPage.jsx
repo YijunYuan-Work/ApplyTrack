@@ -255,6 +255,7 @@ function ProgressPage({
   onAddApplication,
   onDashboard,
   onImportExcel,
+  onJobAgent,
   onProfile,
   onProgress,
   onSignOut,
@@ -351,6 +352,7 @@ function ProgressPage({
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
+      onJobAgent={onJobAgent}
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
