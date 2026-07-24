@@ -19,6 +19,7 @@ function ApplicationFormPage({
   onCancel,
   onDashboard,
   onImportExcel,
+  onJobAgent,
   onProfile,
   onProgress,
   onSave,
@@ -95,6 +96,7 @@ function ApplicationFormPage({
       onAddApplication={() => confirmNavigation(onAddApplication)}
       onDashboard={() => confirmNavigation(onDashboard)}
       onImportExcel={() => confirmNavigation(onImportExcel)}
+      onJobAgent={() => confirmNavigation(onJobAgent)}
       onProfile={() => confirmNavigation(onProfile)}
       onProgress={() => confirmNavigation(onProgress)}
       onSignOut={() => confirmNavigation(onSignOut)}

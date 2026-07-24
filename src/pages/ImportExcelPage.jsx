@@ -7,6 +7,7 @@ function ImportExcelPage({
   onDashboard,
   onImportExcel,
   onImportApplications,
+  onJobAgent,
   onProfile,
   onProgress,
   onSignOut,
@@ -18,6 +19,7 @@ function ImportExcelPage({
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
+      onJobAgent={onJobAgent}
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}

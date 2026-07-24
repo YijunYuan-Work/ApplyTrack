@@ -12,6 +12,10 @@ ApplyTrack is a job application tracker built with React, Vite, and Supabase. It
 - Excel import flow with preview and per-row selection
 - Profile page for recovery email and password updates
 - Progress page with a pipeline chart and weekly calendar
+- Opt-in Job Agent setup with private resume storage and reusable answers
+- LinkedIn and Indeed job-alert ingestion through a private forwarding address
+- Signed Resend inbound webhooks with message and job deduplication
+- Single application queue with source links, one-click pipeline recording, and removal of unsuitable jobs
 - Password recovery through a Supabase Edge Function and Resend
 
 ## Tech Stack
@@ -21,7 +25,8 @@ ApplyTrack is a job application tracker built with React, Vite, and Supabase. It
 - Supabase Auth, Database, Row Level Security, and Edge Functions
 - Recharts for progress visualization
 - xlsx for spreadsheet parsing
-- Resend for password recovery email delivery
+- PDF.js and Mammoth for local PDF and DOCX resume text extraction
+- Resend for password recovery delivery and inbound job-alert email processing
 
 ## Getting Started
 
@@ -30,7 +35,9 @@ ApplyTrack is a job application tracker built with React, Vite, and Supabase. It
 - Node.js
 - npm
 - A Supabase project
-- A Resend account, only needed for password recovery emails
+- A Resend account, needed for password recovery and inbound job-alert emails
+- A domain or Resend receiving domain configured for inbound email
+- A Mapbox account, optional, for address and preferred-location suggestions
 
 ### Install Dependencies
 
@@ -51,13 +58,15 @@ Then update `.env.local`:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+VITE_MAPBOX_ACCESS_TOKEN=your-restricted-public-mapbox-token
+VITE_JOB_ALERT_INBOUND_DOMAIN=alerts.your-domain.com
 ```
 
-Only `.env.example` should be committed. Keep `.env.local` private.
+Only `.env.example` should be committed. Keep `.env.local` private. The Mapbox value is a browser-visible public token, so restrict it to your local and deployed ApplyTrack URLs. Leave it blank to use the structured address fields without autocomplete.
 
 ### Set Up the Database
 
-Run the SQL in `supabase/schema.sql` inside the Supabase SQL Editor. This creates the `applications` table, enables row-level security, and adds user-scoped policies so each user can only access their own applications.
+Run the SQL in `supabase/schema.sql` inside the Supabase SQL Editor. This creates the application and Job Agent tables, enables row-level security, and adds user-scoped policies so each user can only access their own records. It also creates the private `resumes` Storage bucket.
 
 If you already created the table before the extra application fields were added, run `supabase/add-application-detail-columns.sql` as well.
 
@@ -78,6 +87,54 @@ The public demo dashboard is available without signing in:
 ```text
 http://127.0.0.1:5173/#/demo
 ```
+
+## Job Agent Setup
+
+The current Job Agent provides profile and resume setup, LinkedIn and Indeed alert ingestion, and one queue of jobs waiting to be applied to. ApplyTrack does not scrape job sites, store job-site credentials, or submit applications. After applying on LinkedIn or Indeed, use **Finished applying** to create a populated pipeline record. Use **Remove** to permanently delete an unsuitable job from the user's queue. Resume text is extracted in the browser before the file and approved text are stored in the user's private Supabase records.
+
+The Job Agent profile stores separate legal and preferred names, a structured mailing address, work authorization, sponsorship needs, notice period in days, and professional links. Role, location, work-arrangement, and compensation filtering is configured in LinkedIn and Indeed when the user creates each job alert.
+
+### Optional Address Suggestions
+
+ApplyTrack uses the Mapbox Geocoding API when `VITE_MAPBOX_ACCESS_TOKEN` is configured. Create a public token in Mapbox, restrict its allowed URLs, and add it to `.env.local` and your Vercel environment variables. Selected suggestions are saved as structured profile data, so review Mapbox's permanent geocoding requirements before enabling this in production. Without a token, users can enter every address field manually.
+
+### Apply The Alert-Ingestion Migration
+
+For an existing Supabase project, apply `supabase/migrations/20260722220608_linkedin_indeed_alert_ingestion.sql` through the SQL Editor, or push linked migrations with:
+
+```powershell
+npx supabase db push
+```
+
+The migrations create the private inbox and message-history tables, add RLS policies, link imported leads to their source message, and retire the obsolete scheduled-discovery tables and cron configuration.
+
+### Configure Resend Inbound Email
+
+1. In Resend, add and verify a receiving domain.
+2. Add that exact domain to local and Vercel environments as `VITE_JOB_ALERT_INBOUND_DOMAIN`.
+3. In Resend Webhooks, add this endpoint and subscribe it to `email.received`:
+
+```text
+https://YOUR_PROJECT_REF.supabase.co/functions/v1/ingest-job-alert
+```
+
+4. Copy the webhook signing secret and set the server-only function values:
+
+```powershell
+npx supabase secrets set RESEND_API_KEY=re_your_api_key
+npx supabase secrets set RESEND_WEBHOOK_SECRET=whsec_your_webhook_secret
+npx supabase secrets set INBOUND_EMAIL_DOMAIN=alerts.your-domain.com
+```
+
+5. Deploy the public webhook function:
+
+```powershell
+npx supabase functions deploy ingest-job-alert --no-verify-jwt
+```
+
+The endpoint is public so Resend can call it, but it verifies every Resend signature before processing. It stores ingestion metadata only, not raw email bodies or attachments. Replayed webhook events and repeated jobs are deduplicated.
+
+After deployment, open Job Agent > Setup, create the private forwarding address, and forward LinkedIn and Indeed job-alert emails to it. The Matches page shows every imported job that has not yet been marked as applied. Delivery timing is controlled by LinkedIn and Indeed; ApplyTrack processes alerts when they arrive.
 
 ## Password Recovery Setup
 
@@ -115,9 +172,10 @@ The function is public because unauthenticated users need to request password re
 For Vercel deployment:
 
 1. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in Vercel Project Settings > Environment Variables.
-2. Redeploy after adding or changing environment variables.
-3. Add the deployed Vercel URL to `ALLOWED_REDIRECT_ORIGINS` for password recovery.
-4. Set `APP_URL` to the deployed site URL.
+2. Optionally add `VITE_MAPBOX_ACCESS_TOKEN` to enable address and location suggestions.
+3. Redeploy after adding or changing environment variables.
+4. Add the deployed Vercel URL to `ALLOWED_REDIRECT_ORIGINS` for password recovery.
+5. Set `APP_URL` to the deployed site URL.
 
 Do not paste real secrets into `.env.example` or commit `.env.local`.
 
@@ -142,6 +200,12 @@ npm run lint
 Runs ESLint.
 
 ```powershell
+npm test
+```
+
+Runs the Job Agent alert-parser, profile-data, and resume-parser tests.
+
+```powershell
 npm run preview
 ```
 
@@ -160,6 +224,7 @@ src/
   utils/        Routing, storage, and Excel import utilities
 supabase/
   functions/    Edge Functions
+  migrations/   Incremental database migrations
   schema.sql    Database schema and RLS policies
 ```
 
@@ -168,4 +233,8 @@ supabase/
 - The Supabase publishable key is safe to expose in browser code when row-level security policies are correct.
 - The Supabase service role key must only be used server-side, such as inside Edge Functions.
 - Keep `.env.local` and function `.env` files out of Git.
+- Resume files are stored in a private bucket and are restricted to their owner.
+- Mapbox browser tokens should be public tokens restricted to the ApplyTrack origins; never use a secret Mapbox token in a `VITE_` variable.
+- Inbound message history is server-owned and read-only to its user; raw alert bodies are not retained.
+- Generated leads are server-owned; users can only review the state of their own leads.
 - Review RLS policies before adding new tables or broadening data access.

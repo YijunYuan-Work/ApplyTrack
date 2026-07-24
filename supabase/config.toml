@@ -1,2 +1,5 @@
 [functions.request-password-reset]
 verify_jwt = false
+
+[functions.ingest-job-alert]
+verify_jwt = false

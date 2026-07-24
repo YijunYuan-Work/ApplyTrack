@@ -33,7 +33,7 @@ function extractLegacyNoteDetails(notes = '') {
   }
 }
 
-function fromApplicationRow(row) {
+export function fromApplicationRow(row) {
   const legacyDetails = extractLegacyNoteDetails(row.notes)
 
   return normalizeApplication({

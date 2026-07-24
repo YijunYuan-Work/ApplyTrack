@@ -19,6 +19,7 @@ function ProfilePage({
   onAddApplication,
   onDashboard,
   onImportExcel,
+  onJobAgent,
   onProfile,
   onProgress,
   onSignOut,
@@ -96,6 +97,7 @@ function ProfilePage({
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
+      onJobAgent={onJobAgent}
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
