@@ -846,6 +846,7 @@ dd {
   color: var(--text);
   line-height: 1.45;
   -webkit-box-orient: vertical;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
 }
 
@@ -2231,6 +2232,7 @@ dd {
   line-height: 1.35;
   white-space: normal;
   -webkit-box-orient: initial;
+  line-clamp: unset;
   -webkit-line-clamp: unset;
 }
 
@@ -2531,6 +2533,7 @@ dd {
   max-height: none;
   line-height: 1.35;
   -webkit-box-orient: initial;
+  line-clamp: unset;
   -webkit-line-clamp: unset;
 }
 
