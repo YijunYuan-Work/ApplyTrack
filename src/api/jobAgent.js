@@ -135,16 +135,8 @@ function mapAlertMessage(row) {
 }
 
 export async function fetchJobAgentWorkspace(userId) {
-  const [
-    profileResult,
-    resumesResult,
-    inboxResult,
-    messagesResult,
-    leadsResult,
-  ] =
+  const [inboxResult, messagesResult, leadsResult] =
     await Promise.all([
-      supabase.from('job_agent_profiles').select('*').eq('user_id', userId).maybeSingle(),
-      supabase.from('resumes').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('job_alert_inboxes').select('*').eq('user_id', userId).maybeSingle(),
       supabase
         .from('job_alert_messages')
@@ -161,30 +153,17 @@ export async function fetchJobAgentWorkspace(userId) {
         .limit(500),
     ])
 
-  ;[
-    profileResult,
-    resumesResult,
-    inboxResult,
-    messagesResult,
-    leadsResult,
-  ].forEach(({ error }) => throwIfError(error))
+  ;[inboxResult, messagesResult, leadsResult].forEach(({ error }) => throwIfError(error))
 
   return {
     inbox: mapInbox(inboxResult.data),
     leads: (leadsResult.data || []).map(mapLead),
     messages: (messagesResult.data || []).map(mapAlertMessage),
-    profile: mapProfile(profileResult.data),
-    resumes: (resumesResult.data || []).map(mapResume),
   }
 }
 
 export async function fetchJobAgentSummary(userId) {
-  const [profileResult, inboxResult, messagesResult, leadsResult] = await Promise.all([
-    supabase
-      .from('job_agent_profiles')
-      .select('approved_at, enabled')
-      .eq('user_id', userId)
-      .maybeSingle(),
+  const [inboxResult, messagesResult, leadsResult] = await Promise.all([
     supabase
       .from('job_alert_inboxes')
       .select('enabled, last_received_at')
@@ -199,7 +178,7 @@ export async function fetchJobAgentSummary(userId) {
     supabase.from('job_leads').select('filtered, source, state').eq('user_id', userId),
   ])
 
-  ;[profileResult, inboxResult, messagesResult, leadsResult].forEach(({ error }) =>
+  ;[inboxResult, messagesResult, leadsResult].forEach(({ error }) =>
     throwIfError(error),
   )
 
@@ -221,7 +200,6 @@ export async function fetchJobAgentSummary(userId) {
     pendingCount: alertLeads.filter(
       (lead) => lead.state !== 'applied' && lead.state !== 'expired',
     ).length,
-    ready: Boolean(profileResult.data?.approved_at),
   }
 }
 

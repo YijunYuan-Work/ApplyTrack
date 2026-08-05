@@ -46,7 +46,6 @@ The interface is built as a working product rather than a marketing dashboard. D
 
 - Username-based authentication
 - Optional recovery email and password reset flow
-- Private profile details and reusable application information
 - Session behavior designed for a personal workspace
 
 ## Job Agent
@@ -71,7 +70,6 @@ The current Job Agent includes:
 - Direct links back to the source platform
 - One-click creation of a populated pipeline record after applying
 - Removal of roles that are not a good fit
-- Private resume storage, browser-side text extraction, and detected skills
 
 ApplyTrack does **not** scrape job sites, store LinkedIn or Indeed credentials, or silently submit applications. The user reviews each role and completes the application on its original site before confirming it in ApplyTrack.
 
@@ -80,7 +78,7 @@ ApplyTrack does **not** scrape job sites, store LinkedIn or Indeed credentials, 
 - **Keep the next action visible.** The product should make it obvious what needs attention.
 - **Make information scannable.** Job-search data is dense, so structure matters more than decoration.
 - **Use familiar controls.** Forms, filters, sorting, navigation, and destructive actions should behave as expected.
-- **Respect private data.** Applications, resumes, profile details, and account recovery information belong to the user.
+- **Respect private data.** Applications and account recovery information belong to the user.
 - **Stay user-controlled.** Automation should remove repetitive work without making decisions or submissions invisibly.
 
 ## Architecture
@@ -93,14 +91,11 @@ React 19 + Vite
         +-- Supabase Auth and session management
         +-- Postgres application and Job Agent data
         +-- Row Level Security for user-owned records
-        +-- Private Supabase Storage for resumes
         +-- Edge Functions for recovery and inbound email
         |
         +-- Resend for email delivery and job-alert ingestion
         +-- Recharts for progress visualization
         +-- xlsx for spreadsheet imports
-        +-- PDF.js and Mammoth for resume extraction
-        +-- Mapbox for optional address suggestions
 ```
 
 The frontend uses lightweight hash routing and separates route-level pages, reusable components, API helpers, data normalization, and service integrations.
@@ -108,16 +103,15 @@ The frontend uses lightweight hash routing and separates route-level pages, reus
 ## Privacy and Trust
 
 - Every application and Job Agent record is scoped to its owner through Supabase Row Level Security.
-- Resume files are stored in a private bucket.
 - Service-role credentials are restricted to server-side Edge Functions.
 - Resend webhook signatures are verified before inbound alerts are processed.
 - Raw job-alert email bodies and attachments are not retained.
 - Public password-recovery responses do not reveal whether an account exists.
-- Browser-visible Supabase and Mapbox keys are limited to publishable, origin-restricted credentials.
+- Browser-visible Supabase credentials are limited to the publishable key.
 
 ## Project Status
 
-ApplyTrack currently supports the complete tracking workflow, spreadsheet migration, progress reporting, private profile management, and LinkedIn/Indeed alert ingestion. The Job Agent is intentionally assisted rather than fully autonomous: it prepares a queue and records completed applications while the user remains responsible for reviewing and submitting each application.
+ApplyTrack currently supports the complete tracking workflow, spreadsheet migration, progress reporting, account management, and LinkedIn/Indeed alert ingestion. The Job Agent is intentionally assisted rather than fully autonomous: it prepares a queue and records completed applications while the user remains responsible for reviewing and submitting each application.
 
 Future work is focused on link-based application prefill and browser-assisted form support while preserving this user-controlled boundary.
 
@@ -128,9 +122,8 @@ Future work is focused on link-based application prefill and browser-assisted fo
 | Frontend | React 19, Vite 8 |
 | Backend | Supabase Auth, Postgres, Storage, RLS, Edge Functions |
 | Visualization | Recharts |
-| File processing | xlsx, PDF.js, Mammoth |
+| Spreadsheet processing | xlsx |
 | Email | Resend |
-| Location suggestions | Mapbox Geocoding API |
 | Deployment | Vercel |
 
 ## Run Locally
@@ -151,7 +144,6 @@ The browser environment supports these values:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-VITE_MAPBOX_ACCESS_TOKEN=your-restricted-public-mapbox-token
 VITE_JOB_ALERT_INBOUND_DOMAIN=alerts.your-domain.com
 ```
 
@@ -191,7 +183,7 @@ npx supabase functions deploy request-password-reset
 | `npm run dev` | Start the Vite development server |
 | `npm run build` | Create a production build |
 | `npm run lint` | Run ESLint |
-| `npm test` | Run Job Agent, profile, alert-parser, and resume-parser tests |
+| `npm test` | Run the project unit tests |
 | `npm run preview` | Preview the production build locally |
 
 ## Project Structure

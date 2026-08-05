@@ -46,7 +46,6 @@ const demoJobAgentSummary = {
   lastAlertAt: '2026-07-22T12:00:00.000Z',
   linkedInConnected: true,
   pendingCount: 8,
-  ready: true,
 }
 
 function getUserName(user) {

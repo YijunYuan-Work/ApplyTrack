@@ -4596,8 +4596,7 @@ dd {
   background: #ffffff;
 }
 
-.tag-input:focus-within,
-.location-search-control:focus-within {
+.tag-input:focus-within {
   border-color: #0877d9;
   outline: 3px solid #e2f1ff;
 }
@@ -4626,8 +4625,7 @@ dd {
 }
 
 .tag-chip button,
-.tag-input-entry button,
-.location-search-control button {
+.tag-input-entry button {
   display: inline-grid;
   flex: 0 0 auto;
   width: 30px;
@@ -4642,8 +4640,7 @@ dd {
 }
 
 .tag-chip button:hover,
-.tag-input-entry button:hover,
-.location-search-control button:hover {
+.tag-input-entry button:hover {
   background: #e8eef5;
   color: #071a39;
 }
@@ -4655,8 +4652,7 @@ dd {
   align-items: center;
 }
 
-.tag-input-entry input,
-.location-search-control input {
+.tag-input-entry input {
   min-width: 0;
   min-height: 38px;
   padding: 4px 2px;
@@ -4666,70 +4662,6 @@ dd {
   box-shadow: none;
 }
 
-.location-combobox,
-.preferred-location-input {
-  position: relative;
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.location-search-control {
-  display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) 30px;
-  gap: 8px;
-  align-items: center;
-  min-width: 0;
-  min-height: 48px;
-  padding: 0 10px;
-  border: 1px solid #cfd9e6;
-  border-radius: 7px;
-  background: #ffffff;
-  color: #647084;
-}
-
-.location-suggestions {
-  position: absolute;
-  z-index: 20;
-  top: 52px;
-  right: 0;
-  left: 0;
-  display: grid;
-  overflow: hidden;
-  border: 1px solid #cfd9e6;
-  border-radius: 7px;
-  background: #ffffff;
-  box-shadow: 0 14px 30px rgba(7, 26, 57, 0.14);
-}
-
-.location-suggestions button {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: 9px;
-  align-items: start;
-  min-height: 44px;
-  padding: 11px 12px;
-  border: 0;
-  border-top: 1px solid #edf1f5;
-  border-radius: 0;
-  background: #ffffff;
-  color: #23334b;
-  box-shadow: none;
-  font-size: 0.8rem;
-  text-align: left;
-}
-
-.location-suggestions button:first-child {
-  border-top: 0;
-}
-
-.location-suggestions button:hover,
-.location-suggestions button:focus-visible {
-  background: #f0f7ff;
-}
-
-.location-combobox small,
-.preferred-location-input small,
 .field-error {
   color: #758195;
   font-size: 0.74rem;
