@@ -24,7 +24,9 @@ function JobAlertConnection({ inbox, isManaging, messages, onCreate, onRotate, o
   const inboundDomain = String(import.meta.env.VITE_JOB_ALERT_INBOUND_DOMAIN || '')
     .trim()
     .replace(/^@/, '')
-  const address = inbox && inboundDomain ? `${inbox.addressAlias}@${inboundDomain}` : ''
+  const address = inbox?.address || (
+    inbox && inboundDomain ? `${inbox.addressAlias}@${inboundDomain}` : ''
+  )
   const linkedInStatus = providerStatus(messages, 'linkedin')
   const indeedStatus = providerStatus(messages, 'indeed')
 
@@ -52,7 +54,7 @@ function JobAlertConnection({ inbox, isManaging, messages, onCreate, onRotate, o
         )}
       </div>
 
-      {!inboundDomain ? (
+      {!address && !inboundDomain ? (
         <p className="form-error" role="alert">
           Add VITE_JOB_ALERT_INBOUND_DOMAIN to the app environment before creating an address.
         </p>

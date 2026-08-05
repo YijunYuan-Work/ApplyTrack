@@ -264,12 +264,10 @@ function DashboardPage({
                 Review and update your applications.
               </p>
             </div>
-            {isReadOnly ? (
-              <div className="header-actions">
-                <span className="demo-badge">Public demo</span>
-              </div>
-            ) : (
-              <div className="header-actions">
+            <div className="header-actions">
+              {isDemo && <span className="demo-badge">Public demo</span>}
+              {!isReadOnly && (
+                <>
                 <button className="primary-action" type="button" onClick={onAddApplication}>
                   <span className="button-plus" aria-hidden="true"></span>
                   <span>Add application</span>
@@ -277,8 +275,9 @@ function DashboardPage({
                 <button className="ghost-button" type="button" onClick={onProgress}>
                   View progress
                 </button>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </header>
 
           <MetricGrid

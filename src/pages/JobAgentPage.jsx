@@ -13,11 +13,14 @@ import JobMatches from '../components/JobMatches'
 import { getTodayIsoDate } from '../data/applications'
 
 function JobAgentPage({
+  demoWorkspace = null,
+  isDemo = false,
   onAddApplication,
   onDashboard,
   onImportExcel,
   onJobAgent,
   onApplicationCreated,
+  onDemoWorkspaceChange,
   onJobLeadRemoved,
   onProfile,
   onProgress,
@@ -27,13 +30,26 @@ function JobAgentPage({
   view,
 }) {
   const [workspace, setWorkspace] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(() => !isDemo)
   const [isManagingAlerts, setIsManagingAlerts] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [pageError, setPageError] = useState('')
   const [pageNotice, setPageNotice] = useState('')
+  const activeWorkspace = isDemo ? demoWorkspace : workspace
+
+  function updateWorkspace(updater) {
+    if (isDemo) {
+      onDemoWorkspaceChange(updater)
+    } else {
+      setWorkspace(updater)
+    }
+  }
 
   useEffect(() => {
+    if (isDemo) {
+      return undefined
+    }
+
     let isMounted = true
 
     async function load() {
@@ -61,7 +77,7 @@ function JobAgentPage({
     return () => {
       isMounted = false
     }
-  }, [user.id])
+  }, [isDemo, user.id])
 
   async function handleCreateInbox() {
     setIsManagingAlerts(true)
@@ -69,8 +85,23 @@ function JobAgentPage({
     setPageNotice('')
 
     try {
+      if (isDemo) {
+        updateWorkspace((current) => ({
+          ...current,
+          inbox: {
+            address: 'demo-alerts@inbound.applytrack.app',
+            addressAlias: 'demo-alerts',
+            enabled: true,
+            id: 'demo-inbox',
+            lastReceivedAt: null,
+          },
+        }))
+        setPageNotice('Your sample forwarding address is ready.')
+        return
+      }
+
       const inbox = await createJobAlertInbox(user.id)
-      setWorkspace((current) => ({ ...current, inbox }))
+      updateWorkspace((current) => ({ ...current, inbox }))
       setPageNotice('Your private forwarding address is ready.')
     } catch (error) {
       setPageError(error.message)
@@ -84,8 +115,17 @@ function JobAgentPage({
     setPageError('')
 
     try {
-      const inbox = await updateJobAlertInbox(workspace.inbox.id, { enabled })
-      setWorkspace((current) => ({ ...current, inbox }))
+      if (isDemo) {
+        updateWorkspace((current) => ({
+          ...current,
+          inbox: { ...current.inbox, enabled },
+        }))
+        setPageNotice(enabled ? 'Job alert imports resumed.' : 'Job alert imports paused.')
+        return
+      }
+
+      const inbox = await updateJobAlertInbox(activeWorkspace.inbox.id, { enabled })
+      updateWorkspace((current) => ({ ...current, inbox }))
       setPageNotice(enabled ? 'Job alert imports resumed.' : 'Job alert imports paused.')
     } catch (error) {
       setPageError(error.message)
@@ -105,11 +145,25 @@ function JobAgentPage({
     setPageError('')
 
     try {
-      const inbox = await updateJobAlertInbox(workspace.inbox.id, {
+      if (isDemo) {
+        updateWorkspace((current) => ({
+          ...current,
+          inbox: {
+            ...current.inbox,
+            address: 'new-demo-alerts@inbound.applytrack.app',
+            addressAlias: 'new-demo-alerts',
+            enabled: true,
+          },
+        }))
+        setPageNotice('Sample forwarding address replaced.')
+        return
+      }
+
+      const inbox = await updateJobAlertInbox(activeWorkspace.inbox.id, {
         enabled: true,
         rotateAddress: true,
       })
-      setWorkspace((current) => ({ ...current, inbox }))
+      updateWorkspace((current) => ({ ...current, inbox }))
       setPageNotice('Forwarding address replaced. Update your email forwarding rule.')
     } catch (error) {
       setPageError(error.message)
@@ -132,11 +186,49 @@ function JobAgentPage({
     setPageNotice('')
 
     try {
+      if (isDemo) {
+        const application = {
+          company: lead.company,
+          contact: '',
+          coverLetter: 'No',
+          date: getTodayIsoDate(),
+          followUp: '',
+          id: `demo-job-${lead.id}`,
+          interviewCount: 0,
+          jobUrl: lead.applyUrl || '',
+          lastUpdated: getTodayIsoDate(),
+          location: lead.location || 'Not specified',
+          notes: `Added from a sample ${lead.source === 'linkedin' ? 'LinkedIn' : 'Indeed'} job alert.`,
+          referral: 'No',
+          role: lead.title,
+          salary: lead.salaryMin || lead.salaryMax
+            ? [lead.salaryMin, lead.salaryMax]
+                .filter(Boolean)
+                .map((value) => `$${Number(value).toLocaleString()}`)
+                .join(' - ')
+            : '',
+          status: 'Applied',
+        }
+        updateWorkspace((current) => ({
+          ...current,
+          leads: current.leads.map((currentLead) =>
+            currentLead.id === lead.id
+              ? { ...currentLead, applicationId: application.id, state: 'applied' }
+              : currentLead,
+          ),
+        }))
+        onApplicationCreated(application)
+        setPageNotice(
+          `${application.role} at ${application.company} was added to your sample pipeline.`,
+        )
+        return
+      }
+
       const application = await completeJobLeadApplication(
         lead.id,
         getTodayIsoDate(),
       )
-      setWorkspace((current) => ({
+      updateWorkspace((current) => ({
         ...current,
         leads: current.leads.map((currentLead) =>
           currentLead.id === lead.id
@@ -171,8 +263,20 @@ function JobAgentPage({
     setPageNotice('')
 
     try {
+      if (isDemo) {
+        updateWorkspace((current) => ({
+          ...current,
+          leads: current.leads.filter((currentLead) => currentLead.id !== lead.id),
+        }))
+        onJobLeadRemoved()
+        setPageNotice(
+          `${lead.title} at ${lead.company} was removed from your sample queue.`,
+        )
+        return
+      }
+
       await removeJobLead(lead.id, user.id)
-      setWorkspace((current) => ({
+      updateWorkspace((current) => ({
         ...current,
         leads: current.leads.filter((currentLead) => currentLead.id !== lead.id),
       }))
@@ -188,6 +292,7 @@ function JobAgentPage({
   return (
     <AppLayout
       currentPage="agent"
+      isDemo={isDemo}
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
@@ -226,9 +331,9 @@ function JobAgentPage({
           >
             <SearchCheck aria-hidden="true" size={19} />
             Matches
-            {workspace?.leads && (
+            {activeWorkspace?.leads && (
               <span>
-                {workspace.leads.filter(
+                {activeWorkspace.leads.filter(
                   (lead) => lead.state !== 'applied' && lead.state !== 'expired',
                 ).length}
               </span>
@@ -244,20 +349,20 @@ function JobAgentPage({
             <p className="eyebrow">Job Agent</p>
             <h2>Loading your setup.</h2>
           </section>
-        ) : workspace && view === 'matches' ? (
+        ) : activeWorkspace && view === 'matches' ? (
           <JobMatches
-            inbox={workspace.inbox}
+            inbox={activeWorkspace.inbox}
             isUpdating={isUpdating}
-            leads={workspace.leads}
-            messages={workspace.messages}
+            leads={activeWorkspace.leads}
+            messages={activeWorkspace.messages}
             onFinishApplying={handleFinishApplying}
             onRemove={handleRemoveLead}
           />
-        ) : workspace ? (
+        ) : activeWorkspace ? (
           <JobAgentSetup
-            inbox={workspace.inbox}
+            inbox={activeWorkspace.inbox}
             isManagingAlerts={isManagingAlerts}
-            messages={workspace.messages}
+            messages={activeWorkspace.messages}
             onCreateInbox={handleCreateInbox}
             onRotateInbox={handleRotateInbox}
             onToggleInbox={handleToggleInbox}

@@ -15,6 +15,7 @@ function getInitialApplication(application) {
 function ApplicationFormPage({
   application,
   error,
+  isDemo = false,
   onAddApplication,
   onCancel,
   onDashboard,
@@ -93,6 +94,7 @@ function ApplicationFormPage({
   return (
     <AppLayout
       currentPage="applications"
+      isDemo={isDemo}
       onAddApplication={() => confirmNavigation(onAddApplication)}
       onDashboard={() => confirmNavigation(onDashboard)}
       onImportExcel={() => confirmNavigation(onImportExcel)}

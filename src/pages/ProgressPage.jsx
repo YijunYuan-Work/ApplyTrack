@@ -252,6 +252,7 @@ function useCompactViewport() {
 
 function ProgressPage({
   applications,
+  isDemo = false,
   onAddApplication,
   onDashboard,
   onImportExcel,
@@ -349,6 +350,7 @@ function ProgressPage({
   return (
     <AppLayout
       currentPage="progress"
+      isDemo={isDemo}
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}

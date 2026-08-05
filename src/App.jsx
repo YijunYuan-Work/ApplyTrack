@@ -18,7 +18,6 @@ import {
 } from './api/auth'
 import { fetchJobAgentSummary } from './api/jobAgent'
 import {
-  demoApplications,
   getTodayIsoDate,
   normalizeApplication,
 } from './data/applications'
@@ -26,6 +25,7 @@ import AppLayout from './components/AppLayout'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
 import ApplicationFormPage from './pages/ApplicationFormPage'
 import DashboardPage from './pages/DashboardPage'
+import DemoWorkspace from './pages/DemoWorkspace'
 import ImportExcelPage from './pages/ImportExcelPage'
 import ProfilePage from './pages/ProfilePage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -37,17 +37,6 @@ import './styles/theme.css'
 
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const JobAgentPage = lazy(() => import('./pages/JobAgentPage'))
-const demoJobAgentSummary = {
-  alertEnabled: true,
-  appliedCount: 4,
-  available: true,
-  enabled: true,
-  indeedConnected: true,
-  lastAlertAt: '2026-07-22T12:00:00.000Z',
-  linkedInConnected: true,
-  pendingCount: 8,
-}
-
 function getUserName(user) {
   return user?.user_metadata?.name || user?.email?.split('@')[0] || 'there'
 }
@@ -141,7 +130,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (route === '/demo' || !hasSupabaseConfig || authLoading) {
+    if (route === '/demo' || route.startsWith('/demo/') || !hasSupabaseConfig || authLoading) {
       return
     }
 
@@ -424,32 +413,8 @@ function App() {
     }
   }
 
-  if (route === '/demo') {
-    const demoUser = { name: 'Demo' }
-    const stayOnDemo = () => navigate('/demo')
-
-    return (
-      <DashboardPage
-        applications={demoApplications}
-        error=""
-        isDemo
-        isLoading={false}
-        isReadOnly
-        onAddApplication={stayOnDemo}
-        onBulkDeleteApplications={async () => {}}
-        onDashboard={stayOnDemo}
-        onDeleteApplication={async () => {}}
-        onEditApplication={stayOnDemo}
-        onImportExcel={stayOnDemo}
-        onJobAgent={stayOnDemo}
-        onProfile={stayOnDemo}
-        onProgress={stayOnDemo}
-        onSignOut={stayOnDemo}
-        onStatusChange={async () => {}}
-        jobAgentSummary={demoJobAgentSummary}
-        user={demoUser}
-      />
-    )
+  if (route === '/demo' || route.startsWith('/demo/')) {
+    return <DemoWorkspace route={route} />
   }
 
   if (!hasSupabaseConfig) {

@@ -28,7 +28,7 @@ function findDuplicateIndexes(applications, existingApplications) {
   return duplicateIndexes
 }
 
-function ExcelImportPanel({ applications = [], onImportApplications }) {
+function ExcelImportPanel({ applications = [], demoRows = [], onImportApplications }) {
   const [fileName, setFileName] = useState('')
   const [parsedApplications, setParsedApplications] = useState([])
   const [selectedIndexes, setSelectedIndexes] = useState([])
@@ -51,6 +51,25 @@ function ExcelImportPanel({ applications = [], onImportApplications }) {
     recommendedIndexes.length > 0 &&
     recommendedIndexes.every((index) => selectedIndexes.includes(index))
 
+  function loadApplications(importedApplications, nextFileName) {
+    const possibleDuplicates = findDuplicateIndexes(
+      importedApplications,
+      applications,
+    )
+    const recommendedSelections = importedApplications
+      .map((_application, index) => index)
+      .filter((index) => !possibleDuplicates.has(index))
+
+    setFileName(nextFileName)
+    setParsedApplications(importedApplications)
+    setDuplicateIndexes(possibleDuplicates)
+    setSelectedIndexes(recommendedSelections)
+
+    if (importedApplications.length === 0) {
+      setError('No rows with both company and role were found.')
+    }
+  }
+
   async function handleFileChange(event) {
     const file = event.target.files?.[0]
 
@@ -70,26 +89,21 @@ function ExcelImportPanel({ applications = [], onImportApplications }) {
 
     try {
       const importedApplications = await parseExcelApplications(file)
-      const possibleDuplicates = findDuplicateIndexes(
-        importedApplications,
-        applications,
-      )
-      const recommendedSelections = importedApplications
-        .map((_application, index) => index)
-        .filter((index) => !possibleDuplicates.has(index))
-
-      setParsedApplications(importedApplications)
-      setDuplicateIndexes(possibleDuplicates)
-      setSelectedIndexes(recommendedSelections)
-
-      if (importedApplications.length === 0) {
-        setError('No rows with both company and role were found.')
-      }
+      loadApplications(importedApplications, file.name)
     } catch {
       setError('Could not read this spreadsheet. Try an .xlsx or .xls file.')
     } finally {
       setIsParsing(false)
     }
+  }
+
+  function handleLoadDemoRows() {
+    setError('')
+    setSuccessMessage('')
+    loadApplications(
+      demoRows.map((application) => ({ ...application })),
+      'ApplyTrack-sample.xlsx',
+    )
   }
 
   async function handleImport() {
@@ -185,6 +199,17 @@ function ExcelImportPanel({ applications = [], onImportApplications }) {
             onChange={handleFileChange}
           />
         </label>
+
+        {demoRows.length > 0 && (
+          <button
+            className="ghost-button"
+            type="button"
+            disabled={isParsing || isImporting}
+            onClick={handleLoadDemoRows}
+          >
+            Preview sample file
+          </button>
+        )}
 
         <button
           type="button"

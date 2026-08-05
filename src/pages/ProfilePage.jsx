@@ -16,6 +16,7 @@ function getProfileEmail(user) {
 }
 
 function ProfilePage({
+  isDemo = false,
   onAddApplication,
   onDashboard,
   onImportExcel,
@@ -94,6 +95,7 @@ function ProfilePage({
   return (
     <AppLayout
       currentPage="profile"
+      isDemo={isDemo}
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
@@ -253,14 +255,16 @@ function ProfilePage({
           </form>
         </div>
 
-        <button
-          className="mobile-profile-sign-out ghost-button"
-          type="button"
-          onClick={onSignOut}
-        >
-          <LogOut aria-hidden="true" size={20} />
-          Sign out
-        </button>
+        {!isDemo && (
+          <button
+            className="mobile-profile-sign-out ghost-button"
+            type="button"
+            onClick={onSignOut}
+          >
+            <LogOut aria-hidden="true" size={20} />
+            Sign out
+          </button>
+        )}
       </section>
     </AppLayout>
   )
