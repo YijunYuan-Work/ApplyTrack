@@ -8,7 +8,11 @@ import {
   UsersRound,
   X,
 } from 'lucide-react'
-import { formatJobAgentDate, getJobLeadPresentation } from '../data/jobAgent'
+import {
+  formatJobAgentDate,
+  getJobLeadPresentation,
+  sortJobLeadsNewestFirst,
+} from '../data/jobAgent'
 
 const pageSize = 20
 
@@ -48,17 +52,19 @@ function JobMatches({
   const visibleLeads = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
-    return leads.filter((lead) => {
-      const isWaiting = lead.state !== 'applied' && lead.state !== 'expired'
-      const matchesSource = source === 'all' || lead.source === source
-      const matchesQuery =
-        !normalizedQuery ||
-        `${lead.company} ${lead.title} ${lead.location}`
-          .toLowerCase()
-          .includes(normalizedQuery)
+    return sortJobLeadsNewestFirst(
+      leads.filter((lead) => {
+        const isWaiting = lead.state !== 'applied' && lead.state !== 'expired'
+        const matchesSource = source === 'all' || lead.source === source
+        const matchesQuery =
+          !normalizedQuery ||
+          `${lead.company} ${lead.title} ${lead.location}`
+            .toLowerCase()
+            .includes(normalizedQuery)
 
-      return isWaiting && matchesSource && matchesQuery
-    })
+        return isWaiting && matchesSource && matchesQuery
+      }),
+    )
   }, [leads, query, source])
   const pageCount = Math.max(1, Math.ceil(visibleLeads.length / pageSize))
   const safePage = Math.min(page, pageCount)

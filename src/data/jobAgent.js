@@ -145,6 +145,24 @@ export function formatJobAgentDate(value, fallback = 'Not yet') {
   }).format(date)
 }
 
+function getJobLeadImportTimestamp(lead) {
+  const timestamp = Date.parse(lead?.discoveredAt || lead?.postedAt || '')
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
+
+export function sortJobLeadsNewestFirst(leads) {
+  return [...leads].sort((firstLead, secondLead) => {
+    const dateDifference =
+      getJobLeadImportTimestamp(secondLead) - getJobLeadImportTimestamp(firstLead)
+
+    if (dateDifference !== 0) {
+      return dateDifference
+    }
+
+    return String(secondLead.id || '').localeCompare(String(firstLead.id || ''))
+  })
+}
+
 export function formatSalary(minimum, maximum, currency = 'CAD') {
   const formatter = new Intl.NumberFormat(undefined, {
     currency,

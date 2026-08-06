@@ -148,7 +148,7 @@ export async function fetchJobAgentWorkspace(userId) {
         .from('job_leads')
         .select('*')
         .eq('user_id', userId)
-        .order('match_score', { ascending: false })
+        .order('discovered_at', { ascending: false })
         .order('posted_at', { ascending: false, nullsFirst: false })
         .limit(500),
     ])

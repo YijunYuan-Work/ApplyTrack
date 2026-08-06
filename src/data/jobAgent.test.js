@@ -4,6 +4,7 @@ import {
   formatList,
   getJobLeadPresentation,
   parseList,
+  sortJobLeadsNewestFirst,
 } from './jobAgent.js'
 
 test('parseList trims, deduplicates, and accepts commas or new lines', () => {
@@ -50,4 +51,18 @@ test('job lead presentation omits salary when none is available', () => {
   })
 
   assert.equal(presentation.salaryLabel, null)
+})
+
+test('sortJobLeadsNewestFirst orders leads by import date with newest first', () => {
+  const leads = [
+    { discoveredAt: '2026-08-04T10:00:00.000Z', id: 'older' },
+    { discoveredAt: '2026-08-06T10:00:00.000Z', id: 'newest' },
+    { discoveredAt: '2026-08-05T10:00:00.000Z', id: 'middle' },
+  ]
+
+  assert.deepEqual(
+    sortJobLeadsNewestFirst(leads).map((lead) => lead.id),
+    ['newest', 'middle', 'older'],
+  )
+  assert.equal(leads[0].id, 'older')
 })
