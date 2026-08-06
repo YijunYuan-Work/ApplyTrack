@@ -545,12 +545,12 @@ function App() {
     )
   }
 
-  function handleJobLeadRemoved() {
+  function handleJobLeadRemoved(removedCount = 1) {
     setJobAgentSummary((current) =>
       current
         ? {
             ...current,
-            pendingCount: Math.max(0, (current.pendingCount || 0) - 1),
+            pendingCount: Math.max(0, (current.pendingCount || 0) - removedCount),
           }
         : current,
     )

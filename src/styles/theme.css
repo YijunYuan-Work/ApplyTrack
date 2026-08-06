@@ -4986,13 +4986,26 @@ dd {
   margin: 0;
 }
 
-.agent-queue-heading > strong {
+.agent-queue-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.agent-queue-controls > strong {
   flex: 0 0 auto;
   padding: 6px 10px;
   border-radius: 999px;
   background: #e8f3ff;
   color: #006bd8;
   font-size: 0.78rem;
+}
+
+.agent-remove-all-action {
+  min-height: 40px;
+  padding: 8px 12px;
+  white-space: nowrap;
 }
 
 .agent-view-tabs {
@@ -5595,6 +5608,11 @@ dd {
   .agent-queue-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .agent-queue-controls {
+    justify-content: space-between;
+    width: 100%;
   }
 
   .agent-panel-heading button,

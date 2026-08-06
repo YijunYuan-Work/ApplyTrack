@@ -5,6 +5,7 @@ import {
   createJobAlertInbox,
   fetchJobAgentWorkspace,
   removeJobLead,
+  removeJobLeads,
   updateJobAlertInbox,
 } from '../api/jobAgent'
 import AppLayout from '../components/AppLayout'
@@ -289,6 +290,52 @@ function JobAgentPage({
     }
   }
 
+  async function handleRemoveAllLeads() {
+    const waitingLeads = activeWorkspace.leads.filter(
+      (lead) => lead.state !== 'applied' && lead.state !== 'expired',
+    )
+
+    if (waitingLeads.length === 0) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Remove all ${waitingLeads.length} jobs from your application queue? This cannot be undone.`,
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    const leadIds = waitingLeads.map((lead) => lead.id)
+
+    setIsUpdating(true)
+    setPageError('')
+    setPageNotice('')
+
+    try {
+      const removedLeadIds = isDemo
+        ? leadIds
+        : await removeJobLeads(leadIds, user.id)
+      const removedLeadIdSet = new Set(removedLeadIds)
+
+      updateWorkspace((current) => ({
+        ...current,
+        leads: current.leads.filter((lead) => !removedLeadIdSet.has(lead.id)),
+      }))
+      onJobLeadRemoved(removedLeadIds.length)
+      setPageNotice(
+        isDemo
+          ? `${removedLeadIds.length} jobs were removed from your sample queue.`
+          : `${removedLeadIds.length} jobs were removed from your queue.`,
+      )
+    } catch (error) {
+      setPageError(error.message)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   return (
     <AppLayout
       currentPage="agent"
@@ -357,6 +404,7 @@ function JobAgentPage({
             messages={activeWorkspace.messages}
             onFinishApplying={handleFinishApplying}
             onRemove={handleRemoveLead}
+            onRemoveAll={handleRemoveAllLeads}
           />
         ) : activeWorkspace ? (
           <JobAgentSetup

@@ -404,3 +404,19 @@ export async function removeJobLead(leadId, userId) {
   throwIfError(error)
   return data.id
 }
+
+export async function removeJobLeads(leadIds, userId) {
+  if (leadIds.length === 0) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('job_leads')
+    .delete()
+    .eq('user_id', userId)
+    .in('id', leadIds)
+    .select('id')
+
+  throwIfError(error)
+  return (data || []).map((lead) => lead.id)
+}

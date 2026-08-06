@@ -5,6 +5,7 @@ import {
   ExternalLink,
   MapPin,
   Search,
+  Trash2,
   UsersRound,
   X,
 } from 'lucide-react'
@@ -41,6 +42,7 @@ function JobMatches({
   messages,
   onFinishApplying,
   onRemove,
+  onRemoveAll,
 }) {
   const [query, setQuery] = useState('')
   const [source, setSource] = useState('all')
@@ -48,6 +50,9 @@ function JobMatches({
   const latestMessage = messages[0]
   const hasLinkedIn = messages.some((message) => message.provider === 'linkedin')
   const hasIndeed = messages.some((message) => message.provider === 'indeed')
+  const waitingLeadCount = leads.filter(
+    (lead) => lead.state !== 'applied' && lead.state !== 'expired',
+  ).length
 
   const visibleLeads = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -92,7 +97,18 @@ function JobMatches({
             <h2>Jobs waiting for you</h2>
             <p>Open a job, apply on LinkedIn or Indeed, then confirm it here.</p>
           </div>
-          <strong>{visibleLeads.length} waiting</strong>
+          <div className="agent-queue-controls">
+            <strong>{waitingLeadCount} waiting</strong>
+            <button
+              className="danger-action agent-remove-all-action"
+              disabled={isUpdating || waitingLeadCount === 0}
+              type="button"
+              onClick={onRemoveAll}
+            >
+              <Trash2 aria-hidden="true" size={17} />
+              Remove all
+            </button>
+          </div>
         </div>
 
         <div className="agent-match-actions">
