@@ -164,7 +164,7 @@ npx supabase secrets set INBOUND_EMAIL_DOMAIN=alerts.your-domain.com
 npx supabase functions deploy ingest-job-alert --no-verify-jwt
 ```
 
-To activate password recovery, configure the Resend sender, application URL, and allowed redirect origins before deploying the recovery function:
+To activate password recovery, **first apply the SQL migrations**, including `20261009201500_password_recovery_safety.sql`. That migration adds a private-to-clients, service-role-only lookup and persistent rate limiting. Only then configure the Resend sender, application URL, and allowed redirect origins before deploying the updated recovery function:
 
 ```powershell
 npx supabase secrets set RESEND_API_KEY=re_your_api_key
