@@ -3,7 +3,7 @@ import {
   getTodayIsoDate,
   normalizeApplication,
   statuses,
-} from '../data/applications'
+} from '../data/applications.js'
 
 const maximumSpreadsheetBytes = 5 * 1024 * 1024
 
