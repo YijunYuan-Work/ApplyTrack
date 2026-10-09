@@ -6,7 +6,7 @@ export function normalizeRecoveryEmail(value) {
   }
 
   const email = value.trim().toLowerCase()
-  return email.length <= 254 && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)
+  return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     ? email
     : ''
 }
