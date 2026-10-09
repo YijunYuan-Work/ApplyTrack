@@ -167,7 +167,7 @@ export async function downloadExcelTemplate() {
 }
 
 export async function parseExcelApplications(file) {
-  if (!/\\.xlsx?$/i.test(file.name)) {
+  if (!['.xls', '.xlsx'].some((extension) => file.name.toLowerCase().endsWith(extension))) {
     throw new Error('Choose an .xlsx or .xls spreadsheet.')
   }
 
