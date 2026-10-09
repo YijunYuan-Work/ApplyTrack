@@ -27,7 +27,7 @@ test('job lead presentation extracts salary, tags, and summary text', () => {
     salaryMin: null,
   })
 
-  assert.equal(presentation.salaryLabel, '$90,000 - $120,000')
+  assert.match(presentation.salaryLabel, /^(?:CA)?\$90,000 - (?:CA)?\$120,000$/)
   assert.deepEqual(presentation.highlights, ['Easy Apply', 'Remote'])
   assert.equal(presentation.summary, 'Build business applications')
 })

@@ -176,6 +176,19 @@ npx supabase functions deploy request-password-reset
 
 </details>
 
+## Dependency security
+
+Spreadsheet parsing uses SheetJS Community Edition 0.20.3 from the [official
+SheetJS distribution](https://cdn.sheetjs.com/), rather than the obsolete npm
+registry release 0.18.5. The import flow accepts .xlsx and legacy .xls files,
+limits uploads to 5 MB, and validates expected columns. Monitor the official
+SheetJS advisories because the CDN tarball is not tracked like an npm-registry
+version.
+
+The CI workflow uses Node.js 24 and runs lint, tests, and a production build
+on every pull request. For the same checks locally, run `npm ci` followed by
+`npm run lint`, `npm test`, and `npm run build`.
+
 ## Development Commands
 
 | Command | Purpose |

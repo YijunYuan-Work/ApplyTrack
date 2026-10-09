@@ -3,7 +3,9 @@ import {
   getTodayIsoDate,
   normalizeApplication,
   statuses,
-} from '../data/applications'
+} from '../data/applications.js'
+
+const maximumSpreadsheetBytes = 5 * 1024 * 1024
 
 const fieldAliases = {
   company: ['company', 'employer', 'organization'],
@@ -165,10 +167,27 @@ export async function downloadExcelTemplate() {
 }
 
 export async function parseExcelApplications(file) {
+  if (!['.xls', '.xlsx'].some((extension) => file.name.toLowerCase().endsWith(extension))) {
+    throw new Error('Choose an .xlsx or .xls spreadsheet.')
+  }
+
+  if (file.size === 0 || file.size > maximumSpreadsheetBytes) {
+    throw new Error('Spreadsheets must be between 1 byte and 5 MB.')
+  }
+
   const XLSX = await import('xlsx')
   const buffer = await file.arrayBuffer()
-  const workbook = XLSX.read(buffer, { cellDates: true })
+  const workbook = XLSX.read(buffer, {
+    cellDates: true,
+    cellFormula: false,
+    cellHTML: false,
+  })
   const firstSheetName = workbook.SheetNames[0]
+
+  if (!firstSheetName) {
+    return []
+  }
+
   const sheet = workbook.Sheets[firstSheetName]
   const rows = XLSX.utils.sheet_to_json(sheet, {
     defval: '',
@@ -176,12 +195,20 @@ export async function parseExcelApplications(file) {
     raw: true,
   })
 
-  if (rows.length < 2) {
+  if (rows.length === 0) {
     return []
   }
 
   const [headers, ...dataRows] = rows
   const headerMap = buildHeaderMap(headers)
+
+  if (headerMap.company === undefined || headerMap.role === undefined) {
+    throw new Error('The spreadsheet must include Company and Role columns.')
+  }
+
+  if (dataRows.length === 0) {
+    return []
+  }
 
   return dataRows
     .map((row) => {
