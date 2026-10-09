@@ -90,8 +90,17 @@ function ExcelImportPanel({ applications = [], demoRows = [], onImportApplicatio
     try {
       const importedApplications = await parseExcelApplications(file)
       loadApplications(importedApplications, file.name)
-    } catch {
-      setError('Could not read this spreadsheet. Try an .xlsx or .xls file.')
+    } catch (parseError) {
+      const expectedMessages = [
+        'Choose an .xlsx or .xls spreadsheet.',
+        'Spreadsheets must be between 1 byte and 5 MB.',
+        'The spreadsheet must include Company and Role columns.',
+      ]
+      setError(
+        expectedMessages.includes(parseError?.message)
+          ? parseError.message
+          : 'Could not read this spreadsheet. Try an .xlsx or .xls file.',
+      )
     } finally {
       setIsParsing(false)
     }
