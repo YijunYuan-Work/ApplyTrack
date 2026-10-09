@@ -1,14 +1,17 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.106.2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2.106.2/cors'
+import {
+  getRecoveryNetworkAddress,
+  getSafeRecoveryRedirect,
+  hashRecoveryBucket,
+  readRecoveryRequest,
+} from '../_shared/recoverySecurity.ts'
 
 const recoveryResponse = {
   message: 'If an account uses that recovery email, a reset link is on its way.',
 }
-const rateLimitWindowMs = 15 * 60 * 1000
-const maxResetRequests = 5
-const resetAttempts = new Map<string, { count: number; resetAt: number }>()
 
-function jsonResponse(body: Record<string, string | boolean>, status = 200) {
+function jsonResponse(body: Record<string, string>, status = 200) {
   return new Response(JSON.stringify(body), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     status,
@@ -26,85 +29,41 @@ function getSecretKey() {
   return Object.values(secretKeys)[0] as string | undefined
 }
 
-function getRateLimitKey(request: Request, email: string) {
-  const forwardedFor =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+async function consumeRecoveryQuota(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  request: Request,
+  email: string,
+) {
+  const [emailHash, networkHash] = await Promise.all([
+    hashRecoveryBucket('email', email),
+    hashRecoveryBucket('network', getRecoveryNetworkAddress(request)),
+  ])
 
-  return `${forwardedFor}:${email || 'empty'}`
-}
-
-function isRateLimited(request: Request, email: string) {
-  const now = Date.now()
-  const key = getRateLimitKey(request, email)
-  const attempt = resetAttempts.get(key)
-
-  if (!attempt || attempt.resetAt <= now) {
-    resetAttempts.set(key, { count: 1, resetAt: now + rateLimitWindowMs })
-    return false
-  }
-
-  if (attempt.count >= maxResetRequests) {
-    return true
-  }
-
-  resetAttempts.set(key, {
-    count: attempt.count + 1,
-    resetAt: attempt.resetAt,
+  const { data, error } = await supabaseAdmin.rpc('consume_password_reset_quota', {
+    p_email_hash: emailHash,
+    p_network_hash: networkHash,
   })
-  return false
-}
 
-function getSafeRedirectUrl(requestedRedirect: string) {
-  const fallbackUrl = Deno.env.get('APP_URL')
-  const allowedOrigins = (Deno.env.get('ALLOWED_REDIRECT_ORIGINS') || fallbackUrl || '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean)
-
-  try {
-    const requestedUrl = new URL(requestedRedirect)
-
-    if (allowedOrigins.includes(requestedUrl.origin)) {
-      return `${requestedUrl.origin}/?recovery=1`
-    }
-  } catch {
-    // Use the configured application URL below.
+  if (error || typeof data !== 'boolean') {
+    throw error || new Error('Recovery rate-limit check failed.')
   }
 
-  if (!fallbackUrl) {
-    throw new Error('APP_URL is not configured.')
-  }
-
-  return `${new URL(fallbackUrl).origin}/?recovery=1`
+  return data
 }
 
-async function findUserByRecoveryEmail(
+async function lookupAuthEmail(
   supabaseAdmin: ReturnType<typeof createClient>,
   email: string,
 ) {
-  const perPage = 1000
+  const { data, error } = await supabaseAdmin.rpc('find_recovery_auth_email', {
+    p_recovery_email: email,
+  })
 
-  for (let page = 1; page <= 10; page += 1) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
-      page,
-      perPage,
-    })
-
-    if (error) {
-      throw error
-    }
-
-    const matchingUser = data.users.find(
-      (user) =>
-        user.user_metadata?.profileEmail?.trim().toLowerCase() === email,
-    )
-
-    if (matchingUser || data.users.length < perPage) {
-      return matchingUser || null
-    }
+  if (error) {
+    throw error
   }
 
-  return null
+  return typeof data === 'string' && data ? data : null
 }
 
 async function sendResetEmail(to: string, actionLink: string) {
@@ -143,6 +102,17 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: 'Method not allowed.' }, 405)
   }
 
+  let payload
+  try {
+    payload = await readRecoveryRequest(request)
+  } catch {
+    return jsonResponse({ error: 'Invalid password recovery request.' }, 400)
+  }
+
+  if (!payload.email) {
+    return jsonResponse(recoveryResponse)
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const secretKey = getSecretKey()
@@ -151,36 +121,31 @@ Deno.serve(async (request) => {
       throw new Error('Supabase admin credentials are not configured.')
     }
 
-    const { email = '', redirectTo = '' } = await request.json()
-    const normalizedEmail =
-      typeof email === 'string' ? email.trim().toLowerCase() : ''
-
-    if (isRateLimited(request, normalizedEmail)) {
-      return jsonResponse(
-        { error: 'Too many reset requests. Please wait before trying again.' },
-        429,
-      )
-    }
-
-    if (!normalizedEmail) {
-      return jsonResponse(recoveryResponse)
-    }
-
     const supabaseAdmin = createClient(supabaseUrl, secretKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: { autoRefreshToken: false, persistSession: false },
     })
-    const user = await findUserByRecoveryEmail(supabaseAdmin, normalizedEmail)
 
-    if (!user?.email) {
+    // Rate limiting persists across concurrent Edge Function instances.
+    // A limited request returns the same non-enumerating public response.
+    const permitted = await consumeRecoveryQuota(supabaseAdmin, request, payload.email)
+    if (!permitted) {
       return jsonResponse(recoveryResponse)
     }
+
+    const authEmail = await lookupAuthEmail(supabaseAdmin, payload.email)
+    if (!authEmail) {
+      return jsonResponse(recoveryResponse)
+    }
+
+    const redirectTo = getSafeRecoveryRedirect(
+      payload.redirectTo,
+      Deno.env.get('APP_URL') || '',
+      Deno.env.get('ALLOWED_REDIRECT_ORIGINS') || '',
+    )
 
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-      email: user.email,
-      options: { redirectTo: getSafeRedirectUrl(redirectTo) },
+      email: authEmail,
+      options: { redirectTo },
       type: 'recovery',
     })
 
@@ -188,9 +153,10 @@ Deno.serve(async (request) => {
       throw error || new Error('Supabase did not return a recovery link.')
     }
 
-    await sendResetEmail(normalizedEmail, data.properties.action_link)
+    await sendResetEmail(payload.email, data.properties.action_link)
   } catch (error) {
-    console.error('Password reset request failed:', error)
+    // Avoid printing email addresses, account metadata, or recovery links.
+    console.error('Password reset request failed:', error instanceof Error ? error.name : 'unknown')
     return jsonResponse(
       { error: 'Password recovery is unavailable right now. Please try again later.' },
       500,
