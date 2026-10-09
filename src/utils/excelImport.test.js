@@ -8,7 +8,7 @@ function spreadsheetFile(rows, bookType = 'xlsx') {
   const worksheet = XLSX.utils.aoa_to_sheet(rows)
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Applications')
   const bytes = XLSX.write(workbook, { type: 'array', bookType })
-  const arrayBuffer = Uint8Array.from(bytes).buffer
+  const arrayBuffer = bytes instanceof ArrayBuffer ? bytes : Uint8Array.from(bytes).buffer
 
   return {
     name: bookType === 'biff8' ? 'applications.xls' : 'applications.xlsx',
