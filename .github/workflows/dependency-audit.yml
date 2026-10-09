@@ -11,7 +11,7 @@ on:
     branches: [chore/phase1-dependency-hardening]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   audit:
@@ -24,6 +24,23 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Apply nonbreaking audit updates to lockfile
+        run: npm audit fix --package-lock-only --ignore-scripts || true
+      - name: Verify dependency upgrades
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+      - name: Commit compatible lockfile upgrades to feature branch only
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: apply compatible security updates to lockfile"
+            git push origin HEAD:refs/heads/chore/phase1-dependency-hardening
+          fi
       - name: Generate audit report
         run: npm audit --json > dependency-audit.json || true
       - name: Summarize vulnerabilities
