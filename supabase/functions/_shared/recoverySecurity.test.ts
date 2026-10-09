@@ -83,3 +83,17 @@ test('extracts a bounded, best-effort network address', () => {
   })
   assert.equal(getRecoveryNetworkAddress(request), '203.0.113.1')
 })
+
+test('rejects control and invisible format characters in recovery email', () => {
+  for (const character of ['\u0000', '\u0001', '\u007f', '\u200b', '\u202e']) {
+    assert.equal(normalizeRecoveryEmail(`user${character}@example.com`), '')
+  }
+})
+
+test('rejects unsafe APP_URL configuration rather than using it as a fallback', () => {
+  for (const appUrl of ['javascript:alert(1)', 'file:///tmp/app', 'http://public.example',
+    'https://username:password@app.example']) {
+    assert.throws(() => getSafeRecoveryRedirect('https://evil.example', appUrl, ''),
+      /APP_URL/)
+  }
+})

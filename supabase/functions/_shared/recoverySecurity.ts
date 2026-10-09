@@ -1,7 +1,7 @@
 const maxRequestBytes = 2048
 
 export function normalizeRecoveryEmail(value) {
-  if (typeof value !== 'string') {
+  if (typeof value !== 'string' || /[\p{Cc}\p{Cf}]/u.test(value)) {
     return ''
   }
 
@@ -34,7 +34,18 @@ export function getSafeRecoveryRedirect(requestedRedirect, appUrl, allowedOrigin
     throw new Error('APP_URL is not configured.')
   }
 
-  const fallbackOrigin = new URL(appUrl).origin
+  let configured
+  try {
+    configured = new URL(appUrl)
+  } catch {
+    throw new Error('APP_URL is invalid.')
+  }
+  const isSafeUrl = (url) => !url.username && !url.password && (
+    url.protocol === 'https:' ||
+    (url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname))
+  )
+  if (!isSafeUrl(configured)) throw new Error('APP_URL must use HTTPS or loopback HTTP without credentials.')
+  const fallbackOrigin = configured.origin
   const permitted = new Set(
     (allowedOrigins || fallbackOrigin)
       .split(',')
@@ -44,10 +55,7 @@ export function getSafeRecoveryRedirect(requestedRedirect, appUrl, allowedOrigin
 
   try {
     const requested = new URL(requestedRedirect)
-    if (permitted.has(requested.origin) && (
-      requested.protocol === 'https:' ||
-      (requested.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(requested.hostname))
-    )) {
+    if (permitted.has(requested.origin) && isSafeUrl(requested)) {
       return `${requested.origin}/?recovery=1`
     }
   } catch {

@@ -18,7 +18,9 @@ email as an unverified recovery contact until a future verification migration.
   and grants; old rows are cleaned up probabilistically.
 - Cap request bodies at 2 KiB and validate email shape and redirect origin.
 - Keep identical public responses for nonexistent accounts and throttled
-  requests to reduce account enumeration. Do not log emails or reset links.
+  requests, including account-specific Auth/mail failures, to reduce account
+  enumeration. Database/credential failures before a match fail closed with a
+  generic unavailable response. Do not log emails or reset links.
 - Retain Supabase Auth's signed, expiring recovery links and Resend delivery.
 
 ## Deployment sequence
@@ -56,6 +58,55 @@ database migration**, or password recovery will fail closed.
 | Unapproved preview or attacker redirect origin | Falls back to configured APP_URL |
 | Concurrent Edge instances | Shared counters via Postgres |
 | Non-service-role RPC call | Rejected by EXECUTE grants |
+| Resend rejection or transport failure for a known account | Same public reply as unknown account |
+| Control/invisible characters in email | No lookup, quota row, or delivery |
+| Unsafe APP_URL protocol or embedded credentials | No recovery link generated |
+| Expired or previously consumed recovery token | No new session |
+
+## Repeatable local integration tests
+
+Requirements: Node.js 24, npm, and a running local Docker engine. The test
+runner obtains the pinned Supabase CLI 2.120.0 through `npx`; the first run
+needs network access to download CLI packages, Docker images, and Edge imports.
+No Supabase login, linked project, production secrets, or Resend account is
+needed.
+
+```powershell
+npm ci
+npm test
+npm run test:integration:recovery
+npm run lint
+npm run build
+```
+
+The integration command builds an **unlinked**, disposable Supabase project in
+`.temp/recovery-sandbox` inside the current checkout. The project ID includes a
+checkout-path hash; ports are selected from free blocks starting at 18320. It
+checks Docker project/workdir labels before operating on existing containers,
+resets only that local database, and stops only that project when finished.
+Other Supabase projects, containers, and volumes are not stopped or deleted.
+The database volumes are retained for inspection; generated config, logs, local
+credentials, and Sandbox files are ignored by Git. Run this command only for
+disposable test data, not a local development database you want to preserve.
+
+Because `applications` predates the repository's migration history, the runner
+first generates a test-only bootstrap from the applications portion of
+`supabase/schema.sql`, then applies **every repository migration**, including
+the recovery migration. That bootstrap is not a production migration.
+
+The suite uses real PostgreSQL, PostgREST, Supabase Auth, and Deno Edge workers.
+It checks grants and RLS (including existing application ownership), RPC
+validation and idempotence, duplicate email ambiguity, atomic rollback, expiry,
+5/email and 30/network quotas, 48-way database concurrency, and 12 simultaneous
+Edge requests. Real recovery tokens change a password; reuse and expiration
+are rejected. Invalid bodies, redirects, and mail-provider failures are covered.
+
+The deployed entrypoint is smoke-tested locally for methods and an unknown
+account. Known-account delivery tests use a test-only entrypoint importing the
+**same production handler**, with only the Resend transport replaced by a local
+capture server. Production keeps the fixed Resend endpoint and has no test-mode
+environment switch. No real mail is sent. GitHub Actions runs this suite in a
+separate Docker-backed job as well as unit tests, lint, and build.
 
 ## Known limits and follow-up
 
@@ -71,5 +122,7 @@ The per-email bucket still enforces shared, durable limits; add platform WAF or
 trusted-proxy-aware network limiting for larger deployments.
 
 These SQL changes have not been applied to the live Supabase project by this
-PR. Unit and CI tests do not constitute a deployed Edge Function integration
-test.
+PR. Local integration/CI tests do not prove production secrets, Resend domain
+verification, real inbox delivery, proxy/WAF behavior, or frontend recovery
+flow correctness against a deployed project. Those remain deployment-time
+manual checks, after approval and the migration-first deployment sequence.
