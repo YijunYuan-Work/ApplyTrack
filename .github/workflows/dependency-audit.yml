@@ -1,0 +1,45 @@
+name: Dependency Security Audit
+
+on:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - .github/workflows/dependency-audit.yml
+  workflow_dispatch:
+  push:
+    branches: [chore/phase1-dependency-hardening]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Generate audit report
+        run: npm audit --json > dependency-audit.json || true
+      - name: Summarize vulnerabilities
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs'
+          const report = JSON.parse(fs.readFileSync('dependency-audit.json', 'utf8'))
+          const vulnerabilities = Object.entries(report.vulnerabilities || {})
+          console.log('Summary:', JSON.stringify(report.metadata?.vulnerabilities || {}))
+          for (const [name, data] of vulnerabilities) {
+            console.log(JSON.stringify({
+              name, severity: data.severity, isDirect: data.isDirect,
+              range: data.range, fixAvailable: data.fixAvailable,
+              via: data.via?.map(item => typeof item === 'string' ? item : {
+                name: item.name, title: item.title, url: item.url, range: item.range,
+              }),
+            }))
+          }
+          EOF
