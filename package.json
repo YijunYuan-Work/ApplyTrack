@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "test": "node --test src/utils/excelImport.test.js src/data/jobAgent.test.js src/utils/resumeParser.test.js supabase/functions/_shared/jobAlertParser.test.ts",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:auth-ui": "playwright test --config playwright.auth.config.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.62.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

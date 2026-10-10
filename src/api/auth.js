@@ -34,14 +34,13 @@ export async function signInWithEmail(username, password) {
   return data.user
 }
 
-export async function signUpWithEmail(username, email, password) {
+export async function signUpWithEmail(username, password) {
   const { data, error } = await supabase.auth.signUp({
     email: createAuthEmail(username),
     password,
     options: {
       data: {
         name: username,
-        profileEmail: email.trim(),
         username,
       },
     },
@@ -60,37 +59,6 @@ export async function signOut() {
   if (error) {
     throw error
   }
-}
-
-export async function requestPasswordReset(email) {
-  const { data, error } = await supabase.functions.invoke('request-password-reset', {
-    body: {
-      email: email.trim(),
-      redirectTo: `${window.location.origin}/?recovery=1`,
-    },
-  })
-
-  if (error) {
-    throw new Error('Password recovery is unavailable right now. Please try again later.')
-  }
-
-  if (data?.error) {
-    throw new Error(data.error)
-  }
-}
-
-export async function updateProfileEmail(email) {
-  const { data, error } = await supabase.auth.updateUser({
-    data: {
-      profileEmail: email.trim(),
-    },
-  })
-
-  if (error) {
-    throw error
-  }
-
-  return data.user
 }
 
 export async function updatePassword(password) {

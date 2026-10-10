@@ -149,25 +149,6 @@
   gap: 18px;
 }
 
-.auth-form-copy {
-  margin: 0;
-}
-
-.auth-link-button {
-  justify-self: start;
-  min-height: auto;
-  padding: 0;
-  background: transparent;
-  color: var(--accent);
-  font-size: 0.86rem;
-}
-
-.auth-link-button:hover {
-  background: transparent;
-  color: #256257;
-  text-decoration: underline;
-}
-
 .field-hint {
   color: var(--text);
   font-size: 0.76rem;

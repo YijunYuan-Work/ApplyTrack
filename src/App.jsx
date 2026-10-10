@@ -9,12 +9,10 @@ import {
 } from './api/applications'
 import {
   getCurrentUser,
-  requestPasswordReset,
   signInWithEmail,
   signOut,
   signUpWithEmail,
   updatePassword,
-  updateProfileEmail,
 } from './api/auth'
 import { fetchJobAgentSummary } from './api/jobAgent'
 import {
@@ -211,14 +209,14 @@ function App() {
     }
   }, [route, user])
 
-  async function handleAuthSubmit({ email, mode, password, username }) {
+  async function handleAuthSubmit({ mode, password, username }) {
     setAuthLoading(true)
     setAuthError('')
 
     try {
       const authenticatedUser =
         mode === 'sign-up'
-          ? await signUpWithEmail(username, email, password)
+          ? await signUpWithEmail(username, password)
           : await signInWithEmail(username, password)
 
       setUser(authenticatedUser)
@@ -237,15 +235,6 @@ function App() {
     setApplications([])
     setJobAgentSummary(null)
     navigate('/sign-in')
-  }
-
-  async function handlePasswordResetRequest(email) {
-    await requestPasswordReset(email)
-  }
-
-  async function handleUpdateProfileEmail(email) {
-    const updatedUser = await updateProfileEmail(email)
-    setUser(updatedUser)
   }
 
   async function handleUpdatePassword(password) {
@@ -460,7 +449,6 @@ function App() {
         error={authError}
         isLoading={authLoading}
         onAuthSubmit={handleAuthSubmit}
-        onPasswordResetRequest={handlePasswordResetRequest}
       />
     )
   }
@@ -503,7 +491,6 @@ function App() {
       <ProfilePage
         {...sharedPageProps}
         onUpdatePassword={handleUpdatePassword}
-        onUpdateProfileEmail={handleUpdateProfileEmail}
       />
     )
   }
