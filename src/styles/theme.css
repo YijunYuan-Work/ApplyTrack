@@ -906,6 +906,11 @@ dd {
   gap: 14px;
 }
 
+.profile-settings-grid {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 560px;
+}
+
 .form-error,
 .form-success {
   margin: 0;
@@ -963,16 +968,6 @@ dd {
   background: var(--surface);
   color: var(--text-h);
   box-shadow: 0 6px 16px rgba(37, 75, 105, 0.08);
-}
-
-.auth-link-button {
-  justify-self: start;
-  min-height: auto;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent);
-  box-shadow: none;
 }
 
 .progress-summary {

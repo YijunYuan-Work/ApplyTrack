@@ -14,6 +14,16 @@ import { navigate } from '../utils/routes'
 const JobAgentPage = lazy(() => import('./JobAgentPage'))
 const ProgressPage = lazy(() => import('./ProgressPage'))
 
+const user = {
+  id: 'demo-user',
+  name: 'Demo',
+  user_metadata: {
+    name: 'Demo',
+    profileEmail: 'demo@example.com',
+    username: 'Demo',
+  },
+}
+
 function getDemoPath(path) {
   return path === '/dashboard' ? '/demo' : `/demo${path}`
 }
@@ -50,15 +60,6 @@ function DemoWorkspace({ route }) {
   const [applications, setApplications] = useState(() =>
     demoApplications.map((application) => ({ ...application })),
   )
-  const [user, setUser] = useState({
-    id: 'demo-user',
-    name: 'Demo',
-    user_metadata: {
-      name: 'Demo',
-      profileEmail: 'demo@example.com',
-      username: 'Demo',
-    },
-  })
   const [jobAgentWorkspace, setJobAgentWorkspace] = useState(
     createDemoJobAgentWorkspace,
   )
@@ -204,15 +205,6 @@ function DemoWorkspace({ route }) {
       <ProfilePage
         {...sharedPageProps}
         onUpdatePassword={async () => {}}
-        onUpdateProfileEmail={async (email) => {
-          setUser((current) => ({
-            ...current,
-            user_metadata: {
-              ...current.user_metadata,
-              profileEmail: email.trim(),
-            },
-          }))
-        }}
       />
     )
   }

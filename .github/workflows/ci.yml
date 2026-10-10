@@ -26,5 +26,9 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
+      - name: Install Chromium for isolated authentication UI tests
+        run: npx playwright install --with-deps chromium
+      - name: Test authentication UI with synthetic backend
+        run: npm run test:auth-ui
       - name: Build
         run: npm run build

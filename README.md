@@ -45,8 +45,10 @@ The interface is built as a working product rather than a marketing dashboard. D
 ### Profile and Account
 
 - Username-based authentication
-- Optional recovery email and password reset flow
+- Password updates for signed-in users
 - Session behavior designed for a personal workspace
+
+Public password recovery and recovery email settings are temporarily unavailable. Existing valid password reset links remain supported.
 
 ## Job Agent
 
@@ -164,7 +166,7 @@ npx supabase secrets set INBOUND_EMAIL_DOMAIN=alerts.your-domain.com
 npx supabase functions deploy ingest-job-alert --no-verify-jwt
 ```
 
-To activate password recovery, configure the Resend sender, application URL, and allowed redirect origins before deploying the recovery function:
+The legacy password-recovery Edge Function is retained, but its public UI is hidden. The following server configuration is reference only; deploying this function alone does not re-enable recovery UI:
 
 ```powershell
 npx supabase secrets set RESEND_API_KEY=re_your_api_key
