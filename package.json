@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --test src/utils/excelImport.test.js src/data/jobAgent.test.js src/utils/resumeParser.test.js supabase/functions/_shared/jobAlertParser.test.ts supabase/functions/_shared/recoverySecurity.test.ts supabase/functions/request-password-reset/handler.test.ts scripts/recovery-local.test.mjs",
+    "test": "node --test src/utils/excelImport.test.js src/data/jobAgent.test.js src/utils/resumeParser.test.js supabase/functions/_shared/jobAlertParser.test.ts supabase/functions/_shared/recoverySecurity.test.ts supabase/functions/request-password-reset/handler.test.ts scripts/recovery-local.test.mjs scripts/check-recovery-release.test.mjs",
     "preview": "vite preview",
-    "test:integration:recovery": "node scripts/test-recovery-local.mjs"
+    "test:integration:recovery": "node scripts/test-recovery-local.mjs",
+    "check:release:recovery": "node scripts/check-recovery-release.mjs",
+    "prepare:rollback:recovery": "node scripts/prepare-recovery-rollback.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",

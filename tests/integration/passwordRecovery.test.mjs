@@ -56,7 +56,9 @@ async function createUser(label, profileEmail) {
 async function request(body, options = {}) {
   const response = await fetch(`${status.FUNCTIONS_URL}/${options.production ? 'request-password-reset' : 'recovery-integration'}`, {
     method: options.method || 'POST',
-    headers: { apikey: status.ANON_KEY, 'Content-Type': 'application/json',
+    // The readiness probe shares fetch's pool with Auth; do not leave an idle
+    // Kong socket there while synchronous catalog checks block the event loop.
+    headers: { apikey: status.ANON_KEY, Connection: 'close', 'Content-Type': 'application/json',
       'x-forwarded-for': options.network || `198.51.100.${mails.length + 1}` },
     body: ['GET', 'OPTIONS'].includes(options.method) ? undefined :
       typeof body === 'string' ? body : JSON.stringify(body),
@@ -157,6 +159,15 @@ test('migrations create protected table, explicit RPC grants and fixed search pa
     assert.deepEqual(fn.config, ['search_path=""'])
     assert.equal(fn.definer, fn.name === 'find_recovery_auth_email')
   }
+})
+
+test('release catalog verifier is read-only and all post-migration checks pass', async () => {
+  const countBefore = sql('select count(*) from public.password_reset_throttles')
+  const query = await readFile(path.join(root, 'docs/security/verify-recovery-release.sql'), 'utf8')
+  const result = JSON.parse(sql(query))
+  assert.equal(result.all_passed, true, JSON.stringify(result.checks))
+  assert.equal(Object.keys(result.checks).length, 17)
+  assert.equal(sql('select count(*) from public.password_reset_throttles'), countBefore)
 })
 
 test('the recovery migration is safe to apply again without restoring public grants', async () => {

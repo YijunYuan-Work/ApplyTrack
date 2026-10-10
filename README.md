@@ -164,15 +164,12 @@ npx supabase secrets set INBOUND_EMAIL_DOMAIN=alerts.your-domain.com
 npx supabase functions deploy ingest-job-alert --no-verify-jwt
 ```
 
-To activate password recovery, **first apply the SQL migrations**, including `20261009201500_password_recovery_safety.sql`. That migration adds a private-to-clients, service-role-only lookup and persistent rate limiting. Only then configure the Resend sender, application URL, and allowed redirect origins before deploying the updated recovery function:
-
-```powershell
-npx supabase secrets set RESEND_API_KEY=re_your_api_key
-npx supabase secrets set "PASSWORD_RESET_FROM_EMAIL=ApplyTrack <noreply@your-domain.com>"
-npx supabase secrets set APP_URL=https://your-deployment.example
-npx supabase secrets set "ALLOWED_REDIRECT_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://your-deployment.example"
-npx supabase functions deploy request-password-reset
-```
+Password recovery uses a service-role-only lookup and persistent rate limiting.
+Production activation requires a verified backup, the recovery migration, a
+production-only redirect allowlist, and an approved function deployment, in that
+order. Follow the [production release runbook](docs/security/recovery-production-release.md)
+instead of applying local-development settings to production. Localhost origins
+belong only in a separate local environment.
 
 </details>
 

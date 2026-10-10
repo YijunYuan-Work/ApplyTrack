@@ -25,6 +25,10 @@ email as an unverified recovery contact until a future verification migration.
 
 ## Deployment sequence
 
+Production operators must use the approval gates and backup/rollback procedures
+in [the production release runbook](recovery-production-release.md). The summary
+below is not authorization to change production.
+
 **Do not merge or deploy the updated Edge Function before completing the
 database migration**, or password recovery will fail closed.
 
