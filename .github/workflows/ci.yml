@@ -26,9 +26,13 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
+      - name: Isolated source and Edge audit characterizations
+        run: npm run test:audit
       - name: Install Chromium for isolated authentication UI tests
         run: npx playwright install --with-deps chromium
       - name: Test authentication UI with synthetic backend
         run: npm run test:auth-ui
+      - name: Synthetic functional audit (Chromium)
+        run: npm run test:audit-ui -- --project chromium
       - name: Build
         run: npm run build
