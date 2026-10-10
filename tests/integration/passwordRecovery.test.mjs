@@ -3,10 +3,9 @@ import { before, after, test } from 'node:test'
 import { randomUUID, createHash } from 'node:crypto'
 import { createServer } from 'node:http'
 import { writeFile, readFile } from 'node:fs/promises'
-import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
-import { localStatus, root, sandbox, sql, serveFunctions } from '../../scripts/recovery-local.mjs'
+import { localStatus, root, sandbox, sql, serveFunctions, stopFunctions } from '../../scripts/recovery-local.mjs'
 
 const runId = randomUUID().replaceAll('-', '')
 const users = []
@@ -129,13 +128,12 @@ after(async () => {
       await admin.from('password_reset_throttles').delete().in('bucket_key', [...buckets])
     }
   }
-  if (mailServer) await new Promise((resolve) => mailServer.close(resolve))
-  if (edgeProcess?.pid) {
-    if (process.platform === 'win32') {
-      spawnSync('taskkill', ['/pid', String(edgeProcess.pid), '/t', '/f'], { stdio: 'ignore' })
-    } else {
-      edgeProcess.kill('SIGTERM')
-    }
+  await stopFunctions(edgeProcess)
+  if (mailServer) {
+    await new Promise((resolve) => {
+      mailServer.close(resolve)
+      mailServer.closeAllConnections()
+    })
   }
 })
 

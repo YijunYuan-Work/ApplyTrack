@@ -9,6 +9,7 @@ export const projectId = `applytrack-recovery-pr6-${createHash('sha256').update(
 export const dbContainer = `supabase_db_${projectId}`
 const cliExecutable = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 const cliArgs = ['--yes', 'supabase@2.120.0']
+const stoppedProcesses = new WeakSet()
 
 function command(args) {
   const fullArgs = [...cliArgs, ...args, '--workdir', sandbox]
@@ -68,7 +69,38 @@ export function cli(args) {
 export function serveFunctions(envFile) {
   assertSandboxOwnership()
   const [executable, parameters] = command(['functions', 'serve', '--env-file', envFile])
-  return spawn(executable, parameters, { cwd: root, stdio: 'pipe' })
+  return spawn(executable, parameters, { cwd: root, stdio: 'pipe',
+    detached: process.platform !== 'win32' })
+}
+
+export async function stopFunctions(child) {
+  if (!child?.pid || stoppedProcesses.has(child)) return
+  if (child.stdout?.destroyed && child.stderr?.destroyed &&
+    (child.exitCode !== null || child.signalCode !== null)) return
+  const closed = new Promise((resolve) => child.once('close', () => {
+    stoppedProcesses.add(child)
+    resolve()
+  }))
+  function terminate(signal) {
+    if (process.platform === 'win32') {
+      const result = spawnSync('taskkill', ['/pid', String(child.pid), '/t', '/f'], { stdio: 'ignore' })
+      if (result.error || result.status !== 0) {
+        throw new Error(`Cannot stop the owned test process tree: ${result.error?.message || result.status}`)
+      }
+    } else {
+      // The detached launcher owns this group, including npx's native CLI child.
+      try { process.kill(-child.pid, signal) } catch (error) {
+        if (error.code !== 'ESRCH') throw error
+      }
+    }
+  }
+  const timeout = setTimeout(() => terminate('SIGKILL'), 5000)
+  try {
+    terminate('SIGTERM')
+    await closed
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 export function sql(query) {
