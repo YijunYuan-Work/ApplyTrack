@@ -116,8 +116,11 @@ Acceptance:
 **Size:** Medium  
 **Findings:** F01, G02  
 **Dependency:** RF-03 sequencing only  
-**Status:** [~] In Progress — Implementation / Awaiting ChatGPT Review
-**PR:** [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12) — open, awaiting ChatGPT Review
+**Status:** [~] In Progress — Stage 1 reviewed and merged; production release gated  
+**PR:** [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12) — reviewed, merged  
+**Merge commit:** `7cd120dbf07b8f59abe088efe5092937bf77f264`  
+**Merged:** 2026-10-11 (UTC)  
+**Production status:** The RF-04 migration is **not deployed**. Read-only production data/schema preflight, one-time backup/restore safety gate, migration-history registration and separate execution authorization are still pending. The Supabase GitHub Integration `Deploy to production` hold from SEC-02 must remain OFF.
 **Migration runbook:** [RF-04 Ownership Migration Runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md)
 **Migration:** `20261011042500_job_lead_ownership_integrity.sql`
 
@@ -627,7 +630,7 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 1 | RF-03 — Notes Data Integrity | P0 | Done — merged and deployed | [#9](https://github.com/YijunYuan-Work/ApplyTrack/pull/9) |
 | 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | Done — R01 mitigated via SEC-02 | [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) |
 | 3 | SEC-02 — Retire Legacy Recovery Endpoint | P0 Security | Done — production absence verified; auto-sync remains OFF | [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11); [runbook](SEC_02_RETIREMENT_RUNBOOK.md) |
-| 4 | RF-04 — Ownership Integrity | P0 | Planned | — |
+| 4 | RF-04 — Ownership Integrity | P0 | In Progress — merged; production migration not deployed | [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12); [runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md) |
 | 5 | RF-05 — Ingestion Failure Handling | P0 | Planned | — |
 | 6 | RF-06 — Lead State Consistency | P0 | Planned | — |
 | 7 | RF-07 — Status Mutation Reliability | P0 | Planned | — |
