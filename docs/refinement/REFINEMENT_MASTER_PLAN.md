@@ -1,0 +1,646 @@
+# ApplyTrack — Refinement Master Plan
+
+**Version:** 1.0  
+**Status:** Active — Approved (2026-10-10)  
+**Baseline:** `main` at `d2ad8718ff8ad68591d6b7ccbfe2cf626bd97650` (Refinement 02 merged)  
+**Source:** [Refinement 02 Quality Audit](./REFINEMENT_02_QUALITY_AUDIT.md)  
+**Document:** `docs/refinement/REFINEMENT_MASTER_PLAN.md`
+
+## 1. Project Objective
+
+Bring ApplyTrack to a production-quality standard suitable for a professional Software Engineering / QA Engineering portfolio.
+
+The refinement effort focuses on:
+
+- Functional correctness and reliability
+- Data integrity and security
+- Maintainable architecture and clean code
+- Consistent, polished UI/UX
+- Accessibility and responsive usability
+- Meaningful automated testing
+- Clear technical documentation
+
+### Non-negotiable Principles
+
+- No new business features.
+- No unnecessary architectural rewrites.
+- No paid services or additional monthly costs.
+- Existing user data must be preserved.
+- Production database changes require explicit approval.
+- UI redesigns require a design review, using Claude Design when appropriate.
+- ChatGPT owns planning, priorities, acceptance criteria and code review.
+- Codex owns implementation, investigation and testing.
+- Prefer narrow, independently reviewable PRs.
+- No automatic merges.
+- Do not reopen PR #6 or restart the abandoned backup-tool project.
+
+## 2. Tracking Rules
+
+Each task must have:
+
+- Stable Task ID
+- Priority
+- Scope and related audit findings
+- Defined acceptance criteria
+- Dependencies
+- Status
+- PR link when available
+- Final verification result
+
+### Status Definitions
+
+- `[ ]` Planned — not started
+- `[~]` In Progress — implementation underway
+- `[?]` Blocked / Decision Required — needs further evidence or approval
+- `[x]` Done — approved, merged, and required release checks complete
+- `Deferred` — intentionally postponed
+- `Not Required` — investigated and closed without implementation
+
+Only one implementation task should normally be active at a time. Independent read-only investigation may be performed when needed.
+
+A task is not complete merely because Codex pushed code or CI passed.
+
+---
+
+# 3. Completed Foundation
+
+- [x] **BASE-01 — Excel Import Security & CI** — [PR #4](https://github.com/YijunYuan-Work/ApplyTrack/pull/4)
+- [x] **BASE-02 — Dependency Security Hardening** — [PR #5](https://github.com/YijunYuan-Work/ApplyTrack/pull/5)
+- [x] **BASE-03 — Hide Public Password Recovery UI** — [PR #7](https://github.com/YijunYuan-Work/ApplyTrack/pull/7)
+- [x] **BASE-04 — Comprehensive Functional & Codebase Quality Audit** — [PR #8](https://github.com/YijunYuan-Work/ApplyTrack/pull/8)
+
+**Closed / Not Merged:** [PR #6 — Account Recovery Hardening](https://github.com/YijunYuan-Work/ApplyTrack/pull/6).
+
+The abandoned password-recovery and database-backup development initiatives are not part of the active roadmap.
+
+---
+
+# Phase A — Data Integrity & Security
+
+**Priority: Highest**
+
+The objective is to eliminate issues that can corrupt user data, compromise account boundaries or leave the application in an inconsistent state.
+
+## RF-03 — Application Notes Data Integrity
+
+**Priority:** P0  
+**Size:** Small  
+**Findings:** F02, F03, CQ07, G01  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Prevent legacy metadata extraction from removing legitimate Notes.
+- Handle `NULL` and missing Notes safely.
+- Preserve existing application data across fetch, edit and save.
+- Retain documented legacy compatibility without destructive assumptions.
+- Improve mapper testability where justified.
+
+Acceptance:
+
+- Notes content is preserved exactly where appropriate.
+- Dashboard loads successfully with nullable Notes records.
+- Role-only edits do not modify Notes.
+- Existing legacy behavior is documented and regression-tested.
+- No schema changes or production data mutation.
+
+## RF-04 — Job Lead Ownership Integrity
+
+**Priority:** P0  
+**Size:** Medium  
+**Findings:** F01, G02  
+**Dependency:** RF-03 sequencing only  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Ensure a Job Lead cannot reference an Application belonging to another user.
+- Review RLS, column permissions, foreign-key association and RPC boundaries.
+- Use the smallest safe database-level correction.
+
+Acceptance:
+
+- Cross-owner associations are rejected.
+- Legitimate owner conversions continue working.
+- Existing data is not unintentionally deleted or reassigned.
+- Synthetic PostgreSQL authorization tests pass.
+- Any migration includes a reviewed deployment and rollback procedure.
+
+**Release gate:** Production migration requires separate explicit approval and an appropriate one-time data safety procedure. No standalone backup platform will be developed.
+
+## RF-05 — Job Alert Processing Reliability
+
+**Priority:** P0  
+**Size:** Medium  
+**Findings:** F06, R07  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Correct unchecked database results during alert processing.
+- Ensure failed completion writes are not reported as successful.
+- Establish reliable retry and message-status semantics.
+- Investigate concurrent message claims and inbox initialization.
+
+Acceptance:
+
+- No false successful completion response after a failed critical write.
+- Failed processing remains safely retryable.
+- Duplicate delivery does not produce duplicate leads.
+- Deterministic tests cover success, failure and repeated delivery.
+- Production Edge deployment requires explicit approval.
+
+## RF-06 — Job Lead State Consistency
+
+**Priority:** P0  
+**Size:** Medium–Large  
+**Findings:** F05, R07  
+**Dependency:** Coordinate with RF-05  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Prevent ingestion from reverting already-applied Job Leads.
+- Correct existing-application retry behavior.
+- Preserve terminal states under concurrent processing.
+- Review atomicity and idempotency without rewriting Job Agent.
+
+Acceptance:
+
+- An Applied lead cannot return to New due to a stale ingestion update.
+- Conversion retries preserve the Application association.
+- No duplicate Applications are created.
+- Concurrent SQL and handler tests pass.
+
+## SEC-01 — Password Recovery Endpoint Risk Triage
+
+**Priority:** Security review before further production backend changes  
+**Size:** Small investigation; implementation conditional  
+**Finding:** R01  
+**Status:** [?] Decision Required  
+**PR:** Conditional
+
+Scope:
+
+- Determine whether the existing production recovery endpoint remains publicly reachable.
+- Review the security implications of in-memory rate limiting, unverified recovery metadata and response differences.
+- Evaluate the smallest safe response within the zero-cost requirement.
+- Do not revive PR #6 automatically.
+
+Acceptance:
+
+- Exposure and risk are documented with evidence.
+- Any proposed deactivation preserves necessary compatibility or explicitly documents the trade-off.
+- No production change occurs without approval.
+
+---
+
+# Phase B — Functional Reliability
+
+**Priority: High**
+
+Correct existing workflows without introducing new product capabilities.
+
+## RF-07 — Application Status Mutation Reliability
+
+**Priority:** P0  
+**Size:** Medium  
+**Findings:** F04, R03  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Prevent out-of-order API responses from overwriting newer UI state.
+- Review per-record mutation ordering.
+- Avoid unintended updates to unrelated fields.
+- Investigate session refresh and fetch/mutation interactions.
+
+Acceptance:
+
+- Rapid status changes converge to correct persisted and displayed values.
+- Failed mutations do not leave false success states.
+- Reloading matches the last accepted mutation.
+- Deterministic race-condition regression tests pass.
+
+## RF-08 — Application Form & Save Lifecycle
+
+**Priority:** P1  
+**Size:** Medium  
+**Findings:** F13, F14, CQ01  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Validate whitespace-only required fields.
+- Provide actionable submission errors.
+- Prevent late save responses from overriding subsequent user navigation.
+- Improve explicit mutation outcome handling.
+
+Acceptance:
+
+- Invalid input cannot fail silently.
+- Save errors remain visible and actionable.
+- User navigation is not unexpectedly reversed by delayed responses.
+- Real and Demo behavior remains consistent.
+
+## RF-09 — Destructive Operation Reliability
+
+**Priority:** P1  
+**Size:** Small–Medium  
+**Findings:** F10, CQ01  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Preserve selections when bulk deletion is canceled or fails.
+- Only clear selection after successful deletion.
+- Improve failure announcements and retry behavior.
+
+Acceptance:
+
+- Cancel leaves records and selection intact.
+- API failure leaves records and selection intact.
+- Success removes only intended records.
+- Errors are accessible and understandable.
+
+## RF-10 — Job Agent Queue Accuracy
+
+**Priority:** P1  
+**Size:** Medium  
+**Findings:** F07, F16, R04  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Correct Remove All behavior beyond the first 500 retrieved leads.
+- Make bulk-operation scope explicit.
+- Distinguish an empty queue from empty search results.
+- Investigate whether removed leads may be recreated by later alerts.
+
+Acceptance:
+
+- Bulk removal accurately reflects its actual scope.
+- No false success or false empty-queue messaging.
+- Search results and filters are consistent.
+- Re-appearing lead behavior is clarified before altering deletion semantics.
+
+## RF-11 — Dashboard Selection Consistency
+
+**Priority:** P1  
+**Size:** Small  
+**Finding:** F09  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Align Select All with the actual Board/List view.
+- Preserve existing pagination semantics.
+- Verify selected counts, deletion counts and filtering interactions.
+
+Acceptance:
+
+- Board selection matches displayed Board records.
+- List selection follows clearly defined page scope.
+- Selections remain predictable after filtering and pagination.
+
+## RF-12 — Historical Analytics Correctness
+
+**Priority:** P1  
+**Size:** Medium; potentially larger if persistence semantics change  
+**Findings:** F08, G03  
+**Status:** [?] Product Semantics Required  
+**PR:** TBD
+
+Scope:
+
+- Define what date a rejection event represents.
+- Prevent unrelated edits from silently rewriting historical meaning.
+- Independently verify existing Progress metrics and calendar logic.
+- Preserve existing historical data.
+
+Acceptance:
+
+- Historical reporting semantics are documented.
+- Editing Notes does not incorrectly change historical rejection reporting.
+- Calendar and metrics match deterministic test datasets.
+- Any historical-data or schema decision is approved before implementation.
+
+---
+
+# Phase C — UI / UX & Accessibility
+
+**Priority: Medium–High**
+
+Focus on functional usability and visual implementation quality, without adding pages or features.
+
+## RF-13 — Responsive Navigation & Sign Out
+
+**Priority:** P1  
+**Size:** Small–Medium  
+**Findings:** F11, CQ05, G06  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Restore reachable Sign Out controls at tablet widths.
+- Simplify conflicting responsive CSS where necessary.
+- Verify breakpoint boundaries, keyboard access and navigation.
+
+Acceptance:
+
+- Sign Out remains reachable at desktop, tablet and mobile widths.
+- Existing navigation remains functional.
+- No unintended layout regressions.
+- Chromium, Firefox and WebKit regression coverage.
+
+**Design gate:** Any material visual redesign requires prior design approval.
+
+## RF-14 — Public Demo Interaction Accuracy
+
+**Priority:** P1  
+**Size:** Small  
+**Finding:** F12  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Remove misleading successful password-change behavior in Demo.
+- Ensure simulated actions and their feedback accurately represent what happened.
+- Verify Demo does not contact real authentication or persistence services.
+
+Acceptance:
+
+- Demo never falsely claims a real password was changed.
+- Profile remains clear and professional.
+- No new Demo authentication backend.
+
+## RF-15 — Job Agent Salary Interpretation
+
+**Priority:** P1  
+**Size:** Small–Medium  
+**Findings:** F15, CQ02  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Correct supported salary shorthand interpretation.
+- Review frontend/backend parsing differences.
+- Avoid confident output for ambiguous compensation text.
+
+Acceptance:
+
+- `$90k–$120k` is not interpreted as `$90–$120`.
+- Existing numeric and hourly examples remain correct.
+- Parser and presentation tests cover common salary formats.
+
+---
+
+# Phase D — Codebase Cleanup
+
+**Priority: After high-impact correctness fixes**
+
+Do not begin a sweeping refactor. Approve individual cleanups only when supported by measurable maintainability value.
+
+## RF-16 — Business Logic & Request Cleanup
+
+**Priority:** P2  
+**Size:** Medium  
+**Findings:** CQ02, CQ06  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Remove proven duplication between Real and Demo business transformations.
+- Resolve inconsistent shared metrics.
+- Eliminate redundant Job Agent summary requests where safe.
+- Improve narrowly related data-flow boundaries.
+
+Acceptance:
+
+- Shared rules have parity regression tests.
+- No unnecessary new architecture or dependencies.
+- Existing data loading behavior is preserved.
+- Repeated requests are reduced without creating stale-state bugs.
+
+## RF-17 — Legacy Client Code Cleanup
+
+**Priority:** P2  
+**Size:** Small–Medium  
+**Finding:** CQ03  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Verify unreachable components, utilities and old resume/client workflows.
+- Remove confirmed dead client code only.
+- Reassess associated unused dependencies.
+- Preserve real user records and Storage content.
+
+Acceptance:
+
+- No reachable feature regresses.
+- Unused code is eliminated based on import/caller evidence.
+- No schema or stored user data is deleted.
+- Dependency changes pass security and regression checks.
+
+## RF-18 — Schema Reproducibility & Validation
+
+**Priority:** P2, with security/data-integrity exceptions prioritized earlier  
+**Size:** Medium  
+**Findings:** CQ04, CQ08  
+**Status:** [?] Review Before Changes  
+**PR:** TBD
+
+Scope:
+
+- Document and improve the initial schema/migration bootstrap contract.
+- Review field constraints against current application validation.
+- Investigate legacy rows before proposing tighter constraints.
+- Prevent invalid numeric and status values from corrupting calculations.
+
+Acceptance:
+
+- Fresh setup instructions are reproducible.
+- Schema behavior and frontend data contract are documented.
+- Existing data remains compatible.
+- Migration-history rewriting is avoided.
+- Any database changes receive separate approval.
+
+If bootstrap documentation and new schema constraints need different release paths, split them into separate PRs.
+
+---
+
+# Phase E — Final Quality Gate
+
+## RF-19 — Remaining Risk Verification
+
+**Priority:** P1–P2 based on findings  
+**Size:** Medium  
+**Status:** [ ] Planned  
+**PR:** TBD / conditional
+
+Investigate unresolved audit risks:
+
+- R02 — Unpaginated fetches and server row limits.
+- R05 — Excel dates and timezone edge cases.
+- R06 — Clipboard permission failures.
+- R08 — Malformed alert input and external parser assumptions.
+
+R01, R03, R04 and R07 are tracked with their related implementation tasks.
+
+Do not automatically convert every risk into a feature or infrastructure project.
+
+Acceptance:
+
+- Each risk is marked Confirmed, Mitigated, Accepted or Not Applicable.
+- Confirmed defects are addressed by narrowly scoped tasks.
+- Unverified items are not falsely reported as resolved.
+- No unnecessary code is introduced merely to satisfy an audit checklist.
+
+## RF-20 — Final Automated Regression & Engineering Review
+
+**Priority:** P1  
+**Size:** Medium–Large  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Address coverage gaps G01–G07.
+
+Scope:
+
+- Convert all approved BUG-characterization tests to desired-behavior regression tests.
+- Verify corrected Application, Excel, Progress, Job Agent and Authentication workflows.
+- Expand targeted database and Edge integration checks where valuable.
+- Review cross-browser and responsive behavior.
+- Validate error/loading/empty states.
+- Verify keyboard and accessibility fundamentals.
+- Assess bundle size and performance with repeatable measurements.
+- Re-run dependency and security checks.
+
+Acceptance:
+
+- No remaining unresolved Critical or High finding without explicit risk acceptance.
+- All required CI checks pass.
+- Corrected workflows have regression coverage.
+- No regressions in Public Demo.
+- Production and mock-only validation are clearly distinguished.
+- Known limitations are documented.
+
+## RF-21 — Documentation & Portfolio Readiness
+
+**Priority:** P2  
+**Size:** Small–Medium  
+**Status:** [ ] Planned  
+**PR:** TBD
+
+Scope:
+
+- Update README to match the actual shipped product.
+- Remove outdated feature claims and setup guidance.
+- Verify installation/development instructions.
+- Document testing architecture and important engineering decisions.
+- Review screenshots and public demo presentation.
+- Ensure public documentation contains no secrets or misleading claims.
+
+Acceptance:
+
+- README accurately reflects current features.
+- Setup instructions are repeatable.
+- Demo is usable without creating an account.
+- Final documentation is concise and professional.
+- No new product functionality is added.
+
+---
+
+# 4. Current Execution Queue
+
+Only the next task is authorized for implementation. Later tasks may be reprioritized if new evidence changes the risk assessment.
+
+| Order | Task | Priority | Status | PR |
+| --- | --- | --- | --- | --- |
+| 1 | RF-03 — Notes Data Integrity | P0 | Planned | — |
+| 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | Decision required | — |
+| 3 | RF-04 — Ownership Integrity | P0 | Planned | — |
+| 4 | RF-05 — Ingestion Failure Handling | P0 | Planned | — |
+| 5 | RF-06 — Lead State Consistency | P0 | Planned | — |
+| 6 | RF-07 — Status Mutation Reliability | P0 | Planned | — |
+| 7 | RF-08 — Form & Save Lifecycle | P1 | Planned | — |
+| 8 | RF-09 — Destructive Operations | P1 | Planned | — |
+| 9 | RF-10 — Job Agent Queue | P1 | Planned | — |
+| 10 | RF-11 — Dashboard Selection | P1 | Planned | — |
+| 11 | RF-12 — Historical Analytics | P1 | Decision required | — |
+| 12 | RF-13 — Responsive Navigation | P1 | Planned | — |
+| 13 | RF-14 — Demo Interaction Accuracy | P1 | Planned | — |
+| 14 | RF-15 — Salary Interpretation | P1 | Planned | — |
+| 15 | RF-16–18 — Codebase Cleanup | P2 | Planned | — |
+| 16 | RF-19–21 — Final Quality Gate | P1–P2 | Planned | — |
+
+The order is a planning baseline, not an authorization to execute all tasks automatically.
+
+---
+
+# 5. Standard Workflow for Every Task
+
+**Step 1 — Planning**
+
+ChatGPT defines exact scope, acceptance criteria, known constraints and relevant audit findings.
+
+**Step 2 — Implementation**
+
+Codex creates a focused branch, implements the approved task, updates affected regression tests and opens a PR.
+
+**Step 3 — Independent Review**
+
+ChatGPT reviews code, architecture, test evidence, scope discipline and CI.
+
+**Step 4 — User Acceptance**
+
+User checks visible behavior when appropriate and confirms the result.
+
+**Step 5 — Merge & Release**
+
+Merge only after approval. Confirm CI and production deployment when applicable. Database migrations and Edge deployments require separately approved operations.
+
+**Step 6 — Update Master Plan**
+
+Update task state, PR link, final commit, completion date, evidence and remaining risks.
+
+Do not mark an issue Done before all applicable acceptance criteria are met.
+
+---
+
+# 6. Project Completion Criteria
+
+Refinement is considered complete when:
+
+- All confirmed Critical/High defects are corrected or explicitly risk-accepted.
+- Medium findings are resolved, mitigated or consciously deferred.
+- All 16 original functional findings have a recorded disposition.
+- All 8 code quality findings have a recorded disposition.
+- All 8 potential risks have been investigated or consciously accepted.
+- All 7 test coverage gaps have an explicit status.
+- No significant known user-data integrity issues remain.
+- Core workflows have effective regression protection.
+- Desktop, tablet and mobile navigation is functional.
+- Public Demo interactions are accurate and polished.
+- Codebase architecture is understandable and maintainable.
+- Production remains within the CAD $0/month budget.
+- README and technical documentation accurately represent the delivered product.
+
+**No additional features are required for completion.**
+
+The final outcome is a stable, clean, well-tested and professionally presented ApplyTrack.
