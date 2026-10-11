@@ -93,9 +93,9 @@ React 19 + Vite
         +-- Supabase Auth and session management
         +-- Postgres application and Job Agent data
         +-- Row Level Security for user-owned records
-        +-- Edge Functions for recovery and inbound email
+        +-- Edge Function for inbound job-alert email
         |
-        +-- Resend for email delivery and job-alert ingestion
+        +-- Resend for job-alert ingestion
         +-- Recharts for progress visualization
         +-- xlsx for spreadsheet imports
 ```
@@ -108,7 +108,7 @@ The frontend uses lightweight hash routing and separates route-level pages, reus
 - Service-role credentials are restricted to server-side Edge Functions.
 - Resend webhook signatures are verified before inbound alerts are processed.
 - Raw job-alert email bodies and attachments are not retained.
-- Public password-recovery responses do not reveal whether an account exists.
+- Public recovery-email requests are unsupported; valid existing reset links use Supabase Auth.
 - Browser-visible Supabase credentials are limited to the publishable key.
 
 ## Project Status
@@ -166,15 +166,7 @@ npx supabase secrets set INBOUND_EMAIL_DOMAIN=alerts.your-domain.com
 npx supabase functions deploy ingest-job-alert --no-verify-jwt
 ```
 
-The legacy password-recovery Edge Function is retained, but its public UI is hidden. The following server configuration is reference only; deploying this function alone does not re-enable recovery UI:
-
-```powershell
-npx supabase secrets set RESEND_API_KEY=re_your_api_key
-npx supabase secrets set "PASSWORD_RESET_FROM_EMAIL=ApplyTrack <noreply@your-domain.com>"
-npx supabase secrets set APP_URL=https://your-deployment.example
-npx supabase secrets set "ALLOWED_REDIRECT_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://your-deployment.example"
-npx supabase functions deploy request-password-reset
-```
+The unsupported custom recovery-email handler is retired from the repository. Do not redeploy its historical source. Signed-in password updates and existing valid recovery-token handling remain supported. Repository removal does not delete an already-deployed cloud function: production retirement requires separate approval and the [SEC-02 runbook](docs/refinement/SEC_02_RETIREMENT_RUNBOOK.md).
 
 </details>
 
