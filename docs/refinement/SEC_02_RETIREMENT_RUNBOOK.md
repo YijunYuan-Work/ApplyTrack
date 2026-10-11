@@ -13,6 +13,7 @@ Status: **In Progress - Preparation PR / Awaiting Review and Production Approval
 - Workspace: `C:\Work\SideProject\ApplyTrack`; initially clean and synchronized with `origin/main`.
 - Baseline: `94fba227c987798634c7bcc61933362884cb84c8` (SEC-01 completion/tracking documentation).
 - Local preparation branch: `security/sec-02-retire-password-reset`.
+- Preparation PR: [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11), against main; open and unmerged. Initial implementation commit: `06cbc0e4e43a205dea41fe6788490ac5bf1e1468`.
 - Authority: [Master Plan](REFINEMENT_MASTER_PLAN.md), [approved SEC-01 investigation](SEC_01_PASSWORD_RECOVERY_TRIAGE.md), R01 in [Refinement 02](REFINEMENT_02_QUALITY_AUDIT.md#7-potential-risks-and-unverified-findings), and the SEC-02 Stage 1 task brief.
 - SEC-01 is complete as a triage task; R01 remains outstanding until authorized production retirement is verified. Historical reports are unchanged.
 
@@ -55,6 +56,13 @@ Confirmed from the user-supplied **Supabase** settings screenshot:
 - Supabase-changes-only is disabled/unavailable, not a production-deployment filter. A docs-only main push can still initiate the production integration workflow.
 
 The supplied **Vercel** screenshot shows repository connection, PR comments, event/commit-status controls, not a Preview-deployment enable/disable setting. It is not itself proof that automatic Preview is off. In response to the publication gate, the user explicitly confirmed the previously disabled configuration was not intentionally re-enabled, cited recent RF-03/SEC-01 branches without new Preview deployments, and authorized Push/PR with a post-push deployment check. Treat this as user configuration confirmation plus deployment-history corroboration, not independent verification of the current setting. No cloud setting is modified by this task.
+
+Publication observations for initial commit `06cbc0e4e43a205dea41fe6788490ac5bf1e1468`:
+
+- Vercel project's branch-filtered deployment list returned no deployments immediately after Push (2026-10-11T02:19:51Z) and after PR creation (02:20:27Z). The project-wide pre-push list corroborated recent main-only deployments. These are bounded observations, not a guarantee against future delayed events or a settings inspection.
+- PR #11's `Supabase Preview` check was **SKIPPED** at 02:20:18Z, including this branch's function/config removals. This does not establish deletion behavior after a main merge.
+- Read-only Supabase metadata after publication still shows recovery ACTIVE v46 and ingestion ACTIVE v21, with the same IDs, JWT settings, artifact hashes and update timestamps listed above. No cloud function was deleted or redeployed by this task.
+- GitHub CI and dependency checks started automatically; no auto-merge request is set. Recheck the latest PR head and deployment records at handoff and before any later approval.
 
 The [official GitHub integration guide](https://supabase.com/docs/guides/deployment/branching/github-integration) describes configurable production deployment and automatic branch/PR synchronization. The [deployment overview](https://supabase.com/docs/guides/deployment) distinguishes production Git deployment from optional paid preview branching. General documentation is not proof of ApplyTrack's configured production branch, filters or branch automation.
 
@@ -175,7 +183,7 @@ Do not run `npm audit fix --force`; the suggested mammoth downgrade is breaking 
 ## F. Stop Conditions and Explicit Approval Gates
 
 - **Publication gate:** Supabase main deployment/disabled Preview branching evidenced by the user screenshot; user explicitly authorized Push/PR using Vercel configuration confirmation and recent history. Current Vercel setting remains independently unverified. Inspect post-push deployment records and stop/report any unexpected Preview; never treat the comments/events screenshot as the Preview toggle.
-- Stage 1 repository cleanup and local validation are complete; publication/review pending. Intended PR title: **SEC-02: Prepare retirement of legacy password reset endpoint**. No PR exists yet.
+- Stage 1 repository cleanup and local validation are complete; [PR #11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11) is published for independent review, not merged. Title: **SEC-02: Prepare retirement of legacy password reset endpoint**. Initial post-publication checks found no Vercel branch deployment and no production function metadata change; recheck after any subsequent push.
 - Stage 2 integration pause/reconfiguration/resumption, merge-triggered deployments, exact function deletion and any exceptional restore each require explicit authorization. A main merge is not automatically cloud-write approval.
 - No endpoint invocation, real reset links/emails, user/secret reads, Auth/database changes, shared-key changes, paid branching or ingestion deploys are authorized here.
 - Unexpected project/version/source drift, active old deployment jobs, unknown external consumers, changed ingestion artifact, metadata inconsistencies or missing rollback evidence stop release. Never try to repair them with blanket deploy/prune/reset commands.

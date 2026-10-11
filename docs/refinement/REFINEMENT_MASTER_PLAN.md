@@ -213,9 +213,9 @@ Acceptance:
 **Findings:** R01; follow-up to SEC-01  
 **Status:** [~] In Progress — Preparation PR / Awaiting Review and Production Approval
 **Dependency:** [Approved SEC-01 triage](SEC_01_PASSWORD_RECOVERY_TRIAGE.md)  
-**PR:** Pending publication — branch Push/PR explicitly authorized on configuration/history evidence
+**PR:** [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11) — preparation only; unmerged, awaiting ChatGPT review
 **Runbook:** [SEC-02 Retirement Runbook](SEC_02_RETIREMENT_RUNBOOK.md)
-**Preparation limit:** Repository cleanup and local validation complete; Supabase main-only deployment and disabled Preview branching evidenced. Vercel publication uses user configuration confirmation plus recent deployment history, not independent current-setting verification. Cloud retirement and all production writes remain unapproved; R01 remains outstanding.
+**Preparation limit:** Repository cleanup and local validation complete; Supabase main-only deployment and disabled Preview branching evidenced. Vercel publication uses user configuration confirmation plus recent deployment history, not independent current-setting verification. Initial post-Push/PR queries found no Vercel branch deployment; Supabase Preview check skipped and production function metadata unchanged. Cloud retirement and all production writes remain unapproved; R01 remains outstanding.
 
 Scope:
 
@@ -613,7 +613,7 @@ SEC-02 Stage 1 preparation is authorized by its task brief; publication requires
 | --- | --- | --- | --- | --- |
 | 1 | RF-03 — Notes Data Integrity | P0 | Done — merged and deployed | [#9](https://github.com/YijunYuan-Work/ApplyTrack/pull/9) |
 | 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | Done — triage only; R01 open in SEC-02 | [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) |
-| 3 | SEC-02 — Retire Legacy Recovery Endpoint | P0 Security | In Progress — Preparation PR / Awaiting Review and Production Approval | Not published; [runbook](SEC_02_RETIREMENT_RUNBOOK.md) |
+| 3 | SEC-02 — Retire Legacy Recovery Endpoint | P0 Security | In Progress — Preparation PR / Awaiting Review and Production Approval | [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11); [runbook](SEC_02_RETIREMENT_RUNBOOK.md) |
 | 4 | RF-04 — Ownership Integrity | P0 | Planned | — |
 | 5 | RF-05 — Ingestion Failure Handling | P0 | Planned | — |
 | 6 | RF-06 — Lead State Consistency | P0 | Planned | — |
