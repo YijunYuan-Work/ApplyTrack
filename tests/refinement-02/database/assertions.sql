@@ -36,10 +36,21 @@ end $$;
 select public.audit_assert((select id from public.complete_job_lead_application(201,'2026-12-31'))=(select id from public.complete_job_lead_application(201,'2027-01-01')),'RPC repeated conversion returns same application');
 select public.audit_assert((select state from public.job_leads where id=201)='applied','RPC persists applied state');
 select public.audit_assert((select applied_date from public.applications where company='Owner A' and id<>101)='2026-12-31','RPC preserves initial application date across retry');
--- Characterize the defect, not a desired security guarantee: FK checks bypass referenced-row RLS.
-update public.job_leads set application_id=102 where id=203;
-select public.audit_assert((select application_id from public.job_leads where id=203)=102,'BUG: owned lead accepts cross-owner application_id');
+-- F01 regression: referenced-row RLS is not a substitute for an owner-aware FK.
+do $$ begin
+  begin
+    update public.job_leads set application_id=102 where id=203;
+    raise exception 'cross-owner association was allowed';
+  exception when foreign_key_violation then raise notice 'PASS: owned lead rejects cross-owner application_id'; end;
+end $$;
+update public.job_leads set application_id=101 where id=203;
+select public.audit_assert((select application_id from public.job_leads where id=203)=101,'owned lead accepts same-owner application_id');
 update public.job_leads set application_id=null where id=203;
+select public.audit_assert((select application_id from public.job_leads where id=203) is null,'owned lead allows NULL application_id');
+update public.job_leads set state='expired', application_id=101 where id=202;
+reset role;
+select public.audit_assert((select state='new' and application_id is null from public.job_leads where id=202),'other-owner lead UPDATE affects zero rows');
+set role authenticated;
 insert into public.applications(user_id,company,role,notes,status,interview_count) values ('00000000-0000-4000-8000-000000000001','  ','  ',null,'Unrecognized',-3);
 select public.audit_assert(exists(select 1 from public.applications where notes is null and interview_count=-3),'schema permits null notes, whitespace names and negative counts');
 insert into storage.objects(bucket_id,name) values ('resumes','00000000-0000-4000-8000-000000000001/synthetic.txt');
