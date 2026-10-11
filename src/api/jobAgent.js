@@ -1,4 +1,4 @@
-import { fromApplicationRow } from './applications'
+import { fromApplicationRow } from '../data/applicationRows'
 import { supabase } from '../lib/supabase'
 
 function throwIfError(error) {

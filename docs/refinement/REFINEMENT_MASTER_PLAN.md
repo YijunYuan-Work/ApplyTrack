@@ -86,8 +86,10 @@ The objective is to eliminate issues that can corrupt user data, compromise acco
 **Priority:** P0  
 **Size:** Small  
 **Findings:** F02, F03, CQ07, G01  
-**Status:** [ ] Planned  
-**PR:** TBD
+**Status:** [~] In Progress - implementation awaiting ChatGPT review\
+**PR:** [#9](https://github.com/YijunYuan-Work/ApplyTrack/pull/9)
+
+Implementation and validation: [RF-03 technical report](./RF_03_APPLICATION_NOTES_INTEGRITY.md).
 
 Scope:
 
@@ -572,7 +574,7 @@ Only the next task is authorized for implementation. Later tasks may be repriori
 
 | Order | Task | Priority | Status | PR |
 | --- | --- | --- | --- | --- |
-| 1 | RF-03 — Notes Data Integrity | P0 | Planned | — |
+| 1 | RF-03 — Notes Data Integrity | P0 | In Progress - awaiting review | [#9](https://github.com/YijunYuan-Work/ApplyTrack/pull/9) |
 | 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | Decision required | — |
 | 3 | RF-04 — Ownership Integrity | P0 | Planned | — |
 | 4 | RF-05 — Ingestion Failure Handling | P0 | Planned | — |

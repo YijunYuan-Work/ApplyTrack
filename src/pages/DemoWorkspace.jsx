@@ -52,7 +52,7 @@ function prepareApplication(applicationData, applicationId) {
         ? 1
         : interviewCount,
     lastUpdated: applicationId ? today : applicationData.lastUpdated || today,
-    notes: applicationData.notes.trim(),
+    notes: applicationData.notes,
   })
 }
 

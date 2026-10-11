@@ -261,7 +261,7 @@ function App() {
       referral: applicationData.referral.trim(),
       interviewCount: normalizedInterviewCount,
       lastUpdated: applicationId ? today : applicationData.lastUpdated || today,
-      notes: applicationData.notes.trim(),
+      notes: applicationData.notes,
     })
 
     if (!preparedApplication.company || !preparedApplication.role) {

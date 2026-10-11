@@ -1,9 +1,11 @@
 # Refinement 02 Audit Tests
 
-These tests investigate the unchanged application. Tests named `BUG` characterize
+These tests began as the Refinement 02 baseline audit. Tests named `BUG` characterize
 known defects and intentionally assert current, incorrect behavior. Passing them
 does NOT mean the product is defect-free. Approved fixes must replace the relevant
-characterization with desired-behavior regression assertions.
+characterization with desired-behavior regression assertions. RF-03 replaces the
+F02/F03 notes characterizations with lossless/nullable regression assertions and
+adds create/edit coverage at desktop, tablet and phone widths.
 
 ## Run Locally
 
@@ -24,7 +26,8 @@ npm run build
 npm audit --audit-level=high
 ```
 
-Run browser and Vite SSR tests sequentially: Vite shares its dependency cache.
+Run browser suites sequentially: Vite shares its dependency cache. RF-03 tests
+import the production row mappers directly without Vite SSR or Supabase setup.
 Browser suites reserve ports 5193 (existing auth) and 5195 (audit), refuse to reuse
 an existing server, and start their own synthetic environment. Never supply
 production credentials. All audit browser requests outside the local Vite origin

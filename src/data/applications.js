@@ -184,6 +184,7 @@ export function normalizeApplication(application) {
     interviewCount: Number.isNaN(interviewCount) ? 0 : Math.max(0, interviewCount),
     lastUpdated: application.lastUpdated || application.date || getTodayIsoDate(),
     location: application.location || '',
+    notes: typeof application.notes === 'string' ? application.notes : '',
     referral: application.referral || 'No',
     status: statuses.includes(application.status) ? application.status : 'Applied',
   }
