@@ -186,9 +186,12 @@ Acceptance:
 **Priority:** Security review before further production backend changes  
 **Size:** Small investigation; implementation conditional  
 **Finding:** R01  
-**Status:** [~] In Progress / Awaiting Security Review
-**PR:** [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) (triage only; remediation conditional)
-**Report:** [SEC-01 Password Recovery Security Triage](SEC_01_PASSWORD_RECOVERY_TRIAGE.md)
+**Status:** [x] Done — security triage approved; R01 mitigation remains open in SEC-02  
+**PR:** [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) (audit only)  
+**Merge commit:** `bf292553a7fa218a7dea9ef75758d978c3964f03`  
+**Completed:** 2026-10-10 (America/Toronto)  
+**Report:** [SEC-01 Password Recovery Security Triage](SEC_01_PASSWORD_RECOVERY_TRIAGE.md)  
+**Disposition:** Option A recommended for separate remediation; no production changes authorized by this audit.
 
 Scope:
 
@@ -202,6 +205,34 @@ Acceptance:
 - Exposure and risk are documented with evidence.
 - Any proposed deactivation preserves necessary compatibility or explicitly documents the trade-off.
 - No production change occurs without approval.
+
+## SEC-02 — Retire Legacy Password Reset Request Endpoint
+
+**Priority:** P0 security risk reduction  
+**Size:** Small–Medium  
+**Findings:** R01; follow-up to SEC-01  
+**Status:** [ ] Planned — separate remediation approval required  
+**Dependency:** [Approved SEC-01 triage](SEC_01_PASSWORD_RECOVERY_TRIAGE.md)  
+**PR:** TBD
+
+Scope:
+
+- Plan a minimal, controlled retirement of the unused custom `request-password-reset` Edge Function and its obsolete repository source/config/documentation.
+- Preserve existing valid recovery-token consumption, the reset-password page and authenticated password updates.
+- Verify there are no active first-party callers or unexpected dependencies, and document limits of that verification.
+- Preserve an operator-owned rollback record of the deployed v44 handler, without storing secrets in Git.
+- Keep shared Supabase/Resend secrets and the `ingest-job-alert` function unchanged.
+- Remove or appropriately retire SEC-01 characterization tests that require the deleted handler, while retaining supported-auth regression tests.
+
+Acceptance:
+
+- An approved deployment plan specifies precise cloud actions, preflight, validation and rollback.
+- The retired custom request endpoint can no longer invoke admin user enumeration, generate recovery links or send reset emails.
+- Existing-token frontend handling and signed-in password changes remain supported.
+- No Auth settings, user records, session data, database schemas, shared secrets or Job Agent ingestion are modified.
+- CAD $0/month constraint is preserved.
+
+**Production gate:** Separate explicit user authorization is required for the exact Supabase Edge Function delete/deactivation or deployment. Planning or merging a PR does not authorize production writes. SEC-02 is not started or completed by PR #10.
 
 ---
 
@@ -574,26 +605,27 @@ Acceptance:
 
 # 4. Current Execution Queue
 
-Only the next task is authorized for implementation. Later tasks may be reprioritized if new evidence changes the risk assessment.
+No next implementation task is automatically authorized by this update. SEC-02 requires a new task brief, and its production operations require separate explicit user approval. Later tasks may be reprioritized if new evidence changes the risk assessment.
 
 | Order | Task | Priority | Status | PR |
 | --- | --- | --- | --- | --- |
 | 1 | RF-03 — Notes Data Integrity | P0 | Done — merged and deployed | [#9](https://github.com/YijunYuan-Work/ApplyTrack/pull/9) |
-| 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | In Progress / Awaiting Security Review | [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) |
-| 3 | RF-04 — Ownership Integrity | P0 | Planned | — |
-| 4 | RF-05 — Ingestion Failure Handling | P0 | Planned | — |
-| 5 | RF-06 — Lead State Consistency | P0 | Planned | — |
-| 6 | RF-07 — Status Mutation Reliability | P0 | Planned | — |
-| 7 | RF-08 — Form & Save Lifecycle | P1 | Planned | — |
-| 8 | RF-09 — Destructive Operations | P1 | Planned | — |
-| 9 | RF-10 — Job Agent Queue | P1 | Planned | — |
-| 10 | RF-11 — Dashboard Selection | P1 | Planned | — |
-| 11 | RF-12 — Historical Analytics | P1 | Decision required | — |
-| 12 | RF-13 — Responsive Navigation | P1 | Planned | — |
-| 13 | RF-14 — Demo Interaction Accuracy | P1 | Planned | — |
-| 14 | RF-15 — Salary Interpretation | P1 | Planned | — |
-| 15 | RF-16–18 — Codebase Cleanup | P2 | Planned | — |
-| 16 | RF-19–21 — Final Quality Gate | P1–P2 | Planned | — |
+| 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | Done — triage only; R01 open in SEC-02 | [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) |
+| 3 | SEC-02 — Retire Legacy Recovery Endpoint | P0 Security | Planned — production approval required | — |
+| 4 | RF-04 — Ownership Integrity | P0 | Planned | — |
+| 5 | RF-05 — Ingestion Failure Handling | P0 | Planned | — |
+| 6 | RF-06 — Lead State Consistency | P0 | Planned | — |
+| 7 | RF-07 — Status Mutation Reliability | P0 | Planned | — |
+| 8 | RF-08 — Form & Save Lifecycle | P1 | Planned | — |
+| 9 | RF-09 — Destructive Operations | P1 | Planned | — |
+| 10 | RF-10 — Job Agent Queue | P1 | Planned | — |
+| 11 | RF-11 — Dashboard Selection | P1 | Planned | — |
+| 12 | RF-12 — Historical Analytics | P1 | Decision required | — |
+| 13 | RF-13 — Responsive Navigation | P1 | Planned | — |
+| 14 | RF-14 — Demo Interaction Accuracy | P1 | Planned | — |
+| 15 | RF-15 — Salary Interpretation | P1 | Planned | — |
+| 16 | RF-16–18 — Codebase Cleanup | P2 | Planned | — |
+| 17 | RF-19–21 — Final Quality Gate | P1–P2 | Planned | — |
 
 The order is a planning baseline, not an authorization to execute all tasks automatically.
 
