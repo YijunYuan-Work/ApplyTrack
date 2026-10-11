@@ -186,7 +186,7 @@ Acceptance:
 **Priority:** Security review before further production backend changes  
 **Size:** Small investigation; implementation conditional  
 **Finding:** R01  
-**Status:** [x] Done — security triage approved; R01 mitigation remains open in SEC-02  
+**Status:** [x] Done — security triage completed; R01 mitigated by SEC-02 retirement  
 **PR:** [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) (audit only)  
 **Merge commit:** `bf292553a7fa218a7dea9ef75758d978c3964f03`  
 **Completed:** 2026-10-10 (America/Toronto)  
@@ -211,11 +211,14 @@ Acceptance:
 **Priority:** P0 security risk reduction  
 **Size:** Small–Medium  
 **Findings:** R01; follow-up to SEC-01  
-**Status:** [~] In Progress — Preparation PR / Awaiting Review and Production Approval
+**Status:** [x] Done — retired from production; follow-up automation control remains paused  
 **Dependency:** [Approved SEC-01 triage](SEC_01_PASSWORD_RECOVERY_TRIAGE.md)  
-**PR:** [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11) — preparation only; unmerged, awaiting ChatGPT review
-**Runbook:** [SEC-02 Retirement Runbook](SEC_02_RETIREMENT_RUNBOOK.md)
-**Preparation limit:** Repository cleanup and local validation complete; Supabase main-only deployment and disabled Preview branching evidenced. Vercel publication uses user configuration confirmation plus recent deployment history, not independent current-setting verification. Initial post-Push/PR queries found no Vercel branch deployment; Supabase Preview check skipped and production function metadata unchanged. Cloud retirement and all production writes remain unapproved; R01 remains outstanding.
+**PR:** [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11) — merged  
+**Merge commit:** `5d95f1c66db0661f90a5ace1e92098f59aaf0796`  
+**Completed:** 2026-10-11 (UTC; production deletion independently verified)  
+**Runbook:** [SEC-02 Retirement Runbook](SEC_02_RETIREMENT_RUNBOOK.md)  
+**R01 disposition:** Mitigated — `request-password-reset` is absent from the live Supabase Edge Function inventory. The `ingest-job-alert` deployment metadata, version v21, function ID, JWT setting, and artifact hash remained unchanged; the project reports `ACTIVE_HEALTHY`. No live-auth/token end-to-end test was performed.  
+**Operational hold:** The Supabase GitHub Integration `Deploy to production` setting was disabled by the user before retirement and must remain disabled; its current saved state cannot be independently read via the available connector. Its re-enablement, any pending-writer reconciliation, and future production database/Edge deployments require a separate reviewed release decision. The user explicitly accepted residual uncertainty about the stale historical GitHub check and internal queue; treat unexpected function recreation as a new incident.
 
 Scope:
 
@@ -607,13 +610,13 @@ Acceptance:
 
 # 4. Current Execution Queue
 
-SEC-02 Stage 1 preparation is authorized by its task brief; publication requires confirmed branch deployment safety. Its production operations require separate explicit user approval, including control of the confirmed Supabase main deployment integration. No subsequent task is automatically authorized. Later tasks may be reprioritized if new evidence changes the risk assessment.
+SEC-02 retirement was independently verified in the production Supabase function inventory. Supabase GitHub Integration automatic production deployment remains intentionally OFF; do not restore it, apply RF-04 database migrations, or authorize other production Supabase writes without a separate release review. RF-04 is next in planning order, not automatically authorized. Later tasks may be reprioritized if new evidence changes the risk assessment.
 
 | Order | Task | Priority | Status | PR |
 | --- | --- | --- | --- | --- |
 | 1 | RF-03 — Notes Data Integrity | P0 | Done — merged and deployed | [#9](https://github.com/YijunYuan-Work/ApplyTrack/pull/9) |
-| 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | Done — triage only; R01 open in SEC-02 | [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) |
-| 3 | SEC-02 — Retire Legacy Recovery Endpoint | P0 Security | In Progress — Preparation PR / Awaiting Review and Production Approval | [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11); [runbook](SEC_02_RETIREMENT_RUNBOOK.md) |
+| 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | Done — R01 mitigated via SEC-02 | [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) |
+| 3 | SEC-02 — Retire Legacy Recovery Endpoint | P0 Security | Done — production absence verified; auto-sync remains OFF | [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11); [runbook](SEC_02_RETIREMENT_RUNBOOK.md) |
 | 4 | RF-04 — Ownership Integrity | P0 | Planned | — |
 | 5 | RF-05 — Ingestion Failure Handling | P0 | Planned | — |
 | 6 | RF-06 — Lead State Consistency | P0 | Planned | — |

@@ -188,3 +188,41 @@ Do not run `npm audit fix --force`; the suggested mammoth downgrade is breaking 
 - No endpoint invocation, real reset links/emails, user/secret reads, Auth/database changes, shared-key changes, paid branching or ingestion deploys are authorized here.
 - Unexpected project/version/source drift, active old deployment jobs, unknown external consumers, changed ingestion artifact, metadata inconsistencies or missing rollback evidence stop release. Never try to repair them with blanket deploy/prune/reset commands.
 - SEC-01 stays complete; SEC-02 is awaiting review/production approval, not Done; R01 remains open and RF-04/subsequent tasks remain Planned.
+
+
+---
+
+## G. Production Retirement Completion Record (2026-10-11 UTC)
+
+**Status: Completed — production removal independently verified.** This section supersedes the earlier *preparation-only / not executed* status for the retirement operation itself; prior sections remain the historical preparation and conditional runbook. Do not interpret them as permission to repeat the deletion.
+
+### Approved operation and accepted exception
+
+- The user separately authorized deletion of only the custom `request-password-reset` function in project `qotipygmwlovxklkexjb` after PR #11 was merged.
+- The user also explicitly accepted residual uncertainty about the older GitHub check left `in_progress` and the inability to directly inspect the Supabase internal queue. That accepted risk did not authorize changes to other resources.
+- The user reported that the production deletion had been performed. ChatGPT then independently inspected Supabase management metadata, instead of treating the operator's report as sufficient evidence of completion.
+- The exact CLI execution transcript was not independently observed by ChatGPT. The verified outcome is the resulting control-plane function inventory, not an assertion about unseen CLI output or external HTTP behavior.
+
+### Independent production-state verification
+
+| Resource / check | Verified outcome |
+| --- | --- |
+| Project | `qotipygmwlovxklkexjb`, ApplyTrack, `ACTIVE_HEALTHY` |
+| Production branch | `main`, `FUNCTIONS_DEPLOYED`, project health `ACTIVE_HEALTHY` |
+| `request-password-reset` | **Absent** from Supabase Edge Function inventory |
+| `ingest-job-alert` | Still `ACTIVE`, version `21` |
+| Ingest function identity | Unchanged: `d6466f63-f96e-44d9-ae63-b954fa3ff2f8` |
+| Ingest JWT policy | Unchanged: `verify_jwt=false` |
+| Ingest artifact | Unchanged SHA256: `6e5f5fe51c732885d4376a14e839de70de98e3f13068eb8e8a3eb6b738ccdcd1` |
+| Source repository | PR #11 merged as `5d95f1c66db0661f90a5ace1e92098f59aaf0796`; retired handler/config absent from main |
+| CI / security | Main checks for the merge commit passed; Supabase Preview skipped |
+
+These checks confirm removal from the production management inventory and no observed deployment artifact change to ingestion. They are **not** a live endpoint-probing result, proof of delivery, a real-user Auth test, or proof that every possible future deployment writer is impossible.
+
+### Persistent operational safeguard
+
+**Keep Supabase GitHub Integration `Deploy to production` OFF.** The user disabled this before the merge and submitted a screenshot. The current setting cannot be directly read through the available Supabase connector; confirm it again before any future release involving the backend. No restoration of automation, unrelated Supabase deploy, schema change, or secret modification was authorized.
+
+A historical GitHub check remained `in_progress` despite subsequent successful runs; the residual uncertainty about dormant/queued writers was explicitly accepted for this single-function deletion. If the removed function reappears, stop subsequent releases and investigate the deployment writer and security exposure. Resuming automatic production integration is a **separate, not-yet-approved operational task**, to be coordinated before RF-04 or any other production Supabase work.
+
+**R01 disposition: mitigated by verified retirement of the custom recovery Edge Function. SEC-02 is complete, conditional on continued writer isolation.** No requirement to reactivate the insecure handler. Valid existing recovery tokens remain subject to Supabase Auth expiry/verification; source-level and synthetic test evidence supports the retained frontend route, but no live-token validation is claimed.
