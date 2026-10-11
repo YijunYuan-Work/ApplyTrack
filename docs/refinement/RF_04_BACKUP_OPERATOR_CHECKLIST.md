@@ -12,6 +12,12 @@ coverage is unverified, and age/key custody is pending. Synthetic evidence does
 not complete any production gate. The four-schema scope below remains unchanged;
 the report's smaller release-specific alternative requires explicit approval.
 
+Stage 3: [Local Security Remediation](RF_04_LOCAL_SECURITY_REMEDIATION.md) provides
+the synthetic-only ACL test and exact remaining approvals. Its outside-repo
+location and narrower scope are proposals, not approved replacements for the
+paths/four-schema commands below. Do not export until the chosen path's actual
+encryption/ACL/sync protection, age custody and managed restore gates are met.
+
 ## Scope and Consistency
 
 One PostgreSQL 17 custom-format `pg_dump` with four explicit schemas is a
