@@ -117,7 +117,7 @@ Acceptance:
 **Findings:** F01, G02  
 **Dependency:** RF-03 sequencing only  
 **Status:** [~] In Progress — Implementation / Awaiting ChatGPT Review
-**PR:** Pending publication
+**PR:** [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12) — open, awaiting ChatGPT Review
 **Migration runbook:** [RF-04 Ownership Migration Runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md)
 **Migration:** `20261011042500_job_lead_ownership_integrity.sql`
 

@@ -5,7 +5,8 @@ Status: **In Progress - Implementation / Awaiting ChatGPT Review**.
 Scope: Stage 1 code and isolated synthetic tests only. **Nothing in this document authorizes production SQL, export, migration, deployment, data repair or integration changes.**
 
 Baseline: `origin/main` at `2a0c450`. Branch: `security/rf-04-job-lead-ownership`.
-PR: pending publication. Findings: F01 and the SQL-boundary portion of G02 in
+PR: [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12), open and unmerged.
+Findings: F01 and the SQL-boundary portion of G02 in
 [Refinement 02](REFINEMENT_02_QUALITY_AUDIT.md). [Master Plan](REFINEMENT_MASTER_PLAN.md).
 
 ## Root Cause and Design
@@ -312,3 +313,9 @@ integration. Docker SQL/Firefox/WebKit remain local rather than new CI gates.
 Production data compatibility, maintenance-window sizing, backup/rehearsal,
 history-registration choice, deployment and post-release verification remain
 explicit operator/review gates. CAD $0/month is preserved.
+
+Publication observations: Vercel's branch-filtered deployment inventory returned
+no deployments immediately after the implementation Push and after PR #12 was
+created. This is a bounded observation, not independent inspection of the saved
+Preview switch or a guarantee against delayed events. Automatic backend sync
+remains under the existing operator-confirmed OFF hold; no setting was changed.
