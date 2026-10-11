@@ -6,6 +6,9 @@ does NOT mean the product is defect-free. Approved fixes must replace the releva
 characterization with desired-behavior regression assertions. RF-03 replaces the
 F02/F03 notes characterizations with lossless/nullable regression assertions and
 adds create/edit coverage at desktop, tablet and phone widths.
+RF-04 replaces F01's cross-owner-association characterization with a rejection
+regression and extends the real SQL runner; F05's stale-state characterization
+is intentionally unchanged.
 
 ## Run Locally
 
@@ -49,6 +52,17 @@ schema/API contract and local default grants. Consequently, this proves database
 policy/RPC behavior under that fixture, not production grants or Storage service
 behavior. Historical migration replay first supplies the application-table
 baseline from `schema.sql`, because the nine migrations do not create that table.
+RF-04 restores that pre-RF-04 application constraint baseline, replays all nine
+historical migrations unchanged, seeds valid legacy associations, then applies
+`20261011042500_job_lead_ownership_integrity.sql`. Fresh and incremental databases
+run the same ownership/role/RPC assertions, eight concurrent conversions each,
+and two lock-synchronized owner-change races each. Constraint catalog definitions
+are compared between both paths. Separate synthetic databases prove that a
+cross-owner link, an orphaned link and nullable-owner schema drift fail the
+migration without altering existing data, grants, policies or RPCs. Successful
+migration also compares complete legacy rows and those security definitions.
+See [RF-04 release runbook](../../docs/refinement/RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md)
+for the production approval boundary and test limitations.
 
 Evidence is generated under Git-ignored `test-results/`: responsive screenshots,
 failure traces, sanitized performance/axe attachments and breakpoint observations.

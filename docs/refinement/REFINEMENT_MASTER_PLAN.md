@@ -116,8 +116,18 @@ Acceptance:
 **Size:** Medium  
 **Findings:** F01, G02  
 **Dependency:** RF-03 sequencing only  
-**Status:** [ ] Planned  
-**PR:** TBD
+**Status:** [~] In Progress — Implementation / Awaiting ChatGPT Review
+**PR:** Pending publication
+**Migration runbook:** [RF-04 Ownership Migration Runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md)
+**Migration:** `20261011042500_job_lead_ownership_integrity.sql`
+
+Stage 1 implements a same-owner composite foreign key with application-only
+SET NULL deletion, fresh-schema parity and real isolated PostgreSQL regression,
+legacy compatibility and concurrent-write tests. Production data has not been
+queried and the migration has not been deployed. G02 is narrowed at the SQL
+boundary; complete HTTP/hosted integration remains unverified. Supabase automatic
+production deployment remains intentionally disabled under SEC-02's operational
+hold; do not resume it as part of RF-04.
 
 Scope:
 
