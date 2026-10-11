@@ -3,6 +3,7 @@
 Date: 2026-10-10. Findings: **F02, F03, CQ07, G01**.
 Baseline: `origin/main` at `0200606f3fed76f342e2a1d0a04ecc68fccc13f3`.
 Branch: `fix/refinement-03-application-note-integrity`.
+PR: [#9](https://github.com/YijunYuan-Work/ApplyTrack/pull/9).
 Status: implementation awaiting ChatGPT review; not Done, merged or released.
 
 ## Root Causes and Historical Evidence
