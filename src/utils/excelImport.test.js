@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import * as XLSX from 'xlsx'
 import { parseExcelApplications } from './excelImport.js'
+import { fromApplicationRow, toApplicationRow } from '../data/applicationRows.js'
 
 function spreadsheetFile(rows, bookType = 'xlsx') {
   const workbook = XLSX.utils.book_new()
@@ -45,6 +46,23 @@ test('preserves support for legacy .xls workbooks', async () => {
 
   assert.equal(applications.length, 1)
   assert.equal(applications[0].company, 'Old format Co')
+})
+
+test('RF-03: Excel notes retain labels and whitespace through the production row mappers', async () => {
+  const notes = '  Cover letter: Yes\n\nReferral: No\nLast updated: interview pending  \n'
+  for (const bookType of ['xlsx', 'biff8']) {
+    const [parsed] = await parseExcelApplications(spreadsheetFile([
+      ['Company', 'Role', 'Notes', 'Cover Letter', 'Referral', 'Last Updated', 'Interview Stage'],
+      ['Synthetic', 'Engineer', notes, 'No', 'Yes', '2026-01-01', '2'],
+    ], bookType))
+    assert.equal(parsed.notes, `${notes}\nInterview stage: 2`)
+    const mapped = fromApplicationRow(toApplicationRow(parsed, 'synthetic-user'))
+    assert.equal(mapped.notes, parsed.notes)
+    assert.equal(mapped.coverLetter, 'No')
+    assert.equal(mapped.referral, 'Yes')
+    assert.equal(mapped.lastUpdated, '2026-01-01')
+    assert.equal(mapped.interviewCount, 2)
+  }
 })
 
 test('requires recognizable company and role headers', async () => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createServer } from 'vite'
 import * as XLSX from 'xlsx'
+import { fromApplicationRow } from '../../src/data/applicationRows.js'
 import { normalizeApplication } from '../../src/data/applications.js'
 import { getJobLeadPresentation } from '../../src/data/jobAgent.js'
 import { parseExcelApplications } from '../../src/utils/excelImport.js'
@@ -14,17 +14,10 @@ export function workbookFile(rows, extraRows) {
   return { name: 'audit.xlsx', size: bytes.length, arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) }
 }
 
-test('API mapper characterization: legitimate note labels are stripped and null notes crash', async () => {
-  const server = await createServer({
-    server: { middlewareMode: true }, appType: 'custom',
-    plugins: [{ name: 'audit-no-backend', enforce: 'pre', resolveId(id) { if (id.endsWith('/lib/supabase')) return '\0audit-supabase' }, load(id) { if (id === '\0audit-supabase') return 'export const supabase = null' } }],
-  })
-  try {
-    const { fromApplicationRow } = await server.ssrLoadModule('/src/api/applications.js')
-    const row = { id: 1, company: 'Synthetic', role: 'Engineer', notes: 'Cover letter: Yes\nReferral: No\nLast updated: interview pending\nKeep this', cover_letter: 'No', referral: 'Yes', last_updated: '2026-01-01' }
-    assert.equal(fromApplicationRow(row).notes, 'Keep this')
-    assert.throws(() => fromApplicationRow({ ...row, notes: null }), TypeError)
-  } finally { await server.close() }
+test('RF-03 F02/F03: API mapper preserves legitimate note labels and accepts null notes', () => {
+  const row = { id: 1, company: 'Synthetic', role: 'Engineer', notes: 'Cover letter: Yes\nReferral: No\nLast updated: interview pending\nKeep this', cover_letter: 'No', referral: 'Yes', last_updated: '2026-01-01' }
+  assert.equal(fromApplicationRow(row).notes, row.notes)
+  assert.equal(fromApplicationRow({ ...row, notes: null }).notes, '')
 })
 
 test('Excel first sheet, alias mapping, dates, skipped incomplete rows and unknown columns', async () => {

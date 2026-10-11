@@ -86,18 +86,26 @@ test('BUG: out-of-order status responses leave UI stale until reload', async ({ 
   await expect(page.locator('.board-card select')).toHaveValue('Rejected')
 })
 
-test('BUG: API note labels disappear and nullable notes prevent dashboard loading', async ({ page, context }) => {
-  const state = await backend(context, [application(1, { notes: 'Cover letter: Yes\nKeep this note' })])
+test('RF-03 F02/F03: role-only edits preserve notes and nullable rows load alongside valid rows', async ({ page, context }) => {
+  const notes = '  Cover letter: Yes\r\nReferral: No\r\nLast updated: interview pending\r\n\r\nKeep this note  \r\n'
+  const state = await backend(context, [application(1, { notes })])
   await signIn(page)
   await nav(page, 'Edit')
-  await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue('Keep this note')
+  await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(notes.replaceAll('\r\n', '\n'))
   await page.getByLabel('Role', { exact: false }).fill('Updated')
   await page.locator('button[type="submit"]').click()
-  await expect.poll(() => state.applications[0].notes).toBe('Keep this note')
-  state.applications[0].notes = null
+  await expect(page).toHaveURL(/dashboard$/)
+  await expect.poll(() => state.applications[0].notes).toBe(notes)
+  state.applications.push(application(2, { notes: null }))
   await page.reload()
-  await expect(page.locator('.form-error')).toContainText('match')
-  await expect(page.locator('.board-card')).toHaveCount(0)
+  await expect(page.locator('.board-card')).toHaveCount(2)
+  await expect(page.locator('.form-error')).toHaveCount(0)
+  await page.locator('.board-card').filter({ hasText: 'Synthetic 2' }).getByRole('button', { name: 'Edit', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue('')
+  await nav(page, 'Back to dashboard')
+  await page.locator('.board-card').filter({ hasText: 'Synthetic 1' }).getByRole('button', { name: 'Edit', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(notes.replaceAll('\r\n', '\n'))
+  expect(state.blocked).toEqual([])
 })
 
 test('CQ: hidden dashboard interview calculation differs from progress for zero rounds', async ({ page, context }) => {
@@ -128,13 +136,14 @@ test('BUG: demo password succeeds without persistence; all demo navigation stays
 })
 
 test('Excel import duplicate selection and atomic failure feedback', async ({ page, context }) => {
+  const notes = '  Cover letter: Yes\nReferral: No\nLast updated: interview pending  \n'
   const state = await backend(context, [application(1, { company: 'Existing', role: 'Engineer', applied_date: '2026-01-01' })])
   await signIn(page)
   await nav(page, 'Import Excel')
   await page.locator('input[type="file"]').setInputFiles(spreadsheet([
     ['Company', 'Role', 'Applied Date', 'Notes'],
     ['Existing', 'Engineer', '2026-01-01', 'duplicate'],
-    ['Imported', 'Auditor', '2026-12-31', 'must persist'],
+    ['Imported', 'Auditor', '2026-12-31', notes],
   ]))
   await expect(page.getByText(/duplicate/i).first()).toBeVisible()
   state.failInsert = true
@@ -146,9 +155,11 @@ test('Excel import duplicate selection and atomic failure feedback', async ({ pa
   page.once('dialog', (dialog) => dialog.accept())
   await page.getByRole('button', { name: /Import 1/ }).click()
   await expect(page.getByRole('status')).toContainText('1 application')
-  expect(state.applications.at(-1).notes).toBe('must persist')
+  expect(state.applications.at(-1).notes).toBe(notes)
   await nav(page, 'Dashboard')
   await expect(page.getByText('Imported', { exact: true })).toBeVisible()
+  await page.locator('.board-card').filter({ hasText: 'Imported' }).getByRole('button', { name: 'Edit', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(notes)
 })
 
 test('Job conversion, pagination top scroll, filter and remove; BUG empty search mislabels queue', async ({ page, context }) => {
@@ -163,6 +174,8 @@ test('Job conversion, pagination top scroll, filter and remove; BUG empty search
   await page.getByRole('button', { name: 'Finished applying' }).first().click()
   await expect(page.locator('.agent-lead')).toHaveCount(4)
   expect(state.applications).toHaveLength(1)
+  const importedNotes = state.applications[0].notes
+  expect(importedNotes).toMatch(/^Added from (LinkedIn|Indeed) after the application was confirmed as submitted\.$/)
   await page.getByLabel('Search jobs waiting to be applied').fill('no-such-job')
   await expect(page.getByRole('heading', { name: 'No applications waiting' })).toBeVisible()
   expect(state.leads.filter((row) => row.state === 'new')).toHaveLength(24)
@@ -172,8 +185,41 @@ test('Job conversion, pagination top scroll, filter and remove; BUG empty search
   await expect.poll(() => state.leads.length).toBe(24)
   await nav(page, 'Dashboard')
   await expect(page.locator('.metric-card-total strong')).toHaveText('1')
+  await nav(page, 'Edit')
+  await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(importedNotes)
   expect(state.blocked).toEqual([])
 })
+
+for (const width of [1440, 768, 390]) {
+  test(`RF-03: create and role-only edit preserve notes in authenticated and demo forms at ${width}px`, async ({ page, context }, info) => {
+    await page.setViewportSize({ width, height: 900 })
+    const state = await backend(context)
+    const notes = '  Cover letter: Yes\nReferral: No\n\nLast updated: interview pending  \n'
+    for (const demo of [false, true]) {
+      if (demo) await page.goto('/#/demo')
+      else await signIn(page)
+      await nav(page, 'Add application')
+      await page.getByLabel('Company', { exact: false }).fill('Notes fixture')
+      await page.getByLabel('Role', { exact: false }).fill('Engineer')
+      await page.getByLabel('Notes', { exact: true }).fill(notes)
+      await noOverflow(page)
+      await page.locator('button[type="submit"]').click()
+      await expect(page.getByText('Notes fixture', { exact: true })).toBeVisible()
+      await page.locator('.board-card').filter({ hasText: 'Notes fixture' }).getByRole('button', { name: 'Edit', exact: true }).click()
+      await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(notes)
+      await page.getByLabel('Role', { exact: false }).fill('Updated notes fixture')
+      await page.locator('button[type="submit"]').click()
+      await expect(page.getByText('Updated notes fixture', { exact: true })).toBeVisible()
+      await page.locator('.board-card').filter({ hasText: 'Notes fixture' }).getByRole('button', { name: 'Edit', exact: true }).click()
+      await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(notes)
+      await noOverflow(page)
+      await page.screenshot({ path: info.outputPath(`notes-${demo ? 'demo' : 'authenticated'}-${width}.png`), fullPage: true })
+      if (!demo) expect(state.applications[0].notes).toBe(notes)
+    }
+    expect(state.applications).toHaveLength(1)
+    expect(state.blocked).toEqual([])
+  })
+}
 
 test('BUG: remove all uses only fetched 500 leads and leaves an unseen lead', async ({ page, context }) => {
   const state = await backend(context, [], Array.from({ length: 501 }, (_, i) => lead(i + 1)))

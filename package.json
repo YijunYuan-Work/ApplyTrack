@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --test src/utils/excelImport.test.js src/data/jobAgent.test.js src/utils/resumeParser.test.js supabase/functions/_shared/jobAlertParser.test.ts",
+    "test": "node --test src/utils/excelImport.test.js src/data/applicationRows.test.js src/data/jobAgent.test.js src/utils/resumeParser.test.js supabase/functions/_shared/jobAlertParser.test.ts",
     "preview": "vite preview",
     "test:auth-ui": "playwright test --config playwright.auth.config.js",
     "test:audit": "node --experimental-vm-modules --test tests/refinement-02/logic.test.js tests/refinement-02/edge.test.mjs",

@@ -53,7 +53,8 @@ function getCell(row, headerMap, field) {
     return ''
   }
 
-  return String(row[index] ?? '').trim()
+  const value = String(row[index] ?? '')
+  return field === 'notes' ? value : value.trim()
 }
 
 function toIsoDate(value, XLSX) {

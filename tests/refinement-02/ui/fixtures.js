@@ -40,7 +40,10 @@ export async function backend(context, rows = [], leads = []) {
     if (table === 'complete_job_lead_application') {
       const item = state.leads.find((item) => item.id === body.p_job_lead_id)
       if (!item.application_id) {
-        const created = application(10000 + item.id, { company: item.company, role: item.title, applied_date: body.p_applied_date })
+        const created = application(10000 + item.id, {
+          company: item.company, role: item.title, applied_date: body.p_applied_date,
+          notes: `Added from ${item.source === 'linkedin' ? 'LinkedIn' : 'Indeed'} after the application was confirmed as submitted.`,
+        })
         state.applications.push(created)
         item.application_id = created.id
         item.state = 'applied'
