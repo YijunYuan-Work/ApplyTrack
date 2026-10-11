@@ -186,8 +186,9 @@ Acceptance:
 **Priority:** Security review before further production backend changes  
 **Size:** Small investigation; implementation conditional  
 **Finding:** R01  
-**Status:** [?] Decision Required  
-**PR:** Conditional
+**Status:** [~] In Progress / Awaiting Security Review
+**PR:** Triage PR pending publication; remediation conditional
+**Report:** [SEC-01 Password Recovery Security Triage](SEC_01_PASSWORD_RECOVERY_TRIAGE.md)
 
 Scope:
 
@@ -578,7 +579,7 @@ Only the next task is authorized for implementation. Later tasks may be repriori
 | Order | Task | Priority | Status | PR |
 | --- | --- | --- | --- | --- |
 | 1 | RF-03 — Notes Data Integrity | P0 | Done — merged and deployed | [#9](https://github.com/YijunYuan-Work/ApplyTrack/pull/9) |
-| 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | Decision required | — |
+| 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | In Progress / Awaiting Security Review | [Report](SEC_01_PASSWORD_RECOVERY_TRIAGE.md) |
 | 3 | RF-04 — Ownership Integrity | P0 | Planned | — |
 | 4 | RF-05 — Ingestion Failure Handling | P0 | Planned | — |
 | 5 | RF-06 — Lead State Consistency | P0 | Planned | — |
