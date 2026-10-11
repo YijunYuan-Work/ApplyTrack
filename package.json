@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "test": "node --test src/utils/excelImport.test.js src/data/jobAgent.test.js src/utils/resumeParser.test.js supabase/functions/_shared/jobAlertParser.test.ts",
     "preview": "vite preview",
-    "test:auth-ui": "playwright test --config playwright.auth.config.js"
+    "test:auth-ui": "playwright test --config playwright.auth.config.js",
+    "test:audit": "node --experimental-vm-modules --test tests/refinement-02/logic.test.js tests/refinement-02/edge.test.mjs",
+    "test:audit-ui": "playwright test --config playwright.audit.config.js",
+    "test:audit-db": "pwsh -NoProfile -File tests/refinement-02/database/run.ps1"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
@@ -24,6 +27,7 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.62.1",
     "@types/react": "^19.2.14",
