@@ -1,11 +1,12 @@
 # RF-04: Job Lead Ownership Migration Runbook
 
 Date: 2026-10-11 (America/Toronto).
-Status: **In Progress - Implementation / Awaiting ChatGPT Review**.
-Scope: Stage 1 code and isolated synthetic tests only. **Nothing in this document authorizes production SQL, export, migration, deployment, data repair or integration changes.**
+Status: **In Progress - Stage 1 merged; production release gated**.
+Scope: Stage 1 implementation evidence and subsequent read-only release preparation. **Nothing in this document authorizes production SQL, export, migration, deployment, data repair or integration changes.**
 
-Baseline: `origin/main` at `2a0c450`. Branch: `security/rf-04-job-lead-ownership`.
-PR: [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12), open and unmerged.
+Stage 1 baseline: `origin/main` at `2a0c450`; branch `security/rf-04-job-lead-ownership`.
+Release-preparation baseline: main `0a5b165`.
+PR: [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12), reviewed and merged as `7cd120d`.
 Findings: F01 and the SQL-boundary portion of G02 in
 [Refinement 02](REFINEMENT_02_QUALITY_AUDIT.md). [Master Plan](REFINEMENT_MASTER_PLAN.md).
 
@@ -91,9 +92,25 @@ conversion activity. The timeout bounds lock waits/per-statement execution,
 not the whole transaction. For a large database or repeated contention, stop
 and design a separately reviewed staged/index-concurrent rollout; do not simply
 increase timeouts or retry continuously. Index size, production data quality
-and actual production grants have not been measured in Stage 1.
+were not measured in Stage 1. Subsequent production metadata/preflight findings
+are recorded below; maintenance-window sizing remains pending.
 
-## Read-Only Production Preflight (Not Executed)
+## Read-Only Production Preflight (Reported Complete; Refresh Before Release)
+
+On 2026-10-11, ChatGPT reported an authorized live production preflight:
+**0 cross-owner associations, 0 missing Applications, 0 duplicate links and
+31 valid linked leads**. The original single-column FK remains and migration
+`20261011042500` is not registered or applied. This record attributes data findings
+to ChatGPT; this documentation task did not query/export production user rows.
+The earlier "not executed" language described Stage 1 and is superseded here.
+
+Independent catalog-only checks during this preparation confirmed broad
+Applications/default table ACLs and RLS. See the
+[privilege review](PRODUCTION_PRIVILEGE_REVIEW.md) for findings and separately
+approval-gated SQL. Clean data does not close F01: enforcement is still missing
+in production. Backup, restore rehearsal, migration and post-release verification
+are **not completed**. Refresh the full preflight immediately before release;
+an earlier clean snapshot does not certify future writes or all remaining gates.
 
 An authorized operator must first independently verify the project is
 `qotipygmwlovxklkexjb` / ApplyTrack and use approved private connection storage.
@@ -144,7 +161,8 @@ and RPC definition/ACL privately for before/after comparison. Confirm the nine
 historical migration versions and that RF-04 is absent in migration history.
 Any unexpected history/schema/permission condition blocks application.
 
-Existing-data assessment is **synthetic only**, not a production attestation.
+Stage 1 existing-data tests were synthetic; the subsequent production aggregate
+assessment is reported above, not independently re-attested by this task.
 If invalid links exist, preserve them and stop for an owner-aware, separately
 approved decision: reviewed unlinking, correcting a demonstrably mistaken
 association, or investigation without repair. Never delete a lead/application,
@@ -159,11 +177,16 @@ required. Before approval to migrate, designate an operator, verify available
 free PostgreSQL 17 client tooling, and agree backup scope, encryption, retention
 and a restore target. Credentials, encryption keys and export authorization must
 be supplied privately by the user/operator, not obtained by this task.
+Complete the [backup operator checklist](RF_04_BACKUP_OPERATOR_CHECKLIST.md),
+including managed-schema dependencies, snapshot-aligned checks, encrypted work
+storage and actual restore proof. These remain gates, not verified capabilities.
 
 Use `pg_dump` custom format with an approved snapshot-capable connection and
-explicit schemas `public`, `auth`, `storage`, `supabase_migrations`. This preserves
-all public Application/Lead data and definitions, Auth parent/identity rows,
-Storage metadata and migration history. It does not back up Storage object
+explicit schemas `public`, `auth`, `storage`, `supabase_migrations`. Subject to
+complete schema/data permissions and archive verification, this includes public
+Application/Lead data and definitions, all Auth tables (including users,
+identities and session/token data), Storage metadata and migration history.
+It does not back up Storage object
 bytes, global roles, secrets or external service configuration; capture required
 non-secret role/grant configuration separately and keep other recovery material
 operator-owned. Do not assume a default Supabase CLI dump covers Auth users.
@@ -203,7 +226,7 @@ Procedure, requiring separate export authorization:
 These steps are not executed by Stage 1:
 
 1. ChatGPT reviews this PR, SQL evidence and runbook. Obtain separate user
-   approval for production read-only preflight, export/restore rehearsal and the
+   approval for refreshed production read-only preflight, export/restore rehearsal and the
    exact migration/version/target; agree a maintenance window and operator.
 2. Confirm Supabase GitHub Integration **Deploy to production remains OFF** under
    [SEC-02's operational hold](SEC_02_RETIREMENT_RUNBOOK.md#g-production-retirement-completion-record-2026-10-11-utc).
@@ -213,8 +236,9 @@ These steps are not executed by Stage 1:
 3. Capture read-only preflight and original metadata/security definitions. Verify
    the encrypted backup and approved restore evidence. Stop on mismatch or
    missing permissions. Pause relevant writes only under explicit approval.
-4. Merge only after review and separate merge/release approval. Pin the reviewed
-   migration's commit/hash. Do not run `schema.sql`, replay old migrations,
+4. Stage 1 is already merged; that is not production execution authorization.
+   Obtain separate release approval and pin the reviewed migration's commit/hash.
+   Do not run `schema.sql`, replay old migrations,
    `db reset`, generic deploy or unreviewed `db push` against production.
 5. An authorized operator applies **only** the pinned RF-04 SQL through a reviewed
    migration mechanism, with ON_ERROR_STOP and transactional failure handling.
@@ -310,7 +334,8 @@ passing them is not a claim they are fixed. SQL tests do not run hosted Deno,
 GoTrue/PostgREST/Storage HTTP, use production grants, or verify a production dump.
 G02 is addressed at the SQL ownership boundary, not closed for full-stack
 integration. Docker SQL/Firefox/WebKit remain local rather than new CI gates.
-Production data compatibility, maintenance-window sizing, backup/rehearsal,
+Reported production aggregate compatibility does not waive refreshed preflight;
+maintenance-window sizing, backup/rehearsal,
 history-registration choice, deployment and post-release verification remain
 explicit operator/review gates. CAD $0/month is preserved.
 

@@ -120,17 +120,23 @@ Acceptance:
 **PR:** [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12) — reviewed, merged  
 **Merge commit:** `7cd120dbf07b8f59abe088efe5092937bf77f264`  
 **Merged:** 2026-10-11 (UTC)  
-**Production status:** The RF-04 migration is **not deployed**. Read-only production data/schema preflight, one-time backup/restore safety gate, migration-history registration and separate execution authorization are still pending. The Supabase GitHub Integration `Deploy to production` hold from SEC-02 must remain OFF.
+**Production status:** The RF-04 migration is **not deployed**; F01 remains unresolved in production. ChatGPT reported the authorized read-only preflight complete: 0 cross-owner associations, 0 missing Applications, 0 duplicate links and 31 valid linked leads; the original FK remains and version `20261011042500` is absent from migration history. Refreshed release preflight, backup/restore proof, history-registration procedure and separate execution authorization remain pending. Supabase `Deploy to production` must remain OFF.
 **Migration runbook:** [RF-04 Ownership Migration Runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md)
 **Migration:** `20261011042500_job_lead_ownership_integrity.sql`
 
 Stage 1 implements a same-owner composite foreign key with application-only
 SET NULL deletion, fresh-schema parity and real isolated PostgreSQL regression,
-legacy compatibility and concurrent-write tests. Production data has not been
-queried and the migration has not been deployed. G02 is narrowed at the SQL
+legacy compatibility and concurrent-write tests. The production aggregate
+findings above are attributed to ChatGPT, not independently queried user data by
+this documentation task. The migration has not been deployed. G02 is narrowed at the SQL
 boundary; complete HTTP/hosted integration remains unverified. Supabase automatic
 production deployment remains intentionally disabled under SEC-02's operational
 hold; do not resume it as part of RF-04.
+
+Release preparation: [Production Privilege Review](PRODUCTION_PRIVILEGE_REVIEW.md)
+and [Backup Operator Checklist](RF_04_BACKUP_OPERATOR_CHECKLIST.md). Proposed
+permission SQL is locally validated only, with a separate production approval
+gate; no production privilege hardening or backup is claimed complete.
 
 Scope:
 
