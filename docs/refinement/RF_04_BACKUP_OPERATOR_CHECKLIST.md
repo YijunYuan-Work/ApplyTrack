@@ -5,6 +5,13 @@ Companion to the [RF-04 release runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md).
 CAD $0 software is feasible; credentials, storage protection, permissions and an
 actual successful restore are still release blockers, not assumed capabilities.
 
+Stage 2 local assessment: [Backup Readiness Report](RF_04_BACKUP_READINESS_REPORT.md).
+The proposed local directory is **NOT READY for real confidential data**:
+volume encryption is unverified, inherited ACLs are too broad, complete sync/spill
+coverage is unverified, and age/key custody is pending. Synthetic evidence does
+not complete any production gate. The four-schema scope below remains unchanged;
+the report's smaller release-specific alternative requires explicit approval.
+
 ## Scope and Consistency
 
 One PostgreSQL 17 custom-format `pg_dump` with four explicit schemas is a
@@ -99,6 +106,11 @@ Windows PowerShell text redirection. `--file` avoids encoding corruption.
   owner/grantor mapping and replay the separately captured ACL/default/policy
   manifest under reviewed authority. No ignoring managed-schema ownership errors,
   disabling triggers or accepting a partly restored Auth schema.
+- [ ] Include schema owners and exact USAGE/CREATE grants/grantors in that
+  manifest. A blank-target restore can differ from the source database template's
+  baseline schema ACLs even after archive ACL replay. Reconcile only against the
+  approved manifest; compare normalized effective privileges (including PUBLIC,
+  grant options and defaults), not raw ACL array order or NULL representation.
 - [ ] Verify schema/constraint/trigger/RPC/policy/ACL inventory and migration
   versions; compare same-snapshot counts for EVERY included table and private
   per-table content digests, plus sequence states and RF-04 aggregate integrity.
