@@ -161,27 +161,21 @@ Production verification (ChatGPT read-only inspection after user-authorized rele
 
 **Priority:** P0  
 **Size:** Medium–Large  
-**Findings:** F05, R07  
-**Dependency:** Coordinate with RF-05  
-**Status:** [ ] In Progress - implementation under review; production migration not released
+**Findings:** F05 (remaining conversion-retry defect); coordinated with completed RF-05  
+**Status:** [x] Done — production migration applied and independently verified (2026-10-12 America/Toronto)  
+**Implementation PR:** [#18](https://github.com/YijunYuan-Work/ApplyTrack/pull/18) — Squash merged as `9f361fc25c9d867d20545a58b1ca7fba830fb045`  
+**Migration:** `20261012025412_job_lead_state_consistency.sql`; production history registered exact version `20261012025412`, name `job_lead_state_consistency`  
+**Evidence:** [RF-06 Job Lead State Consistency](RF_06_JOB_LEAD_STATE_CONSISTENCY.md)
 
-**PR:** Pending review on `fix/rf-06-job-lead-state-consistency`
+Production verification (ChatGPT independent read-only inspection):
+- The deployed `complete_job_lead_application(bigint,date)` function contains the reviewed repair before the existing-Application return: when a same-owner associated Lead is not `applied`, it updates **only** the Lead state to `applied`. The owner-scoped `FOR UPDATE` lock and original Application row/date behavior remain.
+- Function remains SECURITY INVOKER with an empty search path. Owner `postgres`; effective EXECUTE: `authenticated` yes, `anon` no, `service_role` yes. Existing ACL and RLS behavior were not intentionally changed by this migration.
+- Production: 629 Leads, 420 Applications, 31 linked Leads, 342 alert messages; zero stale linked Leads, zero cross-owner associations, zero duplicate Lead keys or Application links, zero processing messages.
+- The RF-04 owner-aware FK is still validated; the RF-05 claim/finish RPCs remain service-only among application roles. All four relevant tables retain RLS.
+- Edge `ingest-job-alert` remains ACTIVE at v22; no Edge redeployment was needed. GitHub merge CI passed, Vercel production reached READY.
+- Concurrency, repeated conversion, date preservation and stale-state repair were exercised in local PostgreSQL 17 synthetic regression tests; no live conversion was triggered on production user data. Verification of code/permissions/data is not a claim of production end-to-end HTTP testing.
 
-**Evidence:** [State consistency implementation](RF_06_JOB_LEAD_STATE_CONSISTENCY.md)
-
-Scope:
-
-- Prevent ingestion from reverting already-applied Job Leads.
-- Correct existing-application retry behavior.
-- Preserve terminal states under concurrent processing.
-- Review atomicity and idempotency without rewriting Job Agent.
-
-Acceptance:
-
-- An Applied lead cannot return to New due to a stale ingestion update.
-- Conversion retries preserve the Application association.
-- No duplicate Applications are created.
-- Concurrent SQL and handler tests pass.
+**Outcome:** RF-06 is complete. Application-deletion product semantics and unrelated state UX remain separate potential work; no additional RF-06 release stage or historical data repair is required.
 
 ## SEC-01 — Password Recovery Endpoint Risk Triage
 
@@ -621,7 +615,7 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 3 | SEC-02 — Retire Legacy Recovery Endpoint | P0 Security | Done — production absence verified; auto-sync remains OFF | [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11); [runbook](SEC_02_RETIREMENT_RUNBOOK.md) |
 | 4 | RF-04 — Ownership Integrity | P0 | Done — production migration verified | [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12); [runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md) |
 | 5 | RF-05 — Ingestion Failure Handling | P0 | Done — migration and Edge v22 verified | [#17](https://github.com/YijunYuan-Work/ApplyTrack/pull/17); [evidence](RF_05_ALERT_PROCESSING_RELIABILITY.md) |
-| 6 | RF-06 — Lead State Consistency | P0 | In Progress - implementation under review; not released | [Evidence](RF_06_JOB_LEAD_STATE_CONSISTENCY.md) |
+| 6 | RF-06 — Lead State Consistency | P0 | Done — production conversion RPC verified | [#18](https://github.com/YijunYuan-Work/ApplyTrack/pull/18); [evidence](RF_06_JOB_LEAD_STATE_CONSISTENCY.md) |
 | 7 | RF-07 — Status Mutation Reliability | P0 | Planned | — |
 | 8 | RF-08 — Form & Save Lifecycle | P1 | Planned | — |
 | 9 | RF-09 — Destructive Operations | P1 | Planned | — |

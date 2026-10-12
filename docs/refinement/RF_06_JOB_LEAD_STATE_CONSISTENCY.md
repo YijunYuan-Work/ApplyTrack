@@ -1,6 +1,6 @@
 # RF-06: Job Lead State Consistency
 
-Status: In Progress; implementation under review, not released.
+Status: Completed; production migration independently verified (2026-10-12 America/Toronto).
 
 ## Fix and Rules
 
@@ -74,10 +74,38 @@ Local results:
 This is local synthetic evidence, not a production validation or RF-06 Done
 claim. No existing characterization tests for unrelated findings were removed.
 
-## Release Boundary
+## Production Completion
 
-Requires a separately reviewed production SQL migration only; no Edge Function
-or frontend deployment is required for this correction. Supabase automatic
-production synchronization remains OFF. This implementation performs no
-production access/migration, Auth/secrets/configuration change or deployment.
-Hosted PostgREST/HTTP behavior is not certified by the local psql-backed tests.
+With explicit user approval, the repository migration
+`20261012025412_job_lead_state_consistency.sql` was applied to Supabase
+project `qotipygmwlovxklkexjb`, and migration history records the exact
+version `20261012025412` and name `job_lead_state_consistency`.
+
+ChatGPT independently inspected the deployed conversion RPC: the same-owner
+already-linked path now repairs stale New/Expired state before returning the
+existing Application; the original row lock, invoker permissions and empty
+search path remain. The production RPC is owned by `postgres` and executable
+by `authenticated` and `service_role`, not by `anon`.
+
+Read-only checks showed 629 Leads, 420 Applications, 31 valid linked Leads,
+342 alert messages, and zero linked-state inconsistencies, cross-owner
+associations, duplicate Lead keys, duplicate Application links or active
+Processing messages. RF-04's composite ownership FK remains validated, RF-05's
+two ingestion RPCs retain their application-role privileges, and the four
+relevant tables still have RLS enabled. The `ingest-job-alert` function
+remains ACTIVE v22 without redeployment.
+
+GitHub merge CI passed and Vercel Production reached READY. Deterministic
+local PostgreSQL tests cover retries and concurrency; no live production
+conversion, simulated webhook or user data write was performed during
+independent validation.
+
+## Historical Release Boundary (Completed)
+
+
+
+The required production SQL migration has been completed; no Edge Function
+redeployment or frontend code change was necessary. Supabase automatic
+production synchronization remains under its existing OFF hold. No additional
+production operation is authorized by this report. Local PostgreSQL tests and
+read-only production verification do not certify a live PostgREST HTTP flow.
