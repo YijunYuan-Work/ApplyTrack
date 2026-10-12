@@ -1,6 +1,6 @@
 # RF-07: Application Status Mutation Reliability
 
-Status: In Progress; local implementation only, awaiting ChatGPT review.
+Status: Completed; merged CI and Vercel Production verified (2026-10-12 America/Toronto).
 PR: [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19).
 Baseline: `b7939caec1d2da9ad755a0b35cc3f62d8d8b9828` (origin/main).
 
@@ -70,14 +70,32 @@ conflicts with the SDK lock/startup notifications; these were corrected.
 The final full suites above passed without retries. Generated files, screenshots,
 traces, npm cache and temp files stay within the Git-ignored workspace.
 
-## Release and Limits
+## Production Release and Independent Verification
 
-Frontend-only release; no SQL migration, Edge deployment, new dependency or
-production permission/configuration change. No production operations were run.
-Supabase automatic synchronization and Vercel Preview settings were not modified.
-The post-push Vercel deployment listing contained no RF-07 branch deployment;
-the latest deployment remained main `b7939ca`. This is deployment-history evidence,
-not an independent read of the Preview setting. No production Supabase tool was used.
+The user approved Squash Merge of PR #19. GitHub reported the PR merged into
+`main` as `51b49d9283affed471b61d2a7cbc7f607941ae9c`. The merged-commit
+GitHub checks completed successfully, including 35 unit tests, 27 audit tests,
+12 authentication UI tests and 46 Chromium functional audit cases; lint and
+production build passed. Supabase Preview remained skipped.
+
+ChatGPT independently checked Vercel deployment history: the production
+deployment associated with this exact merged commit is READY. RF-07 ships only
+frontend/API changes. No migration, Edge Function deployment, new dependency,
+Supabase production write or production configuration change was necessary.
+The pre-existing Supabase auto-production-sync hold was not modified.
+
+The automated race and Auth-refresh evidence is deterministic/synthetic; live
+production status writes were not induced for validation. Successful CI,
+deployment metadata and the reviewed code support RF-07 closure without
+asserting cross-device global intent ordering.
+
+## Implementation-era Release Boundaries and Ongoing Limits
+
+This change remained frontend-only. During implementation, no RF-07
+branch Preview deployment was observed. The later merged-commit Vercel
+Production deployment is documented above. Supabase automatic production
+synchronization was not changed by this release; keep its existing OFF hold.
+No further production operation is authorized by RF-07.
 
 The queue is in-memory, not an offline/resumable job system. Closing a page drops
 unsent requests; reload displays persisted state. Conditional writes rely on the

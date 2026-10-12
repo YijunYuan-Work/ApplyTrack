@@ -248,26 +248,18 @@ Correct existing workflows without introducing new product capabilities.
 **Priority:** P0  
 **Size:** Medium  
 **Findings:** F04, R03  
-**Status:** [~] In Progress — implementation and local verification; awaiting review
+**Status:** [x] Done — merged CI and Vercel Production independently verified (2026-10-12 America/Toronto)  
+**PR:** [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19) — Squash merged at `51b49d9283affed471b61d2a7cbc7f607941ae9c`  
+**Evidence:** [RF-07 Application Status Mutation Reliability](RF_07_APPLICATION_STATUS_RELIABILITY.md)
 
-**PR:** [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19)
+Scope and outcome:
 
-Scope:
-
-- Prevent out-of-order API responses from overwriting newer UI state.
-- Review per-record mutation ordering.
-- Avoid unintended updates to unrelated fields.
-- Investigate session refresh and fetch/mutation interactions.
-
-Acceptance:
-
-- Rapid status changes converge to correct persisted and displayed values.
-- Failed mutations do not leave false success states.
-- Reloading matches the last accepted mutation.
-- Deterministic race-condition regression tests pass.
-
-Implementation evidence: [RF-07 status mutation reliability](RF_07_APPLICATION_STATUS_RELIABILITY.md).
-No database migration or Edge Function release is required.
+- Per-Application FIFO status writes and version-checked, status-only PATCH operations prevent stale status responses from overwriting newer changes or unrelated Application fields.
+- New per-record pending/error announcements and bounded reconciliation handle failed and ambiguous responses. Interview count and Last Updated behavior remains.
+- Identity/session-scoped loading fences stale authentication refresh and older application snapshots (R03).
+- Demo mode and existing Board/List workflows remain supported. No new database migration, Edge Function deployment, dependency or production Supabase write was required.
+- GitHub merged-commit CI passed: 35 unit tests, 27 audit tests, 12 authentication UI tests, 46 Chromium functional audit tests; lint and build passed. Vercel Production deployment for the merged commit reported READY; Supabase Preview check was skipped as intended.
+- Browser queue is ephemeral; no global cross-tab/device user-intent ordering. Full-form edit concurrency and navigation lifecycle are separate RF-08 work. No live production write/race test was performed.
 
 ## RF-08 — Application Form & Save Lifecycle
 
@@ -620,7 +612,7 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 4 | RF-04 — Ownership Integrity | P0 | Done — production migration verified | [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12); [runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md) |
 | 5 | RF-05 — Ingestion Failure Handling | P0 | Done — migration and Edge v22 verified | [#17](https://github.com/YijunYuan-Work/ApplyTrack/pull/17); [evidence](RF_05_ALERT_PROCESSING_RELIABILITY.md) |
 | 6 | RF-06 — Lead State Consistency | P0 | Done — production conversion RPC verified | [#18](https://github.com/YijunYuan-Work/ApplyTrack/pull/18); [evidence](RF_06_JOB_LEAD_STATE_CONSISTENCY.md) |
-| 7 | RF-07 — Status Mutation Reliability | P0 | In Progress | [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19); review pending |
+| 7 | RF-07 — Status Mutation Reliability | P0 | Done — CI and Vercel Production READY | [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19); [evidence](RF_07_APPLICATION_STATUS_RELIABILITY.md) |
 | 8 | RF-08 — Form & Save Lifecycle | P1 | Planned | — |
 | 9 | RF-09 — Destructive Operations | P1 | Planned | — |
 | 10 | RF-10 — Job Agent Queue | P1 | Planned | — |
