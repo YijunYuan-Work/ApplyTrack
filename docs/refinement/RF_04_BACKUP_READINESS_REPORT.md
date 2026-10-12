@@ -35,6 +35,12 @@ approval of a custom production encryption format or a durable key-management
 solution. No permanent backup credentials/key files were created. The age-based
 operator procedure still requires its own reviewed tool and roundtrip.
 
+Stage 3 follow-up: [Local Security Remediation](RF_04_LOCAL_SECURITY_REMEDIATION.md)
+verifies a disposable-directory ACL/rollback approach and modeled two-schema
+dependency handling. The actual directory's ACL is unchanged; volume protection,
+age verification and real managed-schema restore remain blocked. This Stage 2
+record remains historical evidence, not a new production-readiness attestation.
+
 ## Storage Assessment
 
 Target: `C:\Work\SideProject\ApplyTrack\tmp\rf04-backup.local`.
