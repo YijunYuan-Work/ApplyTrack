@@ -419,6 +419,11 @@ begin
       and user_id = auth.uid();
 
     if found then
+      if lead_row.state <> 'applied' then
+        update public.job_leads
+        set state = 'applied'
+        where id = lead_row.id;
+      end if;
       return application_row;
     end if;
   end if;
