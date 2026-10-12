@@ -144,63 +144,35 @@ Deno.serve(async (request) => {
     return jsonResponse({ ignored: true, ok: true })
   }
 
-  const { data: priorMessage, error: priorError } = await admin
-    .from('job_alert_messages')
-    .select('id, status')
-    .eq('resend_email_id', event.data.email_id)
-    .maybeSingle()
+  let message: { id: number; token: string; status: string; claimed: boolean }
 
-  if (priorError) {
-    console.error('Could not check webhook idempotency.', priorError.message)
+  try {
+    const { data, error } = await admin.rpc('claim_job_alert_message', {
+      p_inbox_id: inbox.id,
+      p_internet_message_id: event.data.message_id || '',
+      p_parser_version: parserVersion,
+      p_received_at: event.data.created_at || event.created_at || new Date().toISOString(),
+      p_resend_email_id: event.data.email_id,
+      p_subject: event.data.subject || '',
+    })
+
+    if (error || !data) {
+      throw new Error('Could not claim job alert processing.')
+    }
+
+    message = data
+  } catch {
+    console.error('Could not claim job alert processing; delivery can be retried.')
     return jsonResponse({ error: 'Could not process this alert.' }, 500)
   }
 
-  if (priorMessage && priorMessage.status !== 'failed') {
-    return jsonResponse({ duplicate: true, ok: true })
-  }
-
-  const receivedAt = event.data.created_at || event.created_at || new Date().toISOString()
-  const messageResult = priorMessage
-    ? await admin
-        .from('job_alert_messages')
-        .update({
-          safe_error_summary: '',
-          status: 'processing',
-        })
-        .eq('id', priorMessage.id)
-        .select('id')
-        .single()
-    : await admin
-        .from('job_alert_messages')
-        .insert({
-          internet_message_id: event.data.message_id || '',
-          parser_version: parserVersion,
-          received_at: receivedAt,
-          resend_email_id: event.data.email_id,
-          status: 'processing',
-          subject: event.data.subject || '',
-          user_id: inbox.user_id,
-        })
-        .select('id')
-        .single()
-  const { data: message, error: messageError } = messageResult
-
-  if (messageError) {
-    if (messageError.code === '23505') {
+  if (!message.claimed) {
+    if (['completed', 'partial', 'ignored'].includes(message.status)) {
       return jsonResponse({ duplicate: true, ok: true })
     }
 
-    console.error('Could not create job alert history.', messageError.message)
-    return jsonResponse({ error: 'Could not process this alert.' }, 500)
-  }
-
-  const { error: receivedUpdateError } = await admin
-    .from('job_alert_inboxes')
-    .update({ last_received_at: receivedAt })
-    .eq('id', inbox.id)
-
-  if (receivedUpdateError) {
-    console.error('Could not update inbox receipt time.', receivedUpdateError.message)
+    // Do not acknowledge unfinished work: Resend must redeliver if its worker dies.
+    return jsonResponse({ error: 'This alert is still processing.' }, 503)
   }
 
   try {
@@ -212,125 +184,63 @@ Deno.serve(async (request) => {
       throw new Error('Resend could not retrieve the received email.')
     }
 
-    const anchors = anchorsFromHtml(email.html, email.text)
     const parsed = parseJobAlert({
-      anchors,
+      anchors: anchorsFromHtml(email.html, email.text),
       from: email.from || event.data.from,
       subject: email.subject || event.data.subject,
     })
+    const rows = parsed.jobs.map((job) => ({
+      apply_url: job.url,
+      canonical_url: job.url,
+      category: job.category,
+      company: job.company,
+      contract_type: job.contractType,
+      description: job.description,
+      external_id: job.externalId,
+      location: job.location,
+      posted_at: job.postedAt,
+      salary_max: job.salaryMax,
+      salary_min: job.salaryMin,
+      source: job.source,
+      title: job.title,
+    }))
+    const { data: result, error: finishError } = await admin.rpc('finish_job_alert_message', {
+      p_inbox_id: inbox.id,
+      p_jobs: rows,
+      p_message_id: message.id,
+      p_provider: parsed.provider,
+      p_token: message.token,
+    })
 
-    if (parsed.provider === 'unknown') {
-      await admin
+    if (finishError || !result) {
+      throw new Error('Could not commit job alert processing.')
+    }
+
+    return parsed.provider === 'unknown'
+      ? jsonResponse({ ignored: true, ok: true })
+      : jsonResponse({ ...result, ok: true })
+  } catch {
+    console.error('Job alert ingestion failed; delivery can be retried.')
+    try {
+      const { error: failureError } = await admin
         .from('job_alert_messages')
         .update({
           processed_at: new Date().toISOString(),
-          safe_error_summary: 'This message was not a LinkedIn or Indeed job alert.',
-          status: 'ignored',
+          processing_started_at: null,
+          processing_token: null,
+          safe_error_summary: 'The job alert could not be processed. Delivery can be retried.',
+          status: 'failed',
         })
         .eq('id', message.id)
+        .eq('status', 'processing')
+        .eq('processing_token', message.token)
 
-      return jsonResponse({ ignored: true, ok: true })
-    }
-
-    const externalIds = parsed.jobs.map((job) => job.externalId)
-    const { data: existing, error: existingError } = externalIds.length
-      ? await admin
-          .from('job_leads')
-          .select('discovered_at, external_id, source, state')
-          .eq('user_id', inbox.user_id)
-          .eq('source', parsed.provider)
-          .in('external_id', externalIds)
-      : { data: [], error: null }
-
-    if (existingError) {
-      throw existingError
-    }
-
-    const existingById = new Map(
-      (existing || []).map((lead) => [`${lead.source}:${lead.external_id}`, lead]),
-    )
-    const rows = parsed.jobs.map((job) => {
-      const prior = existingById.get(`${job.source}:${job.externalId}`)
-
-      return {
-        apply_url: job.url,
-        canonical_url: job.url,
-        category: job.category,
-        company: job.company,
-        contract_type: job.contractType,
-        description: job.description,
-        discovered_at: prior?.discovered_at || new Date().toISOString(),
-        external_id: job.externalId,
-        filter_reasons: [],
-        filtered: false,
-        job_search_id: null,
-        location: job.location,
-        match_reasons: [],
-        match_score: 0,
-        posted_at: job.postedAt,
-        salary_max: job.salaryMax,
-        salary_min: job.salaryMin,
-        source: job.source,
-        source_message_id: message.id,
-        state: prior?.state || 'new',
-        title: job.title,
-        user_id: inbox.user_id,
+      if (failureError) {
+        console.error('Could not release processing lease; it will expire.')
       }
-    })
-
-    if (rows.length > 0) {
-      const { error: upsertError } = await admin
-        .from('job_leads')
-        .upsert(rows, { onConflict: 'user_id,source,external_id' })
-
-      if (upsertError) {
-        throw upsertError
-      }
+    } catch {
+      console.error('Could not release processing lease; it will expire.')
     }
-
-    const createdCount = rows.filter(
-      (row) => !existingById.has(`${row.source}:${row.external_id}`),
-    ).length
-    const completedAt = new Date().toISOString()
-    const status = rows.length > 0 ? 'completed' : 'partial'
-    const safeErrorSummary = rows.length > 0
-      ? ''
-      : 'The alert was received, but no supported job links were found.'
-
-    await Promise.all([
-      admin
-        .from('job_alert_messages')
-        .update({
-          jobs_created: createdCount,
-          jobs_found: rows.length,
-          jobs_updated: rows.length - createdCount,
-          processed_at: completedAt,
-          provider: parsed.provider,
-          safe_error_summary: safeErrorSummary,
-          status,
-        })
-        .eq('id', message.id),
-      admin
-        .from('job_alert_inboxes')
-        .update({ last_received_at: receivedAt })
-        .eq('id', inbox.id),
-    ])
-
-    return jsonResponse({ created: createdCount, found: rows.length, ok: true })
-  } catch (error) {
-    const safeMessage = error instanceof Error
-      ? error.message
-      : 'The job alert could not be processed.'
-
-    console.error('Job alert ingestion failed.', safeMessage)
-    await admin
-      .from('job_alert_messages')
-      .update({
-        processed_at: new Date().toISOString(),
-        safe_error_summary: safeMessage.slice(0, 300),
-        status: 'failed',
-      })
-      .eq('id', message.id)
 
     return jsonResponse({ error: 'Could not process this alert.' }, 500)
   }

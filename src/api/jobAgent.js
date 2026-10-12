@@ -272,13 +272,18 @@ export async function createJobAlertInbox(userId) {
     return mapInbox(existing)
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('job_alert_inboxes')
-    .insert({ user_id: userId })
-    .select('*')
-    .single()
+    .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true })
 
   throwIfError(error)
+  const { data, error: readError } = await supabase
+    .from('job_alert_inboxes')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  throwIfError(readError)
   return mapInbox(data)
 }
 

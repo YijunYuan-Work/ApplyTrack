@@ -10,7 +10,7 @@
     "test": "node --test src/utils/excelImport.test.js src/data/applicationRows.test.js src/data/jobAgent.test.js src/utils/resumeParser.test.js supabase/functions/_shared/jobAlertParser.test.ts",
     "preview": "vite preview",
     "test:auth-ui": "playwright test --config playwright.auth.config.js",
-    "test:audit": "node --experimental-vm-modules --test tests/refinement-02/logic.test.js tests/refinement-02/edge.test.mjs tests/sec-02/password-recovery-retirement.test.mjs",
+    "test:audit": "node --experimental-vm-modules --test tests/refinement-02/logic.test.js tests/refinement-02/edge.test.mjs tests/refinement-02/inbox.test.mjs tests/sec-02/password-recovery-retirement.test.mjs",
     "test:audit-ui": "playwright test --config playwright.audit.config.js",
     "test:audit-db": "pwsh -NoProfile -File tests/refinement-02/database/run.ps1"
   },
