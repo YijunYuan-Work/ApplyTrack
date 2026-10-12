@@ -6,7 +6,7 @@ export const userId = '00000000-0000-4000-8000-000000000001'
 const user = { id: userId, aud: 'authenticated', role: 'authenticated', email: 'auditor@127.0.0.1', user_metadata: { username: 'auditor', name: 'Auditor', profileEmail: 'synthetic@example.invalid' }, app_metadata: { provider: 'email', providers: ['email'] }, created_at: '2026-01-01T00:00:00Z' }
 
 export function application(id, overrides = {}) {
-  return { id, user_id: userId, company: `Synthetic ${id}`, role: 'Engineer', location: 'Toronto', status: 'Applied', applied_date: `2026-01-${String(id % 28 + 1).padStart(2, '0')}`, last_updated: '2026-01-01', follow_up: null, job_url: 'https://example.invalid/job', notes: '', salary: '', contact: '', cover_letter: 'No', referral: 'No', interview_count: 0, ...overrides }
+  return { id, user_id: userId, company: `Synthetic ${id}`, role: 'Engineer', location: 'Toronto', status: 'Applied', applied_date: `2026-01-${String(id % 28 + 1).padStart(2, '0')}`, last_updated: '2026-01-01', updated_at: '2026-01-01T00:00:00.000Z', follow_up: null, job_url: 'https://example.invalid/job', notes: '', salary: '', contact: '', cover_letter: 'No', referral: 'No', interview_count: 0, ...overrides }
 }
 
 export function lead(id, overrides = {}) {
@@ -21,21 +21,28 @@ export function spreadsheet(rows) {
 
 export async function backend(context, rows = [], leads = []) {
   const state = { applications: structuredClone(rows), leads: structuredClone(leads), requests: [], blocked: [], pending: [], holdUpdates: false, holdInserts: false, failDelete: false, failInsert: false, inbox: { id: 1, user_id: userId, address_alias: 'a'.repeat(32), enabled: true, last_received_at: '2026-01-01T00:00:00Z' }, messages: [] }
+  Object.assign(state, { user, version: 0, controlStatus: false, statusUpdates: [], holdReads: false, reads: [], failStatusReads: false, holdUsers: false, users: [], failUsers: false })
   await context.route('**/*', async (route) => {
     const request = route.request()
     const url = new URL(request.url())
     if (url.origin === 'http://127.0.0.1:5195') return route.continue()
     if (url.origin !== 'http://127.0.0.1:54399') { state.blocked.push(url.origin); return route.abort() }
     const method = request.method()
+    const single = request.headers().accept?.includes('vnd.pgrst.object')
     const body = request.postDataJSON()
     const table = url.pathname.split('/').at(-1)
     state.requests.push({ method, table, body, query: url.search })
     if (table === 'token' || table === 'signup') {
       const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url')
       const exp = Math.floor(Date.now() / 1000) + 3600
-      return route.fulfill({ json: { user, access_token: `${encode({ alg: 'HS256' })}.${encode({ sub: userId, aud: 'authenticated', role: 'authenticated', exp })}.synthetic`, refresh_token: 'synthetic', expires_in: 3600, expires_at: exp, token_type: 'bearer' } })
+      return route.fulfill({ json: { user: state.user, access_token: `${encode({ alg: 'HS256' })}.${encode({ sub: state.user.id, aud: 'authenticated', role: 'authenticated', exp })}.synthetic`, refresh_token: 'synthetic', expires_in: 3600, expires_at: exp, token_type: 'bearer' } })
     }
-    if (table === 'user') return route.fulfill({ json: user })
+    if (table === 'user') {
+      if (state.failUsers) return route.fulfill({ status: 401, json: { message: 'Synthetic invalid JWT' } })
+      const snapshot = structuredClone(state.user)
+      if (state.holdUsers) { state.users.push(() => route.fulfill({ json: snapshot })); return }
+      return route.fulfill({ json: snapshot })
+    }
     if (table === 'logout') return route.fulfill({ status: 204 })
     if (table === 'complete_job_lead_application') {
       const item = state.leads.find((item) => item.id === body.p_job_lead_id)
@@ -51,21 +58,43 @@ export async function backend(context, rows = [], leads = []) {
       return route.fulfill({ json: state.applications.find((row) => row.id === item.application_id) })
     }
     const source = table === 'applications' ? state.applications : table === 'job_leads' ? state.leads : table === 'job_alert_inboxes' ? [state.inbox] : table === 'job_alert_messages' ? state.messages : []
-    let result = source.filter((row) => [...url.searchParams].every(([key, value]) => {
+    const matches = (row) => [...url.searchParams].every(([key, value]) => {
       if (value.startsWith('eq.')) return String(row[key]) === value.slice(3)
       if (value.startsWith('in.(')) return value.slice(4, -1).split(',').includes(String(row[key]))
       return true
-    }))
+    })
+    let result = source.filter(matches)
     if (method === 'POST') {
       if (state.failInsert) return route.fulfill({ status: 400, json: { message: 'Synthetic insert failure' } })
-      result = (Array.isArray(body) ? body : [body]).map((row, index) => ({ id: 1000 + source.length + index, ...row }))
+      result = (Array.isArray(body) ? body : [body]).map((row, index) => ({ id: 1000 + source.length + index, updated_at: '2026-01-01T00:00:00.000Z', ...row }))
       source.push(...result)
       if (state.holdInserts) { state.pending.push(() => route.fulfill({ json: structuredClone(result[0]) })); return }
     }
     if (method === 'PATCH') {
-      result.forEach((row) => Object.assign(row, body))
+      // Match the version at commit time, not when the HTTP request arrived.
+      const commit = () => {
+        result = source.filter(matches)
+        result.forEach((row) => Object.assign(row, body, { updated_at: new Date(Date.UTC(2026, 0, 1) + ++state.version).toISOString() }))
+        return structuredClone(result)
+      }
+      if (state.controlStatus && table === 'applications' && url.searchParams.has('updated_at')) {
+        let response
+        const operation = {
+          body, query: url.search,
+          commit: () => response ??= commit(),
+          respond: () => {
+            const rows = operation.commit()
+            return route.fulfill({ json: single ? rows[0] ?? null : rows })
+          },
+          fail: () => route.fulfill({ status: 400, json: { message: 'Synthetic status failure' } }),
+          abort: () => route.abort('failed'),
+        }
+        state.statusUpdates.push(operation)
+        return
+      }
+      commit()
       const response = structuredClone(result)
-      if (state.holdUpdates) { state.pending.push(() => route.fulfill({ json: response[0] })); return }
+      if (state.holdUpdates) { state.pending.push(() => route.fulfill({ json: single ? response[0] ?? null : response })); return }
     }
     if (method === 'DELETE') {
       if (state.failDelete) return route.fulfill({ status: 400, json: { message: 'Synthetic delete failure' } })
@@ -74,14 +103,21 @@ export async function backend(context, rows = [], leads = []) {
       if (table === 'job_leads') state.leads = kept
     }
     if (method === 'GET') {
+      if (table === 'applications' && url.searchParams.get('select') !== '*' && state.failStatusReads) {
+        return route.fulfill({ status: 400, json: { message: 'Synthetic status read failure' } })
+      }
       const order = url.searchParams.get('order')
       if (order) {
         const [key, direction] = order.split('.')
         result.sort((a, b) => String(a[key]).localeCompare(String(b[key])) * (direction === 'desc' ? -1 : 1))
       }
       if (url.searchParams.has('limit')) result = result.slice(0, Number(url.searchParams.get('limit')))
+      if (table === 'applications' && url.searchParams.get('select') === '*' && state.holdReads) {
+        const snapshot = structuredClone(result)
+        state.reads.push(() => route.fulfill({ json: snapshot }))
+        return
+      }
     }
-    const single = request.headers().accept?.includes('vnd.pgrst.object')
     return route.fulfill({ json: single ? result[0] ?? null : result })
   })
   return state

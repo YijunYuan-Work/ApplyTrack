@@ -12,6 +12,7 @@ function ApplicationCard({
   onEditApplication,
   onStatusChange,
   selectionMode = false,
+  statusMutation,
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const statusClass = application.status.toLowerCase().replace(/\s+/g, '-')
@@ -55,7 +56,8 @@ function ApplicationCard({
                 <span className="sr-only">Status for {application.company}</span>
                 <select
                   className={`status-select status-select-${statusClass}`}
-                  value={application.status}
+                  aria-busy={statusMutation?.pending || false}
+                  value={statusMutation?.pending ? statusMutation.status : application.status}
                   onChange={(event) =>
                     onStatusChange(application.id, event.target.value)
                   }
@@ -65,6 +67,12 @@ function ApplicationCard({
                   ))}
                 </select>
               </label>
+            )}
+            {statusMutation?.pending && (
+              <p className="status-save-feedback" role="status">Saving status...</p>
+            )}
+            {statusMutation?.error && (
+              <p className="status-save-feedback form-error" role="alert">{statusMutation.error}</p>
             )}
           </div>
         </div>

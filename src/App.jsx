@@ -1,11 +1,14 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import {
   createApplication,
   createApplications,
   deleteApplication,
   deleteApplications,
   fetchApplications,
+  fetchApplicationStatus,
+  applicationStatusFields,
   updateApplication,
+  updateApplicationStatus,
 } from './api/applications'
 import {
   getCurrentUser,
@@ -66,6 +69,33 @@ function App() {
   const [dataLoading, setDataLoading] = useState(false)
   const [dataError, setDataError] = useState('')
   const [jobAgentSummary, setJobAgentSummary] = useState(null)
+  const [statusMutations, setStatusMutations] = useState({})
+  const [workspaceVersion, setWorkspaceVersion] = useState(0)
+  const applicationsRef = useRef([])
+  const workspaceRef = useRef({ userId: null, revision: 0, statusQueues: new Map() })
+  const userId = user?.id
+
+  const changeApplications = useCallback((update) => {
+    const next = typeof update === 'function' ? update(applicationsRef.current) : update
+    applicationsRef.current = next
+    workspaceRef.current.revision += 1
+    setApplications(next)
+  }, [])
+
+  const acceptUser = useCallback((nextUser) => {
+    const nextId = nextUser?.id ?? null
+    if (workspaceRef.current.userId !== nextId) {
+      workspaceRef.current = { userId: nextId, revision: 0, statusQueues: new Map() }
+      setWorkspaceVersion((current) => current + 1)
+      applicationsRef.current = []
+      setApplications([])
+      setStatusMutations({})
+      setDataError('')
+      setDataLoading(false)
+      setJobAgentSummary(null)
+    }
+    setUser(nextUser)
+  }, [])
 
   useEffect(() => {
     document.documentElement.dataset.theme = 'light'
@@ -91,15 +121,22 @@ function App() {
     }
 
     let isMounted = true
+    let authEvents = 0
+    let serverUserChecked = false
 
     async function loadSession() {
+      // Let the SDK emit its cached startup session before fencing the server check.
+      await supabase.auth.getSession()
+      if (!isMounted) return
+      const startedAt = authEvents
       const currentUser = await getCurrentUser()
 
       if (!isMounted) {
         return
       }
 
-      setUser(currentUser)
+      serverUserChecked = true
+      if (startedAt === authEvents) acceptUser(currentUser)
       setAuthLoading(false)
     }
 
@@ -109,15 +146,12 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       const sessionUser = session?.user ?? null
-      setUser(sessionUser)
+      if (event === 'INITIAL_SESSION' && (serverUserChecked || authEvents > 0)) return
+      if (event !== 'INITIAL_SESSION') authEvents += 1
+      acceptUser(sessionUser)
 
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password')
-      }
-
-      if (!sessionUser) {
-        setApplications([])
-        setJobAgentSummary(null)
       }
     })
 
@@ -125,7 +159,7 @@ function App() {
       isMounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [acceptUser])
 
   useEffect(() => {
     if (route === '/demo' || route.startsWith('/demo/') || !hasSupabaseConfig || authLoading) {
@@ -151,32 +185,38 @@ function App() {
   }, [authLoading, route, user])
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       return
     }
 
     let isMounted = true
+    const workspace = workspaceRef.current
+    const isCurrent = () => isMounted && workspaceRef.current === workspace
 
     async function loadApplications() {
       setDataLoading(true)
       setDataError('')
 
       try {
-        const [savedApplications, savedJobAgentSummary] = await Promise.all([
-          fetchApplications(),
-          fetchJobAgentSummary(user.id).catch(() => null),
-        ])
-
-        if (isMounted) {
-          setApplications(savedApplications)
+        while (isCurrent()) {
+          const revision = workspace.revision
+          const [savedApplications, savedJobAgentSummary] = await Promise.all([
+            fetchApplications(userId),
+            fetchJobAgentSummary(userId).catch(() => null),
+          ])
+          if (!isCurrent()) return
+          // A fetch begun before a successful mutation must not replace that result.
+          if (revision !== workspace.revision) continue
+          changeApplications(savedApplications)
           setJobAgentSummary(savedJobAgentSummary)
+          break
         }
       } catch (error) {
-        if (isMounted) {
+        if (isCurrent()) {
           setDataError(error.message)
         }
       } finally {
-        if (isMounted) {
+        if (isCurrent()) {
           setDataLoading(false)
         }
       }
@@ -187,16 +227,16 @@ function App() {
     return () => {
       isMounted = false
     }
-  }, [user])
+  }, [userId, workspaceVersion, changeApplications])
 
   useEffect(() => {
-    if (!user || route !== '/dashboard') {
+    if (!userId || route !== '/dashboard') {
       return undefined
     }
 
     let isMounted = true
 
-    fetchJobAgentSummary(user.id)
+    fetchJobAgentSummary(userId)
       .then((summary) => {
         if (isMounted) {
           setJobAgentSummary(summary)
@@ -207,7 +247,7 @@ function App() {
     return () => {
       isMounted = false
     }
-  }, [route, user])
+  }, [route, userId])
 
   async function handleAuthSubmit({ mode, password, username }) {
     setAuthLoading(true)
@@ -219,7 +259,7 @@ function App() {
           ? await signUpWithEmail(username, password)
           : await signInWithEmail(username, password)
 
-      setUser(authenticatedUser)
+      acceptUser(authenticatedUser)
       navigate('/dashboard')
     } catch (error) {
       setAuthError(getFriendlyErrorMessage(error.message))
@@ -231,18 +271,18 @@ function App() {
   async function handleSignOut() {
     setAuthError('')
     await signOut()
-    setUser(null)
-    setApplications([])
-    setJobAgentSummary(null)
+    acceptUser(null)
     navigate('/sign-in')
   }
 
   async function handleUpdatePassword(password) {
+    const workspace = workspaceRef.current
     const updatedUser = await updatePassword(password)
-    setUser(updatedUser)
+    if (workspaceRef.current === workspace) acceptUser(updatedUser)
   }
 
   async function handleSaveApplication(applicationData, applicationId) {
+    const workspace = workspaceRef.current
     const today = getTodayIsoDate()
     const interviewCount = Number(applicationData.interviewCount) || 0
     const normalizedInterviewCount =
@@ -278,14 +318,16 @@ function App() {
           user.id,
         )
 
-        setApplications((currentApplications) =>
+        if (workspaceRef.current !== workspace) return
+        changeApplications((currentApplications) =>
           currentApplications.map((application) =>
             application.id === applicationId ? savedApplication : application,
           ),
         )
       } else {
         const savedApplication = await createApplication(preparedApplication, user.id)
-        setApplications((currentApplications) => [
+        if (workspaceRef.current !== workspace) return
+        changeApplications((currentApplications) => [
           savedApplication,
           ...currentApplications,
         ])
@@ -293,50 +335,85 @@ function App() {
 
       navigate('/dashboard')
     } catch (error) {
+      if (workspaceRef.current !== workspace) return
       setDataError(getFriendlyErrorMessage(error.message))
     }
   }
 
   async function handleQuickStatusChange(applicationId, nextStatus) {
-    const currentApplication = applications.find(
+    const workspace = workspaceRef.current
+    const currentApplication = applicationsRef.current.find(
       (application) => application.id === applicationId,
     )
-
-    if (!currentApplication || currentApplication.status === nextStatus) {
+    if (!currentApplication || !workspace.userId) return
+    let queue = workspace.statusQueues.get(applicationId)
+    if (queue?.latest === nextStatus) return
+    if (
+      !queue && currentApplication.status === nextStatus &&
+      !statusMutations[applicationId]?.error
+    ) return
+    const mark = (mutation) => setStatusMutations((current) => ({
+      ...current, [applicationId]: mutation,
+    }))
+    if (queue) {
+      queue.requests.push({ status: nextStatus, date: getTodayIsoDate() })
+      queue.latest = nextStatus
+      mark({ pending: true, status: nextStatus, error: '' })
       return
     }
-
-    const interviewCount = Number(currentApplication.interviewCount) || 0
-    const preparedApplication = normalizeApplication({
-      ...currentApplication,
-      status: nextStatus,
-      interviewCount:
-        nextStatus === 'Interview' && interviewCount === 0
-          ? 1
-          : interviewCount,
-      lastUpdated: getTodayIsoDate(),
-    })
-
-    setDataError('')
-
-    try {
-      const savedApplication = await updateApplication(
-        applicationId,
-        preparedApplication,
-        user.id,
-      )
-
-      setApplications((currentApplications) =>
-        currentApplications.map((application) =>
-          application.id === applicationId ? savedApplication : application,
-        ),
-      )
-    } catch (error) {
-      setDataError(getFriendlyErrorMessage(error.message))
+    queue = { requests: [{ status: nextStatus, date: getTodayIsoDate() }], latest: nextStatus }
+    workspace.statusQueues.set(applicationId, queue)
+    mark({ pending: true, status: nextStatus, error: '' })
+    const isCurrent = () => workspaceRef.current === workspace
+    const findApplication = () => applicationsRef.current.find((item) => item.id === applicationId)
+    const applyFields = (fields) => changeApplications((current) =>
+      current.map((item) => item.id === applicationId ? { ...item, ...fields } : item),
+    )
+    async function reconcileStatus() {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const beforeRead = findApplication()
+        const row = await fetchApplicationStatus(applicationId, workspace.userId)
+        if (!isCurrent()) return
+        // A full edit may have completed while the status response/read was delayed.
+        if (beforeRead !== findApplication()) continue
+        applyFields(applicationStatusFields(row))
+        return
+      }
+      throw new Error('This application changed while confirming its status.')
     }
+    let lastError = ''
+    while (isCurrent() && queue.requests.length) {
+      const request = queue.requests.shift()
+      const beforeWrite = findApplication()
+      if (!beforeWrite) break
+      try {
+        const fields = await updateApplicationStatus(
+          applicationId, request.status, workspace.userId, request.date, isCurrent,
+        )
+        if (!isCurrent()) return
+        if (beforeWrite === findApplication()) applyFields(fields)
+        else await reconcileStatus()
+        lastError = ''
+      } catch (error) {
+        if (!isCurrent()) return
+        lastError = getFriendlyErrorMessage(error.message)
+        // A failed HTTP response may follow a committed write. Read only status fields.
+        try {
+          await reconcileStatus()
+        } catch {
+          lastError += ' Could not confirm the saved status. Reload to check.'
+        }
+      }
+      if (!isCurrent()) return
+      mark({ pending: true, status: queue.latest, error: lastError })
+    }
+    if (!isCurrent()) return
+    workspace.statusQueues.delete(applicationId)
+    mark({ pending: false, error: lastError })
   }
 
   async function handleDeleteApplication(applicationId) {
+    const workspace = workspaceRef.current
     const confirmed = window.confirm(
       'Delete this application? This cannot be undone.',
     )
@@ -349,17 +426,20 @@ function App() {
 
     try {
       await deleteApplication(applicationId)
-      setApplications((currentApplications) =>
+      if (workspaceRef.current !== workspace) return
+      changeApplications((currentApplications) =>
         currentApplications.filter(
           (application) => application.id !== applicationId,
         ),
       )
     } catch (error) {
+      if (workspaceRef.current !== workspace) return
       setDataError(getFriendlyErrorMessage(error.message))
     }
   }
 
   async function handleBulkDeleteApplications(applicationIds) {
+    const workspace = workspaceRef.current
     if (applicationIds.length === 0) {
       return
     }
@@ -376,26 +456,31 @@ function App() {
 
     try {
       await deleteApplications(applicationIds)
-      setApplications((currentApplications) =>
+      if (workspaceRef.current !== workspace) return
+      changeApplications((currentApplications) =>
         currentApplications.filter(
           (application) => !applicationIds.includes(application.id),
         ),
       )
     } catch (error) {
+      if (workspaceRef.current !== workspace) return
       setDataError(getFriendlyErrorMessage(error.message))
     }
   }
 
   async function handleImportApplications(importedApplications) {
+    const workspace = workspaceRef.current
     setDataError('')
 
     try {
       const savedApplications = await createApplications(importedApplications, user.id)
-      setApplications((currentApplications) => [
+      if (workspaceRef.current !== workspace) return
+      changeApplications((currentApplications) => [
         ...savedApplications,
         ...currentApplications,
       ])
     } catch (error) {
+      if (workspaceRef.current !== workspace) throw error
       const message = getFriendlyErrorMessage(error.message)
       setDataError(message)
       throw new Error(message, { cause: error })
@@ -516,7 +601,8 @@ function App() {
   }
 
   function handleJobLeadApplicationCreated(application) {
-    setApplications((currentApplications) =>
+    if (workspaceRef.current.userId !== user.id) return
+    changeApplications((currentApplications) =>
       currentApplications.some((item) => item.id === application.id)
         ? currentApplications
         : [application, ...currentApplications],
@@ -592,6 +678,7 @@ function App() {
         navigate(jobAgentSummary?.enabled ? '/job-agent/matches' : '/job-agent')
       }
       onStatusChange={handleQuickStatusChange}
+      statusMutations={statusMutations}
     />
   )
 }

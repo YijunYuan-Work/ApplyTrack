@@ -10,6 +10,7 @@ function ApplicationList({
   onSelectApplication,
   onStatusChange,
   selectionMode = false,
+  statusMutations = {},
 }) {
   return (
     <div className="application-list">
@@ -24,6 +25,7 @@ function ApplicationList({
           onSelectApplication={onSelectApplication}
           onStatusChange={onStatusChange}
           selectionMode={selectionMode}
+          statusMutation={statusMutations[application.id]}
         />
       ))}
 
