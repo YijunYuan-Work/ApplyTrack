@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { fromApplicationRow, toApplicationRow } from './applicationRows.js'
+import { fromApplicationRow, toApplicationRow, toApplicationStatusRow } from './applicationRows.js'
 import { normalizeApplication } from './applications.js'
 
 const baseRow = {
@@ -8,6 +8,17 @@ const baseRow = {
   applied_date: '2026-01-02', last_updated: '2026-01-03',
   cover_letter: 'No', referral: 'Yes', interview_count: 2,
 }
+
+test('RF-07: quick status payload is partial and promotes only zero interview rounds', () => {
+  assert.deepEqual(toApplicationStatusRow('Interview', 0, '2026-10-12'), {
+    status: 'Interview', last_updated: '2026-10-12', interview_count: 1,
+  })
+  for (const [status, count] of [['Interview', 2], ['Rejected', 0], ['Offer', 3]]) {
+    assert.deepEqual(toApplicationStatusRow(status, count, '2026-10-12'), {
+      status, last_updated: '2026-10-12',
+    })
+  }
+})
 
 for (const [name, notes] of [
   ['normal', 'Follow up with the recruiter.'],

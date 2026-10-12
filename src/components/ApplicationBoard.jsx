@@ -67,6 +67,7 @@ function ApplicationBoardCard({
   isReadOnly,
   onEditApplication,
   onStatusChange,
+  statusMutation,
 }) {
   const statusClass = application.status.toLowerCase().replace(/\s+/g, '-')
   const companyInitial = application.company.trim().charAt(0).toUpperCase() || 'A'
@@ -93,7 +94,8 @@ function ApplicationBoardCard({
           <span className="sr-only">Status for {application.company}</span>
           <select
             className={`status-select status-select-${statusClass}`}
-            value={application.status}
+            aria-busy={statusMutation?.pending || false}
+            value={statusMutation?.pending ? statusMutation.status : application.status}
             onChange={(event) =>
               onStatusChange(application.id, event.target.value)
             }
@@ -103,6 +105,12 @@ function ApplicationBoardCard({
             ))}
           </select>
         </label>
+      )}
+      {statusMutation?.pending && (
+        <p className="status-save-feedback" role="status">Saving status...</p>
+      )}
+      {statusMutation?.error && (
+        <p className="status-save-feedback form-error" role="alert">{statusMutation.error}</p>
       )}
 
       <div className="board-card-dates" aria-label="Application dates">
@@ -163,6 +171,7 @@ function ApplicationBoard({
   onClearFilters,
   onEditApplication,
   onStatusChange,
+  statusMutations = {},
 }) {
   const groupedApplications = groupApplicationsByStatus(applications)
   const activeApplications = groupedApplications[activeStatus] || []
@@ -211,6 +220,7 @@ function ApplicationBoard({
                     key={application.id}
                     onEditApplication={onEditApplication}
                     onStatusChange={onStatusChange}
+                    statusMutation={statusMutations[application.id]}
                   />
                 ))}
 

@@ -5685,3 +5685,10 @@ dd {
     animation: none;
   }
 }
+
+.status-save-feedback {
+  margin: 6px 0;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}

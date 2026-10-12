@@ -35,6 +35,7 @@ function DashboardPage({
   onProgress,
   onSignOut,
   onStatusChange,
+  statusMutations = {},
   user,
 }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -486,6 +487,7 @@ function DashboardPage({
                 onEditApplication={onEditApplication}
                 onSelectApplication={handleSelectApplication}
                 onStatusChange={onStatusChange}
+                statusMutations={statusMutations}
                 selectionMode={isSelectionMode}
               />
 
@@ -500,6 +502,7 @@ function DashboardPage({
               onClearFilters={handleClearFilters}
               onEditApplication={onEditApplication}
               onStatusChange={onStatusChange}
+              statusMutations={statusMutations}
             />
           )}
         </section>

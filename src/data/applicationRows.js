@@ -39,3 +39,13 @@ export function toApplicationRow(application, userId) {
     notes: typeof application.notes === 'string' ? application.notes : '',
   }
 }
+
+export function toApplicationStatusRow(status, interviewCount, lastUpdated) {
+  return {
+    status,
+    last_updated: lastUpdated,
+    ...(status === 'Interview' && (Number(interviewCount) || 0) === 0
+      ? { interview_count: 1 }
+      : {}),
+  }
+}

@@ -126,7 +126,7 @@ function DemoWorkspace({ route }) {
   async function handleStatusChange(applicationId, nextStatus) {
     setApplications((current) =>
       current.map((application) => {
-        if (application.id !== applicationId) return application
+        if (application.id !== applicationId || application.status === nextStatus) return application
 
         return normalizeApplication({
           ...application,

@@ -69,7 +69,7 @@ test('BUG: failed bulk delete clears selection and does not announce dashboard e
   expect(state.applications).toHaveLength(1)
 })
 
-test('BUG: out-of-order status responses leave UI stale until reload', async ({ page, context }) => {
+test('RF-07 F04: rapid status changes serialize writes and persist the final selection', async ({ page, context }) => {
   const state = await backend(context, [application(1)])
   state.holdUpdates = true
   await signIn(page)
@@ -77,10 +77,13 @@ test('BUG: out-of-order status responses leave UI stale until reload', async ({ 
   await status.selectOption('Interview')
   await expect.poll(() => state.pending.length).toBe(1)
   await status.selectOption('Rejected')
+  expect(state.pending).toHaveLength(1)
+  await expect(status).toHaveValue('Rejected')
+  await state.pending[0]()
   await expect.poll(() => state.pending.length).toBe(2)
   await state.pending[1]()
-  await state.pending[0]()
-  await expect(status).toHaveValue('Interview')
+  await expect(status).toHaveValue('Rejected')
+  await expect(page.getByText('Saving status...')).toHaveCount(0)
   expect(state.applications[0].status).toBe('Rejected')
   await page.reload()
   await expect(page.locator('.board-card select')).toHaveValue('Rejected')
