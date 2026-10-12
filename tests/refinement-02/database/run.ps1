@@ -112,8 +112,9 @@ try {
   # Restore the original application baseline before replaying historical migrations.
   Sql 'alter table public.applications drop constraint applications_user_id_id_key;' 'replay'
   $ownershipMigration = '20261011042500_job_lead_ownership_integrity.sql'
+  $alertMigration = '20261012005112_job_alert_processing_reliability.sql'
   foreach ($file in (Get-ChildItem -LiteralPath (Join-Path $root 'supabase/migrations') -Filter '*.sql' | Sort-Object Name)) {
-    if ($file.Name -eq $ownershipMigration) { continue }
+    if ($file.Name -in @($ownershipMigration, $alertMigration)) { continue }
     Sql (Get-Content -Raw -LiteralPath $file.FullName) 'replay'
     Write-Output "PASS: migration $($file.Name)"
   }
@@ -134,6 +135,8 @@ try {
   Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'ownership-failure-verify.sql')) 'legacy_nullable'
   Sql $migration 'replay'
   Write-Output "PASS: migration $ownershipMigration"
+  Sql (Get-Content -Raw (Join-Path $root "supabase/migrations/$alertMigration")) 'replay'
+  Write-Output "PASS: migration $alertMigration"
   Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'ownership-legacy-verify.sql')) 'replay'
   Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'assertions.sql')) 'replay'
   Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'ownership.sql')) 'replay'
@@ -143,11 +146,30 @@ try {
   $incremental = Sql $catalog 'replay'
   if (($fresh -join "`n") -ne ($incremental -join "`n")) { throw 'Fresh/incremental ownership constraint definitions differ.' }
   Write-Output 'PASS: fresh schema and incremental migration ownership constraints are equivalent'
+  $alertCatalog = "select jsonb_agg(jsonb_build_object('name',proname,'definition',replace(pg_get_functiondef(oid),chr(13),''),'definer',prosecdef,'anon',has_function_privilege('anon',oid,'EXECUTE'),'authenticated',has_function_privilege('authenticated',oid,'EXECUTE'),'service',has_function_privilege('service_role',oid,'EXECUTE')) order by proname) from pg_proc where proname in ('claim_job_alert_message','finish_job_alert_message');"
+  $freshAlert = Sql $alertCatalog
+  $replayedAlert = Sql $alertCatalog 'replay'
+  if (($freshAlert -join "`n") -ne ($replayedAlert -join "`n")) {
+    $diagnostic = "select proname,pg_get_userbyid(proowner),proacl::text,md5(replace(pg_get_functiondef(oid),chr(13),'')) from pg_proc where proname in ('claim_job_alert_message','finish_job_alert_message') order by proname;"
+    Sql $diagnostic
+    Sql $diagnostic 'replay'
+    throw 'Fresh/incremental alert RPC definitions or permissions differ.'
+  }
+  Write-Output 'PASS: fresh schema and incremental migration alert RPCs and permissions are equivalent'
   foreach ($database in @('postgres','replay')) {
     Sql "insert into public.applications(id,user_id,company,role) values (980,'00000000-0000-4000-8000-000000000001','Race','Race parent first'),(981,'00000000-0000-4000-8000-000000000001','Race','Race lead first'); insert into public.job_leads(id,user_id,source,external_id,title,company) values (980,'00000000-0000-4000-8000-000000000001','linkedin','980','Race','Race'),(981,'00000000-0000-4000-8000-000000000001','linkedin','981','Race','Race');" $database
     OwnershipRace $database 'rf04-parent-first' "update public.applications set user_id='00000000-0000-4000-8000-000000000002' where id=980" "select public.audit_expect_owner_fk('update public.job_leads set application_id=980 where id=980','concurrent parent owner change rejects stale lead association')"
     OwnershipRace $database 'rf04-lead-first' 'update public.job_leads set application_id=981 where id=981' "select public.audit_expect_owner_fk('update public.applications set user_id=''00000000-0000-4000-8000-000000000002'' where id=981','concurrent lead association rejects parent owner change')"
     Sql "select public.audit_assert(not exists(select 1 from public.job_leads l left join public.applications a on a.id=l.application_id where l.application_id is not null and (a.id is null or a.user_id is distinct from l.user_id)),'same-owner invariant survives both concurrent owner-change schedules');" $database
+    $env:RF05_TEST_CONTAINER = $name
+    $env:RF05_TEST_DATABASE = $database
+    try {
+      node --experimental-vm-modules --test (Join-Path $PSScriptRoot 'alert-handler.test.mjs')
+      if ($LASTEXITCODE -ne 0) { throw 'RF-05 real-handler/SQL tests failed.' }
+    } finally {
+      Remove-Item Env:RF05_TEST_CONTAINER -ErrorAction SilentlyContinue
+      Remove-Item Env:RF05_TEST_DATABASE -ErrorAction SilentlyContinue
+    }
   }
 } finally {
   if ($created) {
