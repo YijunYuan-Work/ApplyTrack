@@ -20,6 +20,12 @@ encryption/ACL/sync protection, age custody and managed restore gates are met.
 
 ## Scope and Consistency
 
+Stage 4: [Secure Backup Environment](RF_04_SECURE_BACKUP_ENVIRONMENT.md) records
+verified portable age and a newly restricted workspace-only synthetic directory.
+The outside-repository location proposal is superseded. BitLocker/sync/spill,
+permanent custody and managed restore gates remain open: confidential work is
+still NOT READY; the existing export paths and four-schema scope are not changed.
+
 One PostgreSQL 17 custom-format `pg_dump` with four explicit schemas is a
 consistent database snapshot for public application data, **all tables** in
 Auth (not only users/identities), Storage metadata and Supabase migration history.
