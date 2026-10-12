@@ -17,6 +17,13 @@ Authority: [Stage 2 evidence](RF_04_BACKUP_READINESS_REPORT.md),
 
 ## Findings and Status
 
+Stage 4 [Secure Backup Environment](RF_04_SECURE_BACKUP_ENVIRONMENT.md) supersedes
+the outside-repository location and elevation/acquisition approval proposals
+below. The user now requires workspace-only artifacts and no elevated BitLocker
+request. Retained snippets are historical, not active execution instructions.
+Stage 4 records actual portable-tool/ACL results; confidential readiness is still
+NOT READY and production remains separately gated.
+
 | Item | Status | Actual evidence / boundary |
 | --- | --- | --- |
 | Encryption/protection of C: | NOT VERIFIED | Current process has no elevated administrator token; status command returned access denied, not encryption status |
@@ -87,14 +94,15 @@ propagate to newly created archives. Reviewed broad ACEs on the inspected tmp
 and C: parents did not contain an applicable DELETE_CHILD right; this is not a
 complete effective-access/membership or future-policy attestation.
 
-Proposed final location, **not created**: `C:\ApplyTrackBackups\RF04`, below a new
+Historical location, **not created and superseded by Stage 4**:
+`C:\ApplyTrackBackups\RF04`, below a new
 private root `C:\ApplyTrackBackups`. It lies outside this checkout and therefore
 outside ordinary repository staging. It is not automatically encrypted, unsynced
 or immune to SYSTEM-level backup agents; operator confirmation is still required.
 No parent-directory ACL changes are proposed. No data should remain in the
 existing shared project-local target for a real export.
 
-### Reviewed Future Operation (Not Executed; Requires Approval)
+### Historical Operation (Superseded; Do Not Execute)
 
 Approve the new root/path and its three-principal FullControl DACL first. Only
 create it if absent, after storage and synchronization verification. Reject any

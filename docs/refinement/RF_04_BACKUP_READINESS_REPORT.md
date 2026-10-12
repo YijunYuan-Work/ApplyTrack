@@ -43,6 +43,12 @@ record remains historical evidence, not a new production-readiness attestation.
 
 ## Storage Assessment
 
+Stage 4 follow-up: [Secure Backup Environment](RF_04_SECURE_BACKUP_ENVIRONMENT.md)
+records verified age/synthetic recovery and a new restricted workspace-only
+directory. It supersedes the outside-repository location proposal, not this
+historical evidence or the four-schema scope. Confidential readiness remains
+NOT READY; no production backup/restore or permanent custody is claimed.
+
 Target: `C:\Work\SideProject\ApplyTrack\tmp\rf04-backup.local`.
 Only fabricated fixtures/archives were placed there.
 
