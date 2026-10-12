@@ -3,6 +3,7 @@ import {
   toApplicationRow,
   toApplicationStatusRow,
 } from '../data/applicationRows'
+import { mergeApplicationFormChanges } from '../data/applicationForm'
 import { supabase } from '../lib/supabase'
 
 export async function fetchApplications(userId) {
@@ -90,19 +91,34 @@ export async function createApplications(applications, userId) {
   return data.map(fromApplicationRow)
 }
 
-export async function updateApplication(applicationId, application, userId) {
-  const { data, error } = await supabase
-    .from('applications')
-    .update(toApplicationRow(application, userId))
-    .eq('id', applicationId)
-    .select()
-    .single()
+export async function fetchApplication(applicationId, userId) {
+  const { data, error } = await supabase.from('applications').select('*')
+    .eq('id', applicationId).eq('user_id', userId).single()
+  if (error) throw error
+  return data
+}
 
-  if (error) {
-    throw error
+export async function updateApplication(applicationId, changes, userId, isCurrent) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (!isCurrent()) throw new Error('Session changed. Save canceled.')
+    const current = await fetchApplication(applicationId, userId)
+    if (!isCurrent()) throw new Error('Session changed. Save canceled.')
+    if (!current.updated_at) throw new Error('Cannot safely update this application. Reload and try again.')
+    const original = fromApplicationRow(current)
+    const next = mergeApplicationFormChanges(original, changes)
+    const originalRow = toApplicationRow(original, userId)
+    const nextRow = toApplicationRow(next, userId)
+    // Unchanged fields belong to the current record, not the form's older snapshot.
+    const patch = Object.fromEntries(Object.entries(nextRow).filter(([key, value]) =>
+      key !== 'user_id' && (key === 'last_updated' || value !== originalRow[key]),
+    ))
+    const { data, error } = await supabase.from('applications').update(patch)
+      .eq('id', applicationId).eq('user_id', userId).eq('updated_at', current.updated_at)
+      .select().maybeSingle()
+    if (error) throw error
+    if (data) return fromApplicationRow(data)
   }
-
-  return fromApplicationRow(data)
+  throw new Error('This application changed while saving. Please try again.')
 }
 
 export async function deleteApplication(applicationId) {

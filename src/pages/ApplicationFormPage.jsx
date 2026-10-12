@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { validateApplicationForm } from '../data/applicationForm'
+import { getRoute } from '../utils/routes'
 import AppLayout from '../components/AppLayout'
 import {
   createBlankApplication,
@@ -14,7 +16,6 @@ function getInitialApplication(application) {
 
 function ApplicationFormPage({
   application,
-  error,
   isDemo = false,
   onAddApplication,
   onCancel,
@@ -30,7 +31,25 @@ function ApplicationFormPage({
   const [initialFormData] = useState(() => getInitialApplication(application))
   const [formData, setFormData] = useState(initialFormData)
   const [isSaving, setIsSaving] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [saveError, setSaveError] = useState('')
+  const [originRoute] = useState(getRoute)
+  const active = useRef(true)
+  const saving = useRef(false)
+  const formRef = useRef(null)
   const isDirty = JSON.stringify(formData) !== JSON.stringify(initialFormData)
+
+  useEffect(() => {
+    active.current = true
+    const checkRoute = () => {
+      if (getRoute() !== originRoute) active.current = false
+    }
+    window.addEventListener('hashchange', checkRoute)
+    return () => {
+      active.current = false
+      window.removeEventListener('hashchange', checkRoute)
+    }
+  }, [originRoute])
 
   useEffect(() => {
     function handleBeforeUnload(event) {
@@ -48,6 +67,7 @@ function ApplicationFormPage({
 
   function handleChange(event) {
     const { name, value } = event.target
+    setFieldErrors((current) => ({ ...current, [name]: undefined }))
     setFormData((currentData) => {
       const nextData = { ...currentData, [name]: value }
 
@@ -78,16 +98,36 @@ function ApplicationFormPage({
   async function handleSubmit(event) {
     event.preventDefault()
 
-    if (isSaving) {
+    if (saving.current) {
       return
     }
-
+    const errors = validateApplicationForm(formData)
+    setFieldErrors(errors)
+    setSaveError('')
+    if (Object.keys(errors).length) {
+      formRef.current.elements.namedItem(Object.keys(errors)[0]).focus()
+      return
+    }
+    saving.current = true
     setIsSaving(true)
 
     try {
-      await onSave(formData, application?.id)
+      const result = await onSave(formData, application?.id, initialFormData)
+      if (!active.current || getRoute() !== originRoute) return
+      if (result?.status === 'saved') onDashboard()
+      else if (result?.status === 'invalid') {
+        setFieldErrors(result.errors)
+        formRef.current.elements.namedItem(Object.keys(result.errors)[0]).focus()
+      } else if (result?.status !== 'canceled') {
+        setSaveError(result?.message || 'Could not save this application. Please try again.')
+      }
+    } catch (error) {
+      if (active.current && getRoute() === originRoute) {
+        setSaveError(error.message || 'Could not save this application. Please try again.')
+      }
     } finally {
-      setIsSaving(false)
+      saving.current = false
+      if (active.current) setIsSaving(false)
     }
   }
 
@@ -122,6 +162,7 @@ function ApplicationFormPage({
 
       <section className="form-page">
         <form
+          ref={formRef}
           aria-busy={isSaving}
           className="application-form"
           onSubmit={handleSubmit}
@@ -135,9 +176,9 @@ function ApplicationFormPage({
             </div>
           </div>
 
-          {error && (
+          {(saveError || fieldErrors.company || fieldErrors.role) && (
             <p className="form-error" role="alert">
-              {error}
+              {saveError || Object.values(fieldErrors).filter(Boolean).join(' ')}
             </p>
           )}
 
@@ -155,6 +196,8 @@ function ApplicationFormPage({
                     <span className="sr-only">required</span>
                   </span>
                   <input
+                    aria-invalid={Boolean(fieldErrors.company)}
+                    aria-describedby={fieldErrors.company ? 'company-error' : undefined}
                     autoComplete="organization"
                     name="company"
                     value={formData.company}
@@ -162,6 +205,7 @@ function ApplicationFormPage({
                     placeholder="Acme Inc."
                     required
                   />
+                  {fieldErrors.company && <span id="company-error" className="field-hint">{fieldErrors.company}</span>}
                 </label>
 
                 <label>
@@ -173,12 +217,15 @@ function ApplicationFormPage({
                     <span className="sr-only">required</span>
                   </span>
                   <input
+                    aria-invalid={Boolean(fieldErrors.role)}
+                    aria-describedby={fieldErrors.role ? 'role-error' : undefined}
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
                     placeholder="Product Designer"
                     required
                   />
+                  {fieldErrors.role && <span id="role-error" className="field-hint">{fieldErrors.role}</span>}
                 </label>
               </div>
 

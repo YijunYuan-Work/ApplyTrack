@@ -5,6 +5,7 @@ import {
   deleteApplication,
   deleteApplications,
   fetchApplications,
+  fetchApplication,
   fetchApplicationStatus,
   applicationStatusFields,
   updateApplication,
@@ -18,10 +19,9 @@ import {
   updatePassword,
 } from './api/auth'
 import { fetchJobAgentSummary } from './api/jobAgent'
-import {
-  getTodayIsoDate,
-  normalizeApplication,
-} from './data/applications'
+import { getTodayIsoDate } from './data/applications'
+import { applicationFormChanges, prepareApplicationForm, validateApplicationForm } from './data/applicationForm'
+import { fromApplicationRow } from './data/applicationRows'
 import AppLayout from './components/AppLayout'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
 import ApplicationFormPage from './pages/ApplicationFormPage'
@@ -281,62 +281,56 @@ function App() {
     if (workspaceRef.current === workspace) acceptUser(updatedUser)
   }
 
-  async function handleSaveApplication(applicationData, applicationId) {
+  async function handleSaveApplication(applicationData, applicationId, initialData) {
     const workspace = workspaceRef.current
-    const today = getTodayIsoDate()
-    const interviewCount = Number(applicationData.interviewCount) || 0
-    const normalizedInterviewCount =
-      applicationData.status === 'Interview' && interviewCount === 0
-        ? 1
-        : interviewCount
-    const preparedApplication = normalizeApplication({
-      ...applicationData,
-      company: applicationData.company.trim(),
-      role: applicationData.role.trim(),
-      location: applicationData.location.trim() || 'Not specified',
-      jobUrl: applicationData.jobUrl.trim(),
-      contact: applicationData.contact.trim(),
-      salary: applicationData.salary.trim(),
-      coverLetter: applicationData.coverLetter.trim(),
-      referral: applicationData.referral.trim(),
-      interviewCount: normalizedInterviewCount,
-      lastUpdated: applicationId ? today : applicationData.lastUpdated || today,
-      notes: applicationData.notes,
-    })
-
-    if (!preparedApplication.company || !preparedApplication.role) {
-      return
-    }
-
-    setDataError('')
-
+    const errors = validateApplicationForm(applicationData)
+    if (Object.keys(errors).length) return { status: 'invalid', errors }
+    const preparedApplication = prepareApplicationForm(applicationData, applicationId)
+    const isCurrent = () => workspaceRef.current === workspace && Boolean(workspace.userId)
+    if (!isCurrent()) return { status: 'canceled' }
     try {
       if (applicationId) {
-        const savedApplication = await updateApplication(
+        const findApplication = () => applicationsRef.current.find((item) => item.id === applicationId)
+        const beforeWrite = findApplication()
+        let savedApplication = await updateApplication(
           applicationId,
-          preparedApplication,
-          user.id,
+          applicationFormChanges(preparedApplication, initialData),
+          workspace.userId,
+          isCurrent,
         )
-
-        if (workspaceRef.current !== workspace) return
+        if (!isCurrent()) return { status: 'canceled' }
+        // RF-07 may have confirmed another mutation while this response was delayed.
+        if (beforeWrite !== findApplication()) {
+          let confirmed = false
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            const beforeRead = findApplication()
+            const row = await fetchApplication(applicationId, workspace.userId)
+            if (!isCurrent()) return { status: 'canceled' }
+            if (beforeRead !== findApplication()) continue
+            savedApplication = fromApplicationRow(row)
+            confirmed = true
+            break
+          }
+          if (!confirmed) throw new Error('Could not confirm the saved application. Reload to check.')
+        }
         changeApplications((currentApplications) =>
           currentApplications.map((application) =>
             application.id === applicationId ? savedApplication : application,
           ),
         )
       } else {
-        const savedApplication = await createApplication(preparedApplication, user.id)
-        if (workspaceRef.current !== workspace) return
+        const savedApplication = await createApplication(preparedApplication, workspace.userId)
+        if (!isCurrent()) return { status: 'canceled' }
         changeApplications((currentApplications) => [
           savedApplication,
           ...currentApplications,
         ])
       }
 
-      navigate('/dashboard')
+      return { status: 'saved' }
     } catch (error) {
-      if (workspaceRef.current !== workspace) return
-      setDataError(getFriendlyErrorMessage(error.message))
+      if (!isCurrent()) return { status: 'canceled' }
+      return { status: 'error', message: getFriendlyErrorMessage(error.message) }
     }
   }
 
@@ -550,9 +544,9 @@ function App() {
   if (route === '/applications/new') {
     return (
       <ApplicationFormPage
+        key={`${workspaceVersion}:new`}
         {...sharedPageProps}
         application={null}
-        error={dataError}
         onCancel={() => navigate('/dashboard')}
         onSave={handleSaveApplication}
       />
@@ -562,9 +556,9 @@ function App() {
   if (route.endsWith('/edit') && editingApplication) {
     return (
       <ApplicationFormPage
+        key={`${workspaceVersion}:${editingApplicationId}`}
         {...sharedPageProps}
         application={editingApplication}
-        error={dataError}
         onCancel={() => navigate('/dashboard')}
         onSave={handleSaveApplication}
       />

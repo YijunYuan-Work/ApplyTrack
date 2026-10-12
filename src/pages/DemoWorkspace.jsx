@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import AppLayout from '../components/AppLayout'
 import { demoApplications, getTodayIsoDate, normalizeApplication } from '../data/applications'
+import { applicationFormChanges, mergeApplicationFormChanges, prepareApplicationForm, validateApplicationForm } from '../data/applicationForm'
 import {
   createDemoJobAgentWorkspace,
   demoImportApplications,
@@ -31,29 +32,6 @@ function getDemoPath(path) {
 function getDemoEditingId(route) {
   const match = route.match(/^\/demo\/applications\/([^/]+)\/edit$/)
   return match ? decodeURIComponent(match[1]) : null
-}
-
-function prepareApplication(applicationData, applicationId) {
-  const today = getTodayIsoDate()
-  const interviewCount = Number(applicationData.interviewCount) || 0
-
-  return normalizeApplication({
-    ...applicationData,
-    company: applicationData.company.trim(),
-    role: applicationData.role.trim(),
-    location: applicationData.location.trim() || 'Not specified',
-    jobUrl: applicationData.jobUrl.trim(),
-    contact: applicationData.contact.trim(),
-    salary: applicationData.salary.trim(),
-    coverLetter: applicationData.coverLetter.trim(),
-    referral: applicationData.referral.trim(),
-    interviewCount:
-      applicationData.status === 'Interview' && interviewCount === 0
-        ? 1
-        : interviewCount,
-    lastUpdated: applicationId ? today : applicationData.lastUpdated || today,
-    notes: applicationData.notes,
-  })
 }
 
 function DemoWorkspace({ route }) {
@@ -100,16 +78,16 @@ function DemoWorkspace({ route }) {
     user,
   }
 
-  async function handleSaveApplication(applicationData, applicationId) {
-    const preparedApplication = prepareApplication(applicationData, applicationId)
-
-    if (!preparedApplication.company || !preparedApplication.role) return
+  async function handleSaveApplication(applicationData, applicationId, initialData) {
+    const errors = validateApplicationForm(applicationData)
+    if (Object.keys(errors).length) return { status: 'invalid', errors }
+    const preparedApplication = prepareApplicationForm(applicationData, applicationId)
 
     if (applicationId) {
       setApplications((current) =>
         current.map((application) =>
           String(application.id) === String(applicationId)
-            ? { ...preparedApplication, id: application.id }
+            ? mergeApplicationFormChanges(application, applicationFormChanges(preparedApplication, initialData))
             : application,
         ),
       )
@@ -120,7 +98,7 @@ function DemoWorkspace({ route }) {
       ])
     }
 
-    demoNavigate('/dashboard')
+    return { status: 'saved' }
   }
 
   async function handleStatusChange(applicationId, nextStatus) {
@@ -179,9 +157,9 @@ function DemoWorkspace({ route }) {
   if (route === '/demo/applications/new') {
     return (
       <ApplicationFormPage
+        key="new"
         {...sharedPageProps}
         application={null}
-        error=""
         onCancel={() => demoNavigate('/dashboard')}
         onSave={handleSaveApplication}
       />
@@ -191,9 +169,9 @@ function DemoWorkspace({ route }) {
   if (editingApplication) {
     return (
       <ApplicationFormPage
+        key={editingId}
         {...sharedPageProps}
         application={editingApplication}
-        error=""
         onCancel={() => demoNavigate('/dashboard')}
         onSave={handleSaveApplication}
       />

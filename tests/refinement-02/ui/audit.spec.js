@@ -301,7 +301,7 @@ test('BUG: both Sign out controls are hidden throughout tablet breakpoint', asyn
   console.log(JSON.stringify({ browser: info.project.name, boundaries }))
 })
 
-test('BUG: whitespace required fields silently return without saving or showing error', async ({ page, context }) => {
+test('F13: whitespace required fields show actionable errors and focus Company', async ({ page, context }) => {
   const state = await backend(context)
   await signIn(page)
   await nav(page, 'Add application')
@@ -309,11 +309,12 @@ test('BUG: whitespace required fields silently return without saving or showing 
   await page.getByLabel('Role', { exact: false }).fill('   ')
   await page.locator('button[type="submit"]').click()
   await expect(page.locator('button[type="submit"]')).toBeEnabled()
-  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(page.getByRole('alert')).toHaveText('Enter a company name. Enter a role name.')
+  await expect(page.locator('input[name="company"]')).toBeFocused()
   expect(state.requests.filter((request) => request.table === 'applications' && request.method === 'POST')).toHaveLength(0)
 })
 
-test('BUG: save response navigates away from the page chosen during pending operation', async ({ page, context }) => {
+test('F14: delayed save preserves deliberately chosen Progress navigation', async ({ page, context }) => {
   const state = await backend(context)
   state.holdInserts = true
   await signIn(page)
@@ -325,7 +326,10 @@ test('BUG: save response navigates away from the page chosen during pending oper
   await nav(page, 'Progress')
   await expect(page).toHaveURL(/progress$/)
   await state.pending[0]()
-  await expect(page).toHaveURL(/dashboard$/)
+  await expect(page.locator('.progress-summary article').first().locator('strong')).toHaveText('1')
+  await expect(page).toHaveURL(/progress$/)
+  await nav(page, 'Dashboard')
+  await expect(page.getByText('Pending fixture', { exact: true })).toBeVisible()
 })
 
 test('BUG: editing a rejected record moves its historical rejection date', async ({ page, context }) => {
