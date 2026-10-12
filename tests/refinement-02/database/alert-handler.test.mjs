@@ -279,3 +279,54 @@ test('RF-05 actual client initialization + SQL: concurrent callers return one ex
   await sql('update public.job_alert_inboxes set enabled=false where user_id=' + quote(userId))
   assert.equal((await module.namespace.createJobAlertInbox(userId)).enabled, false)
 })
+
+test('RF-06 actual handler + SQL: ingestion and conversion serialize in both lock orders', async () => {
+  await sql('create table public.audit_state_gate(released boolean); insert into public.audit_state_gate values(false); grant select on public.audit_state_gate to authenticated,service_role', 'supabase_admin')
+  const gate = `do $$ begin while not (select released from public.audit_state_gate) loop perform pg_sleep(0.05); end loop; end; $$;`
+  for (const conversionFirst of [true, false]) {
+    const externalId = conversionFirst ? '9401' : '9402'
+    const before = await sql("select jsonb_build_object('applications',count(*)) from public.applications")
+    await sql("insert into public.job_leads(user_id,source,external_id,title,company) values(" + quote(owner) + ",'linkedin'," + quote(externalId) + ",'RF06 overlap','Synthetic')")
+    const lead = await sql("select jsonb_build_object('id',id) from public.job_leads where external_id=" + quote(externalId) + ' and user_id=' + quote(owner))
+    const convert = "select set_config('request.jwt.claim.sub'," + quote(owner) + ",false); select to_jsonb(public.complete_job_lead_application(" + lead.id + ",'2026-10-01'));"
+    const h = await fixture('rf06-overlap-' + conversionFirst)
+    h.email.html = h.email.html.replace('/123', '/' + externalId)
+    await sql('update public.audit_state_gate set released=false', 'supabase_admin')
+    let first, second
+    if (conversionFirst) {
+      first = sql("set application_name='rf06-first'; begin; " + convert + gate + ' commit;', 'authenticated')
+    } else {
+      const originalRpc = admin.rpc
+      const gatedAdmin = { ...admin, rpc: async (name, args) => {
+        if (name !== 'finish_job_alert_message') return originalRpc(name, args)
+        const params = Object.entries(args).map(([key, value]) => key + ' => ' + quote(typeof value === 'object' ? JSON.stringify(value) : value)).join(',')
+        return { data: await sql("set application_name='rf06-first'; begin; select public.finish_job_alert_message(" + params + '); ' + gate + ' commit;'), error: null }
+      } }
+      const gated = await harness({ admin: gatedAdmin, inbox: { id: 501, user_id: owner } })
+      gated.event.data.email_id = h.event.data.email_id
+      gated.email.html = h.email.html
+      first = gated.handler(gated.request())
+    }
+    try {
+      await waitFor(async () => (await sql("select jsonb_build_object('ready',exists(select 1 from pg_stat_activity where datname=current_database() and application_name='rf06-first' and wait_event='PgSleep'))", 'supabase_admin')).ready)
+      second = conversionFirst ? h.handler(h.request()) : sql("set application_name='rf06-second'; " + convert, 'authenticated')
+      const waiter = conversionFirst ? 'rf05-claim-worker' : 'rf06-second'
+      await waitFor(async () => (await sql("select jsonb_build_object('waiting',exists(select 1 from pg_stat_activity where datname=current_database() and application_name=" + quote(waiter) + " and wait_event_type='Lock'))", 'supabase_admin')).waiting)
+      await sql('update public.audit_state_gate set released=true', 'supabase_admin')
+      const results = await Promise.all([first, second])
+      assert.equal(results[conversionFirst ? 1 : 0].status, 200)
+      const result = await sql("select jsonb_build_object('state',l.state,'application',to_jsonb(a),'messages',(select count(*) from public.job_alert_messages where resend_email_id=" + quote(h.event.data.email_id) + " and status='completed' and processing_token is null)) from public.job_leads l join public.applications a on a.id=l.application_id where l.id=" + lead.id)
+      assert.equal(result.state, 'applied')
+      assert.equal(result.application.applied_date, '2026-10-01')
+      assert.equal(result.application.user_id, owner)
+      assert.equal(result.messages, 1)
+      assert.equal((await sql("select jsonb_build_object('applications',count(*)) from public.applications")).applications, before.applications + 1)
+      const retry = await sql(convert.replace('2026-10-01', '2027-01-01'), 'authenticated')
+      assert.deepEqual(retry, result.application)
+      assert.equal((await (await h.handler(h.request())).json()).duplicate, true)
+    } finally {
+      await sql('update public.audit_state_gate set released=true', 'supabase_admin')
+      await Promise.allSettled([first, second].filter(Boolean))
+    }
+  }
+})

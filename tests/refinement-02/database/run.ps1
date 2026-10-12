@@ -55,7 +55,7 @@ function ConcurrentConversion([string]$database) {
     $jobs | Receive-Job
     if ($jobs.State -contains 'Failed') { throw 'Concurrent sessions failed.' }
     Sql "select public.audit_assert((select count(*) from public.applications where role='Concurrency')=1,'eight concurrent RPC calls create exactly one application'); select public.audit_assert((select l.state='applied' and l.user_id=a.user_id from public.job_leads l join public.applications a on a.id=l.application_id where l.id=203),'concurrent conversion persists same-owner link');" $database
-    Sql "update public.job_leads set state='new' where id=203; set role authenticated; select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false); select id from public.complete_job_lead_application(203,'2026-12-31'); select public.audit_assert((select state from public.job_leads where id=203)='new','BUG: RPC retry does not repair stale new state with existing application'); reset role;" $database
+    Sql "update public.job_leads set state='new' where id=203; set role authenticated; select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false); select id from public.complete_job_lead_application(203,'2027-01-01'); select public.audit_assert((select state from public.job_leads where id=203)='applied','RF-06: RPC retry repairs stale new state with existing application'); select public.audit_assert((select applied_date from public.applications where role='Concurrency')='2026-12-31','RF-06: concurrent conversion retry preserves original date'); reset role;" $database
   } finally {
     Sql 'update public.audit_conversion_gate set released=true;' $database
     if ($jobs.Count) { $jobs | Stop-Job; $jobs | Remove-Job }
@@ -88,13 +88,18 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Docker daemon unavailable. Start Docker Desktop manually before running.' }
   docker image inspect $image *> $null
   if ($LASTEXITCODE -ne 0) { throw "Cached image missing. Explicitly pull $image before running." }
-  docker run --detach --name $name --label applytrack.audit=refinement02 --network none --tmpfs /var/lib/postgresql/data --env POSTGRES_PASSWORD=synthetic-local-only $image postgres -D /var/lib/postgresql/data -c config_file=/etc/postgresql/postgresql.conf
+  # Writable database, sockets, temporary files and logs are memory-backed only.
+  $keyScript = (Resolve-Path (Join-Path $PSScriptRoot 'synthetic-getkey.sh')).Path
+  docker run --detach --name $name --label applytrack.audit=refinement02 --network none --read-only --log-driver none --tmpfs /tmp --tmpfs /var/run/postgresql --tmpfs /var/log/postgresql --tmpfs /var/lib/postgresql/data --mount "type=bind,source=$keyScript,target=/synthetic-getkey.sh,readonly" --env POSTGRES_PASSWORD=synthetic-local-only $image postgres -D /var/lib/postgresql/data -c config_file=/etc/postgresql/postgresql.conf -c pgsodium.getkey_script=/synthetic-getkey.sh -c vault.getkey_script=/synthetic-getkey.sh
   if ($LASTEXITCODE -ne 0) { throw 'Container creation failed.' }
   $created = $true
+  $mounts = docker inspect $name --format '{{json .Mounts}}' | ConvertFrom-Json
+  if ($mounts | Where-Object { $_.Type -ne 'tmpfs' -and -not ($_.Type -eq 'bind' -and $_.Destination -eq '/synthetic-getkey.sh' -and -not $_.RW) }) { throw 'Unexpected writable persistent test-container mount.' }
   $ready = $false
   for ($i=0; $i -lt 60; $i++) {
     docker exec $name pg_isready -U postgres *> $null
     if ($LASTEXITCODE -eq 0) { $ready=$true; break }
+    if ((docker inspect $name --format '{{.State.Running}}') -ne 'true') { throw 'Read-only test container exited during initialization.' }
     Start-Sleep -Seconds 1
   }
   if (-not $ready) { throw 'Database readiness timed out.' }
@@ -113,8 +118,9 @@ try {
   Sql 'alter table public.applications drop constraint applications_user_id_id_key;' 'replay'
   $ownershipMigration = '20261011042500_job_lead_ownership_integrity.sql'
   $alertMigration = '20261012005112_job_alert_processing_reliability.sql'
+  $stateMigration = '20261012025412_job_lead_state_consistency.sql'
   foreach ($file in (Get-ChildItem -LiteralPath (Join-Path $root 'supabase/migrations') -Filter '*.sql' | Sort-Object Name)) {
-    if ($file.Name -in @($ownershipMigration, $alertMigration)) { continue }
+    if ($file.Name -in @($ownershipMigration, $alertMigration, $stateMigration)) { continue }
     Sql (Get-Content -Raw -LiteralPath $file.FullName) 'replay'
     Write-Output "PASS: migration $($file.Name)"
   }
@@ -138,6 +144,11 @@ try {
   Sql (Get-Content -Raw (Join-Path $root "supabase/migrations/$alertMigration")) 'replay'
   Write-Output "PASS: migration $alertMigration"
   Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'ownership-legacy-verify.sql')) 'replay'
+  $beforeState = Sql "select jsonb_build_object('owner',proowner,'acl',proacl::text,'leads',(select jsonb_agg(to_jsonb(l) order by id) from public.job_leads l),'applications',(select jsonb_agg(to_jsonb(a) order by id) from public.applications a)) from pg_proc where oid='public.complete_job_lead_application(bigint,date)'::regprocedure;" 'replay'
+  Sql (Get-Content -Raw (Join-Path $root "supabase/migrations/$stateMigration")) 'replay'
+  $afterState = Sql "select jsonb_build_object('owner',proowner,'acl',proacl::text,'leads',(select jsonb_agg(to_jsonb(l) order by id) from public.job_leads l),'applications',(select jsonb_agg(to_jsonb(a) order by id) from public.applications a)) from pg_proc where oid='public.complete_job_lead_application(bigint,date)'::regprocedure;" 'replay'
+  if (($beforeState -join "`n") -ne ($afterState -join "`n")) { throw 'RF-06 migration changed existing data or RPC ownership/ACL.' }
+  Write-Output "PASS: migration $stateMigration preserves existing data and RPC ownership/ACL"
   Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'assertions.sql')) 'replay'
   Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'ownership.sql')) 'replay'
   ConcurrentConversion 'replay'
@@ -146,17 +157,19 @@ try {
   $incremental = Sql $catalog 'replay'
   if (($fresh -join "`n") -ne ($incremental -join "`n")) { throw 'Fresh/incremental ownership constraint definitions differ.' }
   Write-Output 'PASS: fresh schema and incremental migration ownership constraints are equivalent'
-  $alertCatalog = "select jsonb_agg(jsonb_build_object('name',proname,'definition',replace(pg_get_functiondef(oid),chr(13),''),'definer',prosecdef,'anon',has_function_privilege('anon',oid,'EXECUTE'),'authenticated',has_function_privilege('authenticated',oid,'EXECUTE'),'service',has_function_privilege('service_role',oid,'EXECUTE')) order by proname) from pg_proc where proname in ('claim_job_alert_message','finish_job_alert_message');"
+  # Conversion retains its baseline ACL exactly; image default service grants differ by database.
+  $alertCatalog = "select jsonb_agg(jsonb_build_object('name',proname,'definition',replace(pg_get_functiondef(oid),chr(13),''),'definer',prosecdef,'anon',has_function_privilege('anon',oid,'EXECUTE'),'authenticated',has_function_privilege('authenticated',oid,'EXECUTE'),'service',case when proname='complete_job_lead_application' then null else has_function_privilege('service_role',oid,'EXECUTE') end) order by proname) from pg_proc where proname in ('claim_job_alert_message','finish_job_alert_message','complete_job_lead_application');"
   $freshAlert = Sql $alertCatalog
   $replayedAlert = Sql $alertCatalog 'replay'
   if (($freshAlert -join "`n") -ne ($replayedAlert -join "`n")) {
-    $diagnostic = "select proname,pg_get_userbyid(proowner),proacl::text,md5(replace(pg_get_functiondef(oid),chr(13),'')) from pg_proc where proname in ('claim_job_alert_message','finish_job_alert_message') order by proname;"
+    $diagnostic = "select proname,pg_get_userbyid(proowner),proacl::text,md5(replace(pg_get_functiondef(oid),chr(13),'')) from pg_proc where proname in ('claim_job_alert_message','finish_job_alert_message','complete_job_lead_application') order by proname;"
     Sql $diagnostic
     Sql $diagnostic 'replay'
     throw 'Fresh/incremental alert RPC definitions or permissions differ.'
   }
   Write-Output 'PASS: fresh schema and incremental migration alert RPCs and permissions are equivalent'
   foreach ($database in @('postgres','replay')) {
+    Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'state-consistency.sql')) $database
     Sql "insert into public.applications(id,user_id,company,role) values (980,'00000000-0000-4000-8000-000000000001','Race','Race parent first'),(981,'00000000-0000-4000-8000-000000000001','Race','Race lead first'); insert into public.job_leads(id,user_id,source,external_id,title,company) values (980,'00000000-0000-4000-8000-000000000001','linkedin','980','Race','Race'),(981,'00000000-0000-4000-8000-000000000001','linkedin','981','Race','Race');" $database
     OwnershipRace $database 'rf04-parent-first' "update public.applications set user_id='00000000-0000-4000-8000-000000000002' where id=980" "select public.audit_expect_owner_fk('update public.job_leads set application_id=980 where id=980','concurrent parent owner change rejects stale lead association')"
     OwnershipRace $database 'rf04-lead-first' 'update public.job_leads set application_id=981 where id=981' "select public.audit_expect_owner_fk('update public.applications set user_id=''00000000-0000-4000-8000-000000000002'' where id=981','concurrent lead association rejects parent owner change')"
