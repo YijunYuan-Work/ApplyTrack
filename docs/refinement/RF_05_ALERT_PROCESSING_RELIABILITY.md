@@ -1,6 +1,6 @@
 # RF-05: Job Alert Processing Reliability
 
-Status: In Progress; implementation ready for review, not released.
+Status: Completed; migration and production Edge Function v22 independently verified (2026-10-11 America/Toronto).
 Scope: F06 and R07. No production operations, new dependencies or paid services.
 
 ## Behavior
@@ -75,19 +75,26 @@ Both schema paths also verify Indeed salary extraction and accurate creation/upd
 counts. The database runner exited successfully and removed its own container.
 No production database, Edge Function, Auth or deployment configuration was changed.
 
-## Release Boundary and Limits
+## Production Release and Independent Verification
 
-Requires a separately approved application of
-`20261012005112_job_alert_processing_reliability.sql`, followed by an approved
-`ingest-job-alert` deployment. Production v21 is not changed by this PR.
-The SQL is additive and does not rewrite existing messages or Leads.
+With explicit user approval, the migration `20261012005112_job_alert_processing_reliability.sql` was applied to production Supabase project `qotipygmwlovxklkexjb`; its exact version and name are registered in Supabase Migration History. Codex deployed only `ingest-job-alert`; ChatGPT verified that the function is ACTIVE at v22 with `verify_jwt=false`. Its deployed handler and shared parser match GitHub `main` byte-for-byte after normalizing CRLF to LF.
 
-Before deployment, arrange an approved quiet/drained webhook window: old v21
-workers do not honor tokens, so they must not overlap the new workers. Apply SQL
-before deploying the new handler; do not use `schema.sql` on an existing database.
-Keep automatic Supabase production synchronization OFF and Vercel Preview disabled.
-No production migration, function deployment or integration change is authorized
-by this document.
+Read-only production checks found both new JSONB RPCs with SECURITY INVOKER and an empty search path; only `service_role` among application roles has EXECUTE. The new UUID/token and processing-start columns are present. Both RPC definitions contain the expected lease mechanism, and the finish RPC checks the processing token.
+
+Data verification: 342 job-alert messages, all terminal; 0 processing, failed or received messages and 0 retained processing tokens; 0 duplicate email IDs. Existing 629 Leads, 420 Applications and 31 associations remain, with 0 orphan/cross-owner associations and 0 duplicate Lead keys. RLS remains enabled and the RF-04 ownership FK remains validated.
+
+This release did not include a production webhook test using a real Resend email; success under live delivery still depends on normal operation. Local PostgreSQL 17 fault-injection and concurrent-handler suites were reported as passed by Codex; GitHub CI was independently checked and passed. No backup, unrelated production schema change or automatic production-sync enablement was performed as part of this release.
+
+## Historical Pre-release Boundaries and Ongoing Limits
+
+The following paragraphs describe the planned release procedure before this rollout; the production completion record above supersedes their pending language. No further rollout is requested.
+
+
+
+The released SQL is additive and does not rewrite existing messages or Leads.
+Keep automatic Supabase production synchronization OFF. Original v21 workers did
+not honor tokens; the authorized production rollout moved to v22 after the new RPCs
+were registered. Do not replay `schema.sql` on an existing database.
 
 Lease recovery is on redelivery, not a new scheduler or background queue.
 If Resend's retry window is exhausted, operator-approved redelivery is necessary.

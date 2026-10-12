@@ -140,26 +140,22 @@ F01 is **closed at the production database constraint boundary**. G02's complete
 **Priority:** P0  
 **Size:** Medium  
 **Findings:** F06, R07  
-**Status:** [ ] In Progress — implementation under review; production not released
+**Status:** [x] Done — production SQL and Edge Function v22 independently verified (2026-10-11 America/Toronto)  
+**Implementation PR:** [#17](https://github.com/YijunYuan-Work/ApplyTrack/pull/17) — merged as `5981fc5d5d56ee3e44411f272578553be9d8f2d2`  
+**Migration:** `20261012005112_job_alert_processing_reliability.sql` — production history version `20261012005112` registered  
+**Production Edge Function:** `ingest-job-alert` v22, ACTIVE, `verify_jwt=false` (existing signed webhook setting)  
+**Evidence:** [RF-05 Implementation and Production Release](RF_05_ALERT_PROCESSING_RELIABILITY.md)
 
-**PR:** Pending review on `fix/rf-05-alert-processing-reliability`
+Production verification (ChatGPT read-only inspection after user-authorized release):
+- Both `claim_job_alert_message` and `finish_job_alert_message` exist and are SECURITY INVOKER with an empty search path; `anon` and `authenticated` cannot EXECUTE, while `service_role` can. Message claim/lease columns exist.
+- The deployed v22 `index.ts` and shared `jobAlertParser.ts` exactly match reviewed GitHub `main` after newline normalization. No unrelated Edge Functions were deployed.
+- 342 message records, all terminal (`completed`/`partial`/`ignored`); 0 `processing`/`failed`/`received`, 0 processing tokens and 0 duplicate Resend message IDs.
+- 629 Job Leads, 420 Applications, 31 linked Leads; 0 cross-owner links, missing Applications or duplicate Lead keys. RF-04 ownership FK remains validated; RLS remains enabled.
+- GitHub CI passed, including 34 unit, 27 audit, 12 authentication UI and 22 Chromium UI checks. Codex separately reported successful local PostgreSQL 17 concurrency/fault-injection/handler tests.
+- No synthetic email or live end-to-end Resend request was sent to production. Runtime ingestion should continue to be observed through normal usage; production deployment and static/data verification do not certify live webhook delivery.
+- Supabase automatic production synchronization remains under its existing OFF hold; do not re-enable it as part of RF-05.
 
-**Evidence:** [Implementation and release limits](RF_05_ALERT_PROCESSING_RELIABILITY.md)
-
-Scope:
-
-- Correct unchecked database results during alert processing.
-- Ensure failed completion writes are not reported as successful.
-- Establish reliable retry and message-status semantics.
-- Investigate concurrent message claims and inbox initialization.
-
-Acceptance:
-
-- No false successful completion response after a failed critical write.
-- Failed processing remains safely retryable.
-- Duplicate delivery does not produce duplicate leads.
-- Deterministic tests cover success, failure and repeated delivery.
-- Production Edge deployment requires explicit approval.
+**Outcome:** F06 and R07 are closed for RF-05. Lease recovery requires webhook redelivery; a separate scheduler was intentionally not added. RF-06's remaining conversion/state consistency work is a distinct task. This release does not authorize future schema/deployment changes.
 
 ## RF-06 — Job Lead State Consistency
 
@@ -620,8 +616,8 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 1 | RF-03 — Notes Data Integrity | P0 | Done — merged and deployed | [#9](https://github.com/YijunYuan-Work/ApplyTrack/pull/9) |
 | 2 | SEC-01 — Recovery Endpoint Risk Triage | Security | Done — R01 mitigated via SEC-02 | [#10](https://github.com/YijunYuan-Work/ApplyTrack/pull/10) |
 | 3 | SEC-02 — Retire Legacy Recovery Endpoint | P0 Security | Done — production absence verified; auto-sync remains OFF | [#11](https://github.com/YijunYuan-Work/ApplyTrack/pull/11); [runbook](SEC_02_RETIREMENT_RUNBOOK.md) |
-| 4 | RF-04 — Ownership Integrity | P0 | In Progress — merged; production migration not deployed | [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12); [runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md) |
-| 5 | RF-05 — Ingestion Failure Handling | P0 | In Progress — implementation under review; not released | [Evidence](RF_05_ALERT_PROCESSING_RELIABILITY.md) |
+| 4 | RF-04 — Ownership Integrity | P0 | Done — production migration verified | [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12); [runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md) |
+| 5 | RF-05 — Ingestion Failure Handling | P0 | Done — migration and Edge v22 verified | [#17](https://github.com/YijunYuan-Work/ApplyTrack/pull/17); [evidence](RF_05_ALERT_PROCESSING_RELIABILITY.md) |
 | 6 | RF-06 — Lead State Consistency | P0 | Planned | — |
 | 7 | RF-07 — Status Mutation Reliability | P0 | Planned | — |
 | 8 | RF-08 — Form & Save Lifecycle | P1 | Planned | — |
