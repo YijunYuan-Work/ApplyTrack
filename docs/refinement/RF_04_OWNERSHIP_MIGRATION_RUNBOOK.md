@@ -1,14 +1,26 @@
 # RF-04: Job Lead Ownership Migration Runbook
 
 Date: 2026-10-11 (America/Toronto).
-Status: **In Progress - Stage 1 merged; production release gated**.
-Scope: Stage 1 implementation evidence and subsequent read-only release preparation. **Nothing in this document authorizes production SQL, export, migration, deployment, data repair or integration changes.**
+Status: **Completed - deployed and independently verified (2026-10-11 America/Toronto)**.
+Scope: Historical Stage 1/release preparation and the production completion record. **This document does not authorize additional production SQL, exports, migrations, deployments, data repair or integration changes.**
 
 Stage 1 baseline: `origin/main` at `2a0c450`; branch `security/rf-04-job-lead-ownership`.
 Release-preparation baseline: main `0a5b165`.
 PR: [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12), reviewed and merged as `7cd120d`.
 Findings: F01 and the SQL-boundary portion of G02 in
 [Refinement 02](REFINEMENT_02_QUALITY_AUDIT.md). [Master Plan](REFINEMENT_MASTER_PLAN.md).
+
+## Production Completion Record (2026-10-11 America/Toronto)
+
+**RF-04 is complete.** The user explicitly approved release without a production backup. Codex reported a successful `supabase db push` using the linked project and the exact repository migration; ChatGPT independently read the live database and confirmed:
+- Project `qotipygmwlovxklkexjb` is `ACTIVE_HEALTHY`, PostgreSQL 17.6.
+- Supabase migration history records `20261011042500` / `job_lead_ownership_integrity` alongside all nine preceding migrations.
+- `applications_user_id_id_key` is a validated `UNIQUE (user_id, id)`. `job_leads_application_owner_fkey` is validated and nondeferrable; `MATCH SIMPLE`, `ON UPDATE NO ACTION`, `ON DELETE SET NULL (application_id)`. The previous `job_leads_application_id_fkey` is absent, and `job_leads_application_id_key` remains.
+- The owner columns remain NOT NULL. Applications: 420; Leads: 629; linked Leads: 31; missing Applications, cross-owner associations and duplicate links: all 0.
+- Both tables retain RLS and their prior ownership policies. The existing Lead column grants and authenticated-only `complete_job_lead_application(bigint,date)` RPC remain unchanged. The only active Edge Function remains `ingest-job-alert` v21.
+- No production backup was taken by explicit user risk acceptance; no anonymous-permission hardening, Auth/Edge change or automatic backend deployment-enable action was part of RF-04.
+
+The SQL and registration were not asserted to be one database transaction. Their **successful final state** is confirmed by migration history and actual constraints/data. The pre-release gates and proposed operator steps below are retained solely as historical rationale; **do not rerun them**. F01 is closed; broader G02 hosted integration and earlier Applications grants remain separate future work.
 
 ## Root Cause and Design
 
@@ -221,9 +233,9 @@ Procedure, requiring separate export authorization:
    according to an agreed short retention period. If encrypted storage or a
    restore-verifiable backup is unavailable, stop the release.
 
-## Approval-Gated Production Sequence
+## Approval-Gated Production Sequence (Historical; Completed)
 
-These steps are not executed by Stage 1:
+These were pre-release instructions, retained for reference only; the completion record above supersedes their pending language:
 
 1. ChatGPT reviews this PR, SQL evidence and runbook. Obtain separate user
    approval for refreshed production read-only preflight, export/restore rehearsal and the
@@ -262,7 +274,7 @@ These steps are not executed by Stage 1:
    Keep automatic backend synchronization OFF. Mark RF-04 Done only after
    successful production verification and ChatGPT acceptance.
 
-## Post-Migration Verification (Not Executed)
+## Post-Migration Verification (Completed; Reference Queries)
 
 Re-run aggregate invalid-link, NOT NULL, RLS, privilege and RPC queries above.
 The inventory should now contain `applications_user_id_id_key` on `(user_id,id)`
@@ -334,10 +346,7 @@ passing them is not a claim they are fixed. SQL tests do not run hosted Deno,
 GoTrue/PostgREST/Storage HTTP, use production grants, or verify a production dump.
 G02 is addressed at the SQL ownership boundary, not closed for full-stack
 integration. Docker SQL/Firefox/WebKit remain local rather than new CI gates.
-Reported production aggregate compatibility does not waive refreshed preflight;
-maintenance-window sizing, backup/rehearsal,
-history-registration choice, deployment and post-release verification remain
-explicit operator/review gates. CAD $0/month is preserved.
+The production migration and its read-only verification are complete as recorded above. The user expressly accepted skipping a backup for this release; this is not a standing waiver for unrelated releases. CAD $0/month is preserved.
 
 Publication observations: Vercel's branch-filtered deployment inventory returned
 no deployments immediately after the implementation Push and after PR #12 was

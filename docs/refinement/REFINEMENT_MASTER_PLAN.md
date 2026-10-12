@@ -114,45 +114,26 @@ Acceptance:
 
 **Priority:** P0  
 **Size:** Medium  
-**Findings:** F01, G02  
+**Findings:** F01; SQL-boundary portion of G02  
 **Dependency:** RF-03 sequencing only  
-**Status:** [~] In Progress — Stage 1 reviewed and merged; production release gated  
-**PR:** [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12) — reviewed, merged  
-**Merge commit:** `7cd120dbf07b8f59abe088efe5092937bf77f264`  
-**Merged:** 2026-10-11 (UTC)  
-**Production status:** The RF-04 migration is **not deployed**; F01 remains unresolved in production. ChatGPT reported the authorized read-only preflight complete: 0 cross-owner associations, 0 missing Applications, 0 duplicate links and 31 valid linked leads; the original FK remains and version `20261011042500` is absent from migration history. Refreshed release preflight, backup/restore proof, history-registration procedure and separate execution authorization remain pending. Supabase `Deploy to production` must remain OFF.
-**Migration runbook:** [RF-04 Ownership Migration Runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md)
-**Migration:** `20261011042500_job_lead_ownership_integrity.sql`
+**Status:** [x] Done — production migration deployed and independently verified (2026-10-11 America/Toronto)  
+**Implementation PR:** [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12), merged as `7cd120dbf07b8f59abe088efe5092937bf77f264`  
+**Migration:** `20261011042500_job_lead_ownership_integrity.sql`  
+**Production project:** `qotipygmwlovxklkexjb` (ApplyTrack; PostgreSQL 17.6)  
+**Production history:** Version `20261011042500`, name `job_lead_ownership_integrity`, registered; nine earlier versions retained.  
+**Migration runbook and completion evidence:** [RF-04 Ownership Migration Runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md)
 
-Stage 1 implements a same-owner composite foreign key with application-only
-SET NULL deletion, fresh-schema parity and real isolated PostgreSQL regression,
-legacy compatibility and concurrent-write tests. The production aggregate
-findings above are attributed to ChatGPT, not independently queried user data by
-this documentation task. The migration has not been deployed. G02 is narrowed at the SQL
-boundary; complete HTTP/hosted integration remains unverified. Supabase automatic
-production deployment remains intentionally disabled under SEC-02's operational
-hold; do not resume it as part of RF-04.
+Production completion (independently read-only verified by ChatGPT):
+- Validated `UNIQUE (user_id, id)` on Applications and composite same-owner `job_leads_application_owner_fkey`; original single-column FK absent.
+- New FK uses `ON DELETE SET NULL (application_id)`; Lead owner `user_id` remains NOT NULL. Existing one-to-one Lead association uniqueness remains intact.
+- Applications: **420**; Job Leads: **629**; linked Leads: **31**; missing references: **0**; cross-owner links: **0**; duplicate associations: **0**.
+- Applications and Job Leads RLS remain enabled; existing policies, column permissions and `complete_job_lead_application(bigint,date)` RPC were not changed by this release.
+- The user explicitly accepted executing this migration **without a production backup**. The CLI release succeeded, production history matches the repository filename, and post-release catalog/data checks passed.
+- Supabase automatic production synchronization remains under its existing **OFF** hold; do not re-enable it as part of RF-04.
 
-Release preparation: [Production Privilege Review](PRODUCTION_PRIVILEGE_REVIEW.md)
-and [Backup Operator Checklist](RF_04_BACKUP_OPERATOR_CHECKLIST.md). Proposed
-permission SQL is locally validated only, with a separate production approval
-gate; no production privilege hardening or backup is claimed complete.
+F01 is **closed at the production database constraint boundary**. G02's complete hosted HTTP/Auth/Edge integration remains a separate, unverified scope, not evidence that the owner-FK fix failed. The previously identified broad anonymous Applications grants remain a **separate least-privilege improvement**; the proposed permission-hardening SQL was **not applied**.
 
-Scope:
-
-- Ensure a Job Lead cannot reference an Application belonging to another user.
-- Review RLS, column permissions, foreign-key association and RPC boundaries.
-- Use the smallest safe database-level correction.
-
-Acceptance:
-
-- Cross-owner associations are rejected.
-- Legitimate owner conversions continue working.
-- Existing data is not unintentionally deleted or reassigned.
-- Synthetic PostgreSQL authorization tests pass.
-- Any migration includes a reviewed deployment and rollback procedure.
-
-**Release gate:** Production migration requires separate explicit approval and an appropriate one-time data safety procedure. No standalone backup platform will be developed.
+**Release outcome:** RF-04 is complete. No standalone backup platform, further backup readiness program or additional production action is required to close RF-04.
 
 ## RF-05 — Job Alert Processing Reliability
 
