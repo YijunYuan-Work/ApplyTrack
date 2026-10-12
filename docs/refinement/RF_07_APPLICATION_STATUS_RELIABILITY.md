@@ -1,6 +1,7 @@
 # RF-07: Application Status Mutation Reliability
 
 Status: In Progress; local implementation only, awaiting ChatGPT review.
+PR: [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19).
 Baseline: `b7939caec1d2da9ad755a0b35cc3f62d8d8b9828` (origin/main).
 
 ## Cause and Correction
@@ -74,6 +75,9 @@ traces, npm cache and temp files stay within the Git-ignored workspace.
 Frontend-only release; no SQL migration, Edge deployment, new dependency or
 production permission/configuration change. No production operations were run.
 Supabase automatic synchronization and Vercel Preview settings were not modified.
+The post-push Vercel deployment listing contained no RF-07 branch deployment;
+the latest deployment remained main `b7939ca`. This is deployment-history evidence,
+not an independent read of the Preview setting. No production Supabase tool was used.
 
 The queue is in-memory, not an offline/resumable job system. Closing a page drops
 unsent requests; reload displays persisted state. Conditional writes rely on the

@@ -249,7 +249,8 @@ Correct existing workflows without introducing new product capabilities.
 **Size:** Medium  
 **Findings:** F04, R03  
 **Status:** [~] In Progress — implementation and local verification; awaiting review
-**PR:** TBD
+
+**PR:** [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19)
 
 Scope:
 
@@ -619,7 +620,7 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 4 | RF-04 — Ownership Integrity | P0 | Done — production migration verified | [#12](https://github.com/YijunYuan-Work/ApplyTrack/pull/12); [runbook](RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md) |
 | 5 | RF-05 — Ingestion Failure Handling | P0 | Done — migration and Edge v22 verified | [#17](https://github.com/YijunYuan-Work/ApplyTrack/pull/17); [evidence](RF_05_ALERT_PROCESSING_RELIABILITY.md) |
 | 6 | RF-06 — Lead State Consistency | P0 | Done — production conversion RPC verified | [#18](https://github.com/YijunYuan-Work/ApplyTrack/pull/18); [evidence](RF_06_JOB_LEAD_STATE_CONSISTENCY.md) |
-| 7 | RF-07 — Status Mutation Reliability | P0 | In Progress | Review pending |
+| 7 | RF-07 — Status Mutation Reliability | P0 | In Progress | [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19); review pending |
 | 8 | RF-08 — Form & Save Lifecycle | P1 | Planned | — |
 | 9 | RF-09 — Destructive Operations | P1 | Planned | — |
 | 10 | RF-10 — Job Agent Queue | P1 | Planned | — |
