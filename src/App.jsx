@@ -72,6 +72,8 @@ function App() {
   const [statusMutations, setStatusMutations] = useState({})
   const [isDeleting, setIsDeleting] = useState(false)
   const [workspaceVersion, setWorkspaceVersion] = useState(0)
+  const [jobQueueRevision, setJobQueueRevision] = useState(0)
+  const [jobMutationPending, setJobMutationPending] = useState(false)
   const applicationsRef = useRef([])
   const workspaceRef = useRef({ userId: null, revision: 0, statusQueues: new Map(), deleting: false })
   const userId = user?.id
@@ -95,6 +97,8 @@ function App() {
       setDataError('')
       setDataLoading(false)
       setJobAgentSummary(null)
+      setJobMutationPending(false)
+      setJobQueueRevision((current) => current + 1)
     }
     setUser(nextUser)
   }, [])
@@ -204,7 +208,7 @@ function App() {
           const revision = workspace.revision
           const [savedApplications, savedJobAgentSummary] = await Promise.all([
             fetchApplications(userId),
-            fetchJobAgentSummary(userId).catch(() => null),
+            fetchJobAgentSummary(userId).catch(() => ({ available: false, error: true })),
           ])
           if (!isCurrent()) return
           // A fetch begun before a successful mutation must not replace that result.
@@ -237,19 +241,24 @@ function App() {
     }
 
     let isMounted = true
-
+    const workspace = workspaceRef.current
+    const revision = workspace.revision
     fetchJobAgentSummary(userId)
       .then((summary) => {
-        if (isMounted) {
+        if (isMounted && workspaceRef.current === workspace && workspace.revision === revision) {
           setJobAgentSummary(summary)
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (isMounted && workspaceRef.current === workspace && workspace.revision === revision) {
+          setJobAgentSummary({ available: false, error: true })
+        }
+      })
 
     return () => {
       isMounted = false
     }
-  }, [route, userId])
+  }, [route, userId, workspaceVersion, jobQueueRevision])
 
   async function handleAuthSubmit({ mode, password, username }) {
     setAuthLoading(true)
@@ -578,33 +587,38 @@ function App() {
     )
   }
 
-  function handleJobLeadApplicationCreated(application) {
-    if (workspaceRef.current.userId !== user.id) return
+  function captureJobSession() {
+    const workspace = workspaceRef.current
+    const isCurrent = () => workspaceRef.current === workspace
+    return {
+      isCurrent,
+      begin: () => {
+        if (!isCurrent() || workspace.jobLeadBusy) return false
+        workspace.jobLeadBusy = true
+        setJobMutationPending(true)
+        return true
+      },
+      end: () => {
+        workspace.jobLeadBusy = false
+        if (isCurrent()) setJobMutationPending(false)
+      },
+    }
+  }
+
+  function handleJobLeadApplicationCreated(application, session) {
+    if (!session.isCurrent()) return
     changeApplications((currentApplications) =>
       currentApplications.some((item) => item.id === application.id)
         ? currentApplications
         : [application, ...currentApplications],
     )
-    setJobAgentSummary((current) =>
-      current
-        ? {
-            ...current,
-            appliedCount: (current.appliedCount || 0) + 1,
-            pendingCount: Math.max(0, (current.pendingCount || 0) - 1),
-          }
-        : current,
-    )
   }
 
-  function handleJobLeadRemoved(removedCount = 1) {
-    setJobAgentSummary((current) =>
-      current
-        ? {
-            ...current,
-            pendingCount: Math.max(0, (current.pendingCount || 0) - removedCount),
-          }
-        : current,
-    )
+  function handleQueueChanged(session) {
+    if (!session.isCurrent()) return
+    workspaceRef.current.revision += 1
+    setJobAgentSummary(null)
+    setJobQueueRevision((current) => current + 1)
   }
 
   if (route === '/job-agent' || route === '/job-agent/matches') {
@@ -620,9 +634,13 @@ function App() {
         }
       >
         <JobAgentPage
+          key={workspaceVersion}
           {...sharedPageProps}
           onApplicationCreated={handleJobLeadApplicationCreated}
-          onJobLeadRemoved={handleJobLeadRemoved}
+          onQueueChanged={handleQueueChanged}
+          queueRevision={jobQueueRevision}
+          captureJobSession={captureJobSession}
+          mutationPending={jobMutationPending}
           onViewMatches={() => navigate('/job-agent/matches')}
           view={route.endsWith('/matches') ? 'matches' : 'setup'}
         />

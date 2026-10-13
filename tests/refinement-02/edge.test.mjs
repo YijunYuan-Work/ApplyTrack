@@ -134,6 +134,24 @@ test('Edge valid ingestion completes; repeated message is idempotent', async () 
   assert.equal(state.retrievals, 1)
 })
 
+test('RF-10 R04: removal is not suppression; only a later distinct alert recreates a lead', async () => {
+  const h = await harness()
+  assert.equal((await h.handler(h.request())).status, 200)
+  const original = structuredClone(h.state.tables.job_leads[0])
+  h.state.tables.job_leads.splice(0)
+  assert.equal((await (await h.handler(h.request())).json()).duplicate, true)
+  assert.equal(h.state.tables.job_leads.length, 0)
+  const later = { data: { ...h.event.data, email_id: 'synthetic-message-2' } }
+  assert.equal((await h.handler(h.request(later))).status, 200)
+  const recreated = h.state.tables.job_leads[0]
+  assert.equal(recreated.source, original.source)
+  assert.equal(recreated.external_id, original.external_id)
+  assert.equal(recreated.state, 'new')
+  assert.equal(h.state.tables.job_alert_messages.length, 2)
+  assert.equal((await (await h.handler(h.request(later))).json()).duplicate, true)
+  assert.equal(h.state.tables.job_leads.length, 1)
+})
+
 test('Edge retrieval failure is retryable and does not create leads', async () => {
   const { handler, request, state } = await harness()
   state.retrieveFailed = true

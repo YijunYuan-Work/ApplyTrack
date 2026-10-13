@@ -321,6 +321,9 @@ function DashboardPage({
           />
         </section>
 
+        {jobAgentSummary?.error && (
+          <p className="form-error" role="alert">Job queue count unavailable. Reload to try again.</p>
+        )}
         {jobAgentSummary?.available && (
           <section className="agent-dashboard-strip" aria-label="Job Agent summary">
             <span className="agent-dashboard-icon" aria-hidden="true">

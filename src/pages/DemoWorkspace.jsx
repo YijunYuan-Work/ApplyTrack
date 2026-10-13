@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useRef, useState } from 'react'
 import AppLayout from '../components/AppLayout'
 import { demoApplications, getTodayIsoDate, normalizeApplication } from '../data/applications'
 import { applicationFormChanges, mergeApplicationFormChanges, prepareApplicationForm, validateApplicationForm } from '../data/applicationForm'
@@ -41,6 +41,8 @@ function DemoWorkspace({ route }) {
   const [jobAgentWorkspace, setJobAgentWorkspace] = useState(
     createDemoJobAgentWorkspace,
   )
+  const jobMutationScope = useRef({ busy: false })
+  const [jobMutationPending, setJobMutationPending] = useState(false)
   const demoNavigate = (path) => navigate(getDemoPath(path))
   const editingId = getDemoEditingId(route)
   const editingApplication = applications.find(
@@ -222,7 +224,21 @@ function DemoWorkspace({ route }) {
           demoWorkspace={jobAgentWorkspace}
           onApplicationCreated={handleJobApplicationCreated}
           onDemoWorkspaceChange={setJobAgentWorkspace}
-          onJobLeadRemoved={() => {}}
+          onQueueChanged={() => {}}
+          mutationPending={jobMutationPending}
+          captureJobSession={() => ({
+            isCurrent: () => true,
+            begin: () => {
+              if (jobMutationScope.current.busy) return false
+              jobMutationScope.current.busy = true
+              setJobMutationPending(true)
+              return true
+            },
+            end: () => {
+              jobMutationScope.current.busy = false
+              setJobMutationPending(false)
+            },
+          })}
           onViewMatches={() => demoNavigate('/job-agent/matches')}
           view={route.endsWith('/matches') ? 'matches' : 'setup'}
         />

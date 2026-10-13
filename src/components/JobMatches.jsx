@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react'
 import {
   Banknote,
   CheckCircle2,
@@ -12,7 +11,6 @@ import {
 import {
   formatJobAgentDate,
   getJobLeadPresentation,
-  sortJobLeadsNewestFirst,
 } from '../data/jobAgent'
 
 const pageSize = 20
@@ -43,40 +41,27 @@ function JobMatches({
   onFinishApplying,
   onRemove,
   onRemoveAll,
+  waitingLeadCount,
+  resultCount,
+  query,
+  source,
+  page,
+  onQueryChange,
+  onSourceChange,
+  onPageChange,
+  onClearFilters,
+  isLoading,
+  error,
+  onReload,
 }) {
-  const [query, setQuery] = useState('')
-  const [source, setSource] = useState('all')
-  const [page, setPage] = useState(1)
   const latestMessage = messages[0]
   const hasLinkedIn = messages.some((message) => message.provider === 'linkedin')
   const hasIndeed = messages.some((message) => message.provider === 'indeed')
-  const waitingLeadCount = leads.filter(
-    (lead) => lead.state !== 'applied' && lead.state !== 'expired',
-  ).length
-
-  const visibleLeads = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-
-    return sortJobLeadsNewestFirst(
-      leads.filter((lead) => {
-        const isWaiting = lead.state !== 'applied' && lead.state !== 'expired'
-        const matchesSource = source === 'all' || lead.source === source
-        const matchesQuery =
-          !normalizedQuery ||
-          `${lead.company} ${lead.title} ${lead.location}`
-            .toLowerCase()
-            .includes(normalizedQuery)
-
-        return isWaiting && matchesSource && matchesQuery
-      }),
-    )
-  }, [leads, query, source])
-  const pageCount = Math.max(1, Math.ceil(visibleLeads.length / pageSize))
+  const pageCount = Math.max(1, Math.ceil((resultCount || 0) / pageSize))
   const safePage = Math.min(page, pageCount)
-  const pageLeads = visibleLeads.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   function changePage(nextPage) {
-    setPage(nextPage)
+    onPageChange(nextPage)
     requestAnimationFrame(() => {
       window.scrollTo({
         behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -98,10 +83,10 @@ function JobMatches({
             <p>Open a job, apply on LinkedIn or Indeed, then confirm it here.</p>
           </div>
           <div className="agent-queue-controls">
-            <strong>{waitingLeadCount} waiting</strong>
+            <strong>{isLoading ? 'Loading queue...' : waitingLeadCount === null ? 'Count unavailable' : `${waitingLeadCount} waiting`}</strong>
             <button
               className="danger-action agent-remove-all-action"
-              disabled={isUpdating || waitingLeadCount === 0}
+              disabled={isUpdating || isLoading || waitingLeadCount === null || waitingLeadCount === 0}
               type="button"
               onClick={onRemoveAll}
             >
@@ -118,8 +103,7 @@ function JobMatches({
             <input
               value={query}
               onChange={(event) => {
-                setQuery(event.target.value)
-                setPage(1)
+                onQueryChange(event.target.value)
               }}
               placeholder="Search company, title, location"
             />
@@ -129,8 +113,7 @@ function JobMatches({
             <select
               value={source}
               onChange={(event) => {
-                setSource(event.target.value)
-                setPage(1)
+                onSourceChange(event.target.value)
               }}
             >
               <option value="all">All job alerts</option>
@@ -162,14 +145,21 @@ function JobMatches({
         </div>
       </section>
 
-      {visibleLeads.length > 0 ? (
+      {isLoading ? (
+        <section className="page-loading-state" role="status">Loading queue results...</section>
+      ) : error ? (
+        <section className="agent-results-empty">
+          <p className="form-error" role="alert">{error}</p>
+          <button className="secondary-action" type="button" onClick={onReload}>Reload queue</button>
+        </section>
+      ) : leads.length > 0 ? (
         <section className="agent-results" aria-label="Jobs waiting to be applied">
           <div className="agent-results-heading only-count">
-            <span>{visibleLeads.length} jobs</span>
+            <span>{query.trim() || source !== 'all' ? `${resultCount} matching jobs` : `${resultCount} jobs`}</span>
           </div>
 
           <div className="agent-lead-list">
-            {pageLeads.map((lead) => {
+            {leads.map((lead) => {
               const presentation = getJobLeadPresentation(lead)
 
               return (
@@ -272,12 +262,13 @@ function JobMatches({
       ) : (
         <section className="agent-results-empty">
           <CheckCircle2 aria-hidden="true" size={30} />
-          <h2>No applications waiting</h2>
+          <h2>{waitingLeadCount === 0 ? 'No applications waiting' : 'No matching jobs'}</h2>
           <p>
-            {inbox?.enabled
+            {waitingLeadCount !== 0 ? 'Other jobs are waiting in your queue. Clear filters to see them.' : inbox?.enabled
               ? 'New jobs from your LinkedIn and Indeed alerts will appear here.'
               : 'Resume job alert imports to receive new jobs.'}
           </p>
+          {waitingLeadCount !== 0 && <button className="secondary-action" type="button" onClick={onClearFilters}>Clear filters</button>}
         </section>
       )}
     </div>

@@ -23,6 +23,8 @@ export async function backend(context, rows = [], leads = []) {
   const state = { applications: structuredClone(rows), leads: structuredClone(leads), requests: [], blocked: [], pending: [], holdUpdates: false, holdInserts: false, failDelete: false, failInsert: false, inbox: { id: 1, user_id: userId, address_alias: 'a'.repeat(32), enabled: true, last_received_at: '2026-01-01T00:00:00Z' }, messages: [] }
   Object.assign(state, { user, version: 0, controlStatus: false, statusUpdates: [], controlSaves: false, saves: [], holdReads: false, reads: [], failStatusReads: false, holdUsers: false, users: [], failUsers: false })
   Object.assign(state, { controlDeletes: false, deletes: [], deleteAllowedIds: null })
+  Object.assign(state, { controlLeadDeletes: false, leadDeletes: [], leadDeleteAllowedIds: null,
+    leadMaxRows: 1000, failLeadReads: false, controlLeadReads: false, leadReads: [], omitLeadCount: false })
   await context.route('**/*', async (route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -32,7 +34,7 @@ export async function backend(context, rows = [], leads = []) {
     const single = request.headers().accept?.includes('vnd.pgrst.object')
     const body = request.postDataJSON()
     const table = url.pathname.split('/').at(-1)
-    state.requests.push({ method, table, body, query: url.search })
+    state.requests.push({ method, table, body, query: url.search, headers: request.headers() })
     if (table === 'token' || table === 'signup') {
       const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url')
       const exp = Math.floor(Date.now() / 1000) + 3600
@@ -54,14 +56,24 @@ export async function backend(context, rows = [], leads = []) {
         })
         state.applications.push(created)
         item.application_id = created.id
-        item.state = 'applied'
       }
+      item.state = 'applied'
       return route.fulfill({ json: state.applications.find((row) => row.id === item.application_id) })
     }
     const source = table === 'applications' ? state.applications : table === 'job_leads' ? state.leads : table === 'job_alert_inboxes' ? [state.inbox] : table === 'job_alert_messages' ? state.messages : []
     const matches = (row) => [...url.searchParams].every(([key, value]) => {
       if (value.startsWith('eq.')) return String(row[key]) === value.slice(3)
       if (value.startsWith('in.(')) return value.slice(4, -1).split(',').includes(String(row[key]))
+      if (value === 'is.null') return row[key] == null
+      if (value.startsWith('gt.')) return Number(row[key]) > Number(value.slice(3))
+      if (value.startsWith('lte.')) return Number(row[key]) <= Number(value.slice(4))
+      if (key === 'or') {
+        const clauses = [...value.matchAll(/(company|title|location)\.ilike\.("(?:\\.|[^"\\])*")/g)]
+        return clauses.some(([, field, encoded]) => {
+          const text = JSON.parse(encoded).slice(1, -1).replace(/\\([\\%_])/g, '$1')
+          return String(row[field] || '').toLowerCase().includes(text.toLowerCase())
+        })
+      }
       return true
     })
     let result = source.filter(matches)
@@ -119,39 +131,75 @@ export async function backend(context, rows = [], leads = []) {
     if (method === 'DELETE') {
       if (state.failDelete) return route.fulfill({ status: 400, json: { message: 'Synthetic delete failure' } })
       const commit = () => {
-        const current = table === 'applications' ? state.applications : source
+        const current = table === 'applications' ? state.applications : table === 'job_leads' ? state.leads : source
         result = current.filter((row) => matches(row) &&
           (table !== 'applications' || state.deleteAllowedIds === null || state.deleteAllowedIds.includes(row.id)),
         )
+        if (table === 'job_leads' && state.leadDeleteAllowedIds !== null) result = result.filter((row) => state.leadDeleteAllowedIds.includes(row.id))
         const kept = current.filter((row) => !result.includes(row))
         if (table === 'applications') state.applications = kept
         if (table === 'job_leads') state.leads = kept
         return structuredClone(url.searchParams.get('select') === 'id' ? result.map(({ id }) => ({ id })) : result)
       }
-      if (state.controlDeletes && table === 'applications') {
+      const deletedResponse = (rows) => {
+        const headers = request.headers().prefer?.includes('count=exact')
+          ? { 'access-control-expose-headers': 'Content-Range', 'content-range': `*/${result.length}` } : {}
+        const returned = table === 'job_leads' ? rows?.slice(0, state.leadMaxRows) : rows
+        return route.fulfill({ headers, json: single ? returned?.[0] ?? null : returned })
+      }
+      if ((state.controlDeletes && table === 'applications') || (state.controlLeadDeletes && table === 'job_leads')) {
         let response
         const operation = {
           query: url.search,
           commit: () => response ??= commit(),
-          respond: (override) => route.fulfill({ json: override === undefined ? operation.commit() : override }),
+          respond: (override) => {
+            const rows = override === undefined ? operation.commit() : override
+            return deletedResponse(rows)
+          },
           fail: () => route.fulfill({ status: 400, json: { message: 'Synthetic delete failure' } }),
           abort: () => route.abort('failed'),
         }
-        state.deletes.push(operation)
+        ;(table === 'job_leads' ? state.leadDeletes : state.deletes).push(operation)
         return
       }
-      return route.fulfill({ json: commit() })
+      const deleted = commit()
+      return deletedResponse(deleted)
     }
-    if (method === 'GET') {
+    if (method === 'GET' || method === 'HEAD') {
+      if (table === 'job_leads' && state.failLeadReads) return route.fulfill({ status: 400, json: { message: 'Synthetic queue read failure' } })
       if (table === 'applications' && url.searchParams.get('select') !== '*' && state.failStatusReads) {
         return route.fulfill({ status: 400, json: { message: 'Synthetic status read failure' } })
       }
       const order = url.searchParams.get('order')
       if (order) {
-        const [key, direction] = order.split('.')
-        result.sort((a, b) => String(a[key]).localeCompare(String(b[key])) * (direction === 'desc' ? -1 : 1))
+        result.sort((a, b) => {
+          for (const entry of order.split(',')) {
+            const [key, direction] = entry.split('.')
+            const difference = key === 'id' ? Number(a[key]) - Number(b[key]) : String(a[key]).localeCompare(String(b[key]))
+            if (difference) return difference * (direction === 'desc' ? -1 : 1)
+          }
+          return 0
+        })
       }
-      if (url.searchParams.has('limit')) result = result.slice(0, Number(url.searchParams.get('limit')))
+      const total = result.length
+      const offset = Number(url.searchParams.get('offset') || 0)
+      const limit = Math.min(Number(url.searchParams.get('limit') || Infinity), table === 'job_leads' ? state.leadMaxRows : Infinity)
+      result = result.slice(offset, offset + limit)
+      const countHeaders = request.headers().prefer?.includes('count=exact') && !state.omitLeadCount
+        ? { 'access-control-expose-headers': 'Content-Range', 'content-range': result.length ? `${offset}-${offset + result.length - 1}/${total}` : `*/${total}` } : {}
+      if (method === 'HEAD') return route.fulfill({ status: 200, headers: countHeaders, body: '' })
+      if (table === 'job_leads') {
+        const columns = url.searchParams.get('select')
+        if (columns && columns !== '*') result = result.map((row) => Object.fromEntries(columns.split(',').map((key) => [key, row[key]])))
+        const snapshot = structuredClone(result)
+        if (state.controlLeadReads) {
+          state.leadReads.push({ query: url.search,
+            respond: () => route.fulfill({ headers: countHeaders, json: snapshot }),
+          })
+          return
+        }
+        return route.fulfill({ headers: countHeaders, json: single ? snapshot[0] ?? null : snapshot })
+      }
       if (table === 'applications' && url.searchParams.get('select') === '*' && state.holdReads) {
         const snapshot = structuredClone(result)
         state.reads.push(() => route.fulfill({ json: single ? snapshot[0] ?? null : snapshot }))

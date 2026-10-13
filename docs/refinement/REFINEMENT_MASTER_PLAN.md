@@ -303,8 +303,10 @@ Scope and outcome:
 **Priority:** P1  
 **Size:** Medium  
 **Findings:** F07, F16, R04  
-**Status:** [ ] Planned  
+**Status:** [~] In Progress; implementation prepared; independent review pending
 **PR:** TBD
+
+Implementation and local evidence: [RF-10 Job Agent Queue Accuracy](RF_10_JOB_AGENT_QUEUE_ACCURACY.md).
 
 Scope:
 
