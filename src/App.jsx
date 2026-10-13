@@ -70,9 +70,10 @@ function App() {
   const [dataError, setDataError] = useState('')
   const [jobAgentSummary, setJobAgentSummary] = useState(null)
   const [statusMutations, setStatusMutations] = useState({})
+  const [isDeleting, setIsDeleting] = useState(false)
   const [workspaceVersion, setWorkspaceVersion] = useState(0)
   const applicationsRef = useRef([])
-  const workspaceRef = useRef({ userId: null, revision: 0, statusQueues: new Map() })
+  const workspaceRef = useRef({ userId: null, revision: 0, statusQueues: new Map(), deleting: false })
   const userId = user?.id
 
   const changeApplications = useCallback((update) => {
@@ -85,11 +86,12 @@ function App() {
   const acceptUser = useCallback((nextUser) => {
     const nextId = nextUser?.id ?? null
     if (workspaceRef.current.userId !== nextId) {
-      workspaceRef.current = { userId: nextId, revision: 0, statusQueues: new Map() }
+      workspaceRef.current = { userId: nextId, revision: 0, statusQueues: new Map(), deleting: false }
       setWorkspaceVersion((current) => current + 1)
       applicationsRef.current = []
       setApplications([])
       setStatusMutations({})
+      setIsDeleting(false)
       setDataError('')
       setDataLoading(false)
       setJobAgentSummary(null)
@@ -406,61 +408,43 @@ function App() {
     mark({ pending: false, error: lastError })
   }
 
-  async function handleDeleteApplication(applicationId) {
+  async function handleDeleteApplications(applicationIds, single = false) {
     const workspace = workspaceRef.current
-    const confirmed = window.confirm(
-      'Delete this application? This cannot be undone.',
-    )
-
-    if (!confirmed) {
-      return
-    }
-
-    setDataError('')
-
+    const isCurrent = () => workspaceRef.current === workspace && Boolean(workspace.userId)
+    if (!isCurrent()) return { status: 'stale' }
+    if (workspace.deleting) return { status: 'pending' }
+    const ids = [...new Set(applicationIds)]
+    if (ids.length === 0) return { status: 'error', message: 'Choose an application to delete.' }
+    if (!window.confirm(single
+      ? 'Delete this application? This cannot be undone.'
+      : `Delete ${ids.length} selected applications? This cannot be undone.`
+    )) return { status: 'canceled' }
+    if (!isCurrent()) return { status: 'stale' }
+    workspace.deleting = true
+    setIsDeleting(true)
     try {
-      await deleteApplication(applicationId)
-      if (workspaceRef.current !== workspace) return
+      const deletedIds = single
+        ? await deleteApplication(ids[0], workspace.userId)
+        : await deleteApplications(ids, workspace.userId)
+      if (!isCurrent()) return { status: 'stale' }
       changeApplications((currentApplications) =>
-        currentApplications.filter(
-          (application) => application.id !== applicationId,
-        ),
+        currentApplications.filter((application) => !deletedIds.includes(application.id)),
       )
+      return { status: 'deleted', deletedIds }
     } catch (error) {
-      if (workspaceRef.current !== workspace) return
-      setDataError(getFriendlyErrorMessage(error.message))
+      if (!isCurrent()) return { status: 'stale' }
+      return {
+        status: 'error',
+        message: `Deletion could not be confirmed. ${getFriendlyErrorMessage(error.message)} Reload to check saved records before retrying.`,
+      }
+    } finally {
+      workspace.deleting = false
+      if (isCurrent()) setIsDeleting(false)
     }
   }
 
-  async function handleBulkDeleteApplications(applicationIds) {
-    const workspace = workspaceRef.current
-    if (applicationIds.length === 0) {
-      return
-    }
-
-    const confirmed = window.confirm(
-      `Delete ${applicationIds.length} selected applications? This cannot be undone.`,
-    )
-
-    if (!confirmed) {
-      return
-    }
-
-    setDataError('')
-
-    try {
-      await deleteApplications(applicationIds)
-      if (workspaceRef.current !== workspace) return
-      changeApplications((currentApplications) =>
-        currentApplications.filter(
-          (application) => !applicationIds.includes(application.id),
-        ),
-      )
-    } catch (error) {
-      if (workspaceRef.current !== workspace) return
-      setDataError(getFriendlyErrorMessage(error.message))
-    }
-  }
+  const handleDeleteApplication = (id) => handleDeleteApplications([id], true)
+  const handleBulkDeleteApplications = (ids) => handleDeleteApplications(ids)
 
   async function handleImportApplications(importedApplications) {
     const workspace = workspaceRef.current
@@ -658,10 +642,12 @@ function App() {
 
   return (
     <DashboardPage
+      key={workspaceVersion}
       {...sharedPageProps}
       applications={applications}
       error={dataError}
       isLoading={dataLoading}
+      isDeleting={isDeleting}
       jobAgentSummary={jobAgentSummary}
       onBulkDeleteApplications={handleBulkDeleteApplications}
       onDeleteApplication={handleDeleteApplication}

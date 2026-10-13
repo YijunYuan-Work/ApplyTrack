@@ -120,21 +120,22 @@ function DemoWorkspace({ route }) {
   }
 
   async function handleDeleteApplication(applicationId) {
-    if (!window.confirm('Delete this sample application?')) return
+    if (!window.confirm('Delete this sample application?')) return { status: 'canceled' }
     setApplications((current) =>
       current.filter((application) => application.id !== applicationId),
     )
+    return { status: 'deleted', deletedIds: [applicationId] }
   }
 
   async function handleBulkDeleteApplications(applicationIds) {
-    if (
-      applicationIds.length === 0 ||
-      !window.confirm(`Delete ${applicationIds.length} selected sample applications?`)
-    ) return
+    const ids = [...new Set(applicationIds)]
+    if (ids.length === 0) return { status: 'error', message: 'Choose an application to delete.' }
+    if (!window.confirm(`Delete ${ids.length} selected sample applications?`)) return { status: 'canceled' }
 
     setApplications((current) =>
-      current.filter((application) => !applicationIds.includes(application.id)),
+      current.filter((application) => !ids.includes(application.id)),
     )
+    return { status: 'deleted', deletedIds: ids }
   }
 
   async function handleImportApplications(importedApplications) {

@@ -284,7 +284,7 @@ Scope and outcome:
 **Priority:** P1  
 **Size:** Small–Medium  
 **Findings:** F10, CQ01  
-**Status:** [ ] Planned  
+**Status:** [~] In Progress
 **PR:** TBD
 
 Scope:
@@ -299,6 +299,12 @@ Acceptance:
 - API failure leaves records and selection intact.
 - Success removes only intended records.
 - Errors are accessible and understandable.
+
+Implementation evidence: [RF-09 deletion reliability](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md).
+Explicit confirmed deletion outcomes preserve selection on cancellation/failure,
+scope errors to the active Dashboard/session and prevent duplicate requests.
+F09 Board Select All remains unchanged and characterized for RF-11.
+Independent review and frontend release remain pending; no SQL/Edge release is needed.
 
 ## RF-10 — Job Agent Queue Accuracy
 
@@ -610,7 +616,7 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 6 | RF-06 — Lead State Consistency | P0 | Done — production conversion RPC verified | [#18](https://github.com/YijunYuan-Work/ApplyTrack/pull/18); [evidence](RF_06_JOB_LEAD_STATE_CONSISTENCY.md) |
 | 7 | RF-07 — Status Mutation Reliability | P0 | Done — CI and Vercel Production READY | [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19); [evidence](RF_07_APPLICATION_STATUS_RELIABILITY.md) |
 | 8 | RF-08 — Form & Save Lifecycle | P1 | Done — CI and Vercel Production READY | [#20](https://github.com/YijunYuan-Work/ApplyTrack/pull/20); [evidence](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md) |
-| 9 | RF-09 — Destructive Operations | P1 | Planned | — |
+| 9 | RF-09 — Destructive Operations | P1 | In Progress | [evidence](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md) |
 | 10 | RF-10 — Job Agent Queue | P1 | Planned | — |
 | 11 | RF-11 — Dashboard Selection | P1 | Planned | — |
 | 12 | RF-12 — Historical Analytics | P1 | Decision required | — |

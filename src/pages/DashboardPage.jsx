@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { getRoute } from '../utils/routes'
 import {
   ArrowUpDown,
   ArrowRight,
@@ -21,6 +22,7 @@ function DashboardPage({
   applications,
   error,
   isDemo = false,
+  isDeleting = false,
   isLoading,
   isReadOnly = false,
   jobAgentSummary,
@@ -40,13 +42,27 @@ function DashboardPage({
 }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [isSelectionMode, setIsSelectionMode] = useState(false)
-  const [selectedApplicationIds, setSelectedApplicationIds] = useState([])
+  const [selectedIds, setSelectedApplicationIds] = useState([])
+  // A confirmed removal may arrive after this Dashboard remounts during a delete.
+  const applicationIds = new Set(applications.map((application) => application.id))
+  const selectedApplicationIds = selectedIds.filter((id) => applicationIds.has(id))
   const [sortBy, setSortBy] = useState('applied')
   const [statusFilter, setStatusFilter] = useState('All')
   const [pageSize, setPageSize] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState('board')
   const [activeBoardStatus, setActiveBoardStatus] = useState('Applied')
+  const [deleteError, setDeleteError] = useState('')
+  const [deletePending, setDeletePending] = useState(false)
+  const pendingDelete = useRef(false)
+  const active = useRef(true)
+  const [originRoute] = useState(getRoute)
+  const deletionBusy = isDeleting || deletePending
+
+  useEffect(() => {
+    active.current = true
+    return () => { active.current = false }
+  }, [])
 
   const statusCounts = useMemo(
     () =>
@@ -169,17 +185,35 @@ function DashboardPage({
     resetToFirstPage()
   }
 
-  async function handleBulkDelete() {
-    await onBulkDeleteApplications(selectedApplicationIds)
-    setSelectedApplicationIds([])
+  async function handleDelete(action) {
+    if (pendingDelete.current || isDeleting) return
+    pendingDelete.current = true
+    setDeletePending(true)
+    const isCurrent = () => active.current && getRoute() === originRoute
+    try {
+      const result = await action()
+      if (!isCurrent()) return
+      if (result?.status === 'deleted' && Array.isArray(result.deletedIds)) {
+        setSelectedApplicationIds((currentIds) => currentIds.filter((id) => !result.deletedIds.includes(id)))
+        setDeleteError('')
+      } else if (result?.status === 'error') {
+        setDeleteError(result.message)
+      } else if (!['canceled', 'stale', 'pending'].includes(result?.status)) {
+        setDeleteError('Deletion could not be confirmed. Reload to check saved records before retrying.')
+      }
+    } catch (error) {
+      if (isCurrent()) setDeleteError(`Deletion could not be confirmed. ${error.message} Reload to check saved records before retrying.`)
+    } finally {
+      pendingDelete.current = false
+      if (active.current) setDeletePending(false)
+    }
   }
 
-  async function handleDeleteApplication(applicationId) {
-    await onDeleteApplication(applicationId)
-    setSelectedApplicationIds((currentIds) =>
-      currentIds.filter((currentId) => currentId !== applicationId),
-    )
+  const handleBulkDelete = () => {
+    const ids = [...selectedApplicationIds]
+    return handleDelete(() => onBulkDeleteApplications(ids))
   }
+  const handleDeleteApplication = (id) => handleDelete(() => onDeleteApplication(id))
 
   function renderPaginationControls(position) {
     if (filteredApplications.length === 0 || totalPages <= 1) {
@@ -422,7 +456,8 @@ function DashboardPage({
                     </button>
                     <button
                       className="danger-action"
-                      disabled={selectedApplicationIds.length === 0}
+                      aria-busy={deletionBusy}
+                      disabled={selectedApplicationIds.length === 0 || deletionBusy}
                       type="button"
                       onClick={handleBulkDelete}
                     >
@@ -472,6 +507,8 @@ function DashboardPage({
           )}
 
           {error && <p className="form-error">{error}</p>}
+          {deleteError && <p className="form-error" role="alert">{deleteError}</p>}
+          {deletionBusy && <p className="loading-message" role="status">Deleting applications...</p>}
           {isLoading && <p className="loading-message">Loading applications...</p>}
 
           {viewMode === 'list' ? (
@@ -481,6 +518,7 @@ function DashboardPage({
               <ApplicationList
                 applications={pagedApplications}
                 isReadOnly={isReadOnly}
+                isDeleting={deletionBusy}
                 onClearFilters={handleClearFilters}
                 selectedApplicationIds={selectedApplicationIds}
                 onDeleteApplication={handleDeleteApplication}

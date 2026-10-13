@@ -121,24 +121,25 @@ export async function updateApplication(applicationId, changes, userId, isCurren
   throw new Error('This application changed while saving. Please try again.')
 }
 
-export async function deleteApplication(applicationId) {
-  const { error } = await supabase
-    .from('applications')
-    .delete()
-    .eq('id', applicationId)
-
-  if (error) {
-    throw error
-  }
+export async function deleteApplication(applicationId, userId) {
+  return deleteApplications([applicationId], userId)
 }
 
-export async function deleteApplications(applicationIds) {
-  const { error } = await supabase
+export async function deleteApplications(applicationIds, userId) {
+  const ids = [...new Set(applicationIds)]
+  if (!userId || ids.length === 0) throw new Error('Choose applications in your current workspace.')
+  const { data, error } = await supabase
     .from('applications')
     .delete()
-    .in('id', applicationIds)
-
-  if (error) {
-    throw error
+    .eq('user_id', userId)
+    .in('id', ids)
+    .select('id')
+  if (error) throw error
+  // DELETE can succeed with no affected rows under RLS. Require exact confirmation.
+  if (!Array.isArray(data)) throw new Error('The server did not confirm the deleted applications.')
+  const confirmed = new Set(data.map((row) => String(row?.id)))
+  if (data.length !== ids.length || confirmed.size !== ids.length || ids.some((id) => !confirmed.has(String(id)))) {
+    throw new Error('The server did not confirm deletion of every requested application.')
   }
+  return ids
 }

@@ -7,6 +7,7 @@ function ApplicationCard({
   application,
   isSelected = false,
   isReadOnly = false,
+  isDeleting = false,
   onSelectApplication,
   onDeleteApplication,
   onEditApplication,
@@ -161,6 +162,8 @@ function ApplicationCard({
           </div>
           <button
             className="danger-action"
+            disabled={isDeleting}
+            aria-busy={isDeleting}
             type="button"
             onClick={() => onDeleteApplication(application.id)}
           >
