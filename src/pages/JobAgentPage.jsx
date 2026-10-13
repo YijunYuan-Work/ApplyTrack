@@ -1,17 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { SearchCheck, Settings2 } from 'lucide-react'
 import {
   completeJobLeadApplication,
   createJobAlertInbox,
   fetchJobAgentWorkspace,
+  fetchJobLeadQueue,
+  fetchJobLeadRemovalScope,
   removeJobLead,
-  removeJobLeads,
+  removeAllWaitingJobLeads,
   updateJobAlertInbox,
 } from '../api/jobAgent'
 import AppLayout from '../components/AppLayout'
 import JobAgentSetup from '../components/JobAgentSetup'
 import JobMatches from '../components/JobMatches'
 import { getTodayIsoDate } from '../data/applications'
+import { sortJobLeadsNewestFirst } from '../data/jobAgent'
+import { getRoute } from '../utils/routes'
 
 function JobAgentPage({
   demoWorkspace = null,
@@ -22,7 +26,10 @@ function JobAgentPage({
   onJobAgent,
   onApplicationCreated,
   onDemoWorkspaceChange,
-  onJobLeadRemoved,
+  onQueueChanged,
+  captureJobSession,
+  mutationPending,
+  queueRevision = 0,
   onProfile,
   onProgress,
   onSignOut,
@@ -33,10 +40,71 @@ function JobAgentPage({
   const [workspace, setWorkspace] = useState(null)
   const [isLoading, setIsLoading] = useState(() => !isDemo)
   const [isManagingAlerts, setIsManagingAlerts] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
+  const [query, setQuery] = useState('')
+  const [source, setSource] = useState('all')
+  const [page, setPage] = useState(1)
+  const [queue, setQueue] = useState(null)
+  const [queueLoading, setQueueLoading] = useState(!isDemo)
+  const [queueError, setQueueError] = useState('')
+  const [reload, setReload] = useState(0)
+  const active = useRef(false)
+  const navigationRevision = useRef(0)
   const [pageError, setPageError] = useState('')
   const [pageNotice, setPageNotice] = useState('')
   const activeWorkspace = isDemo ? demoWorkspace : workspace
+  const demoWaiting = isDemo ? sortJobLeadsNewestFirst(demoWorkspace.leads.filter((lead) => lead.state === 'new')) : []
+  const demoResults = demoWaiting.filter((lead) => (source === 'all' || lead.source === source) &&
+    `${lead.company} ${lead.title} ${lead.location}`.toLowerCase().includes(query.trim().toLowerCase()))
+  const demoPage = Math.min(page, Math.max(1, Math.ceil(demoResults.length / 20)))
+  const displayedQueue = isDemo ? {
+    pendingCount: demoWaiting.length, resultCount: demoResults.length,
+    leads: demoResults.slice((demoPage - 1) * 20, demoPage * 20),
+  } : queue
+
+  useEffect(() => {
+    active.current = true
+    const moved = () => { navigationRevision.current += 1 }
+    window.addEventListener('hashchange', moved)
+    return () => { active.current = false; window.removeEventListener('hashchange', moved) }
+  }, [])
+
+  useEffect(() => {
+    if (isDemo) return undefined
+    let current = true
+    async function loadQueue() {
+      setQueueLoading(true)
+      setQueueError('')
+      return fetchJobLeadQueue(user.id, { page, query, source })
+    }
+    loadQueue().then((data) => {
+      if (!current) return
+      const lastPage = Math.max(1, Math.ceil(data.resultCount / 20))
+      if (page > lastPage) { setPage(lastPage); return }
+      setQueue(data)
+      setQueueLoading(false)
+    }).catch((error) => {
+      if (!current) return
+      setQueue(null)
+      setQueueError(error.message)
+      setQueueLoading(false)
+    })
+    return () => { current = false }
+  }, [isDemo, user.id, page, query, source, reload, queueRevision])
+
+  function beginMutation(session) {
+    if (!session.begin()) return false
+    setPageError('')
+    setPageNotice('')
+    return true
+  }
+
+  function endMutation(session) {
+    session.end()
+  }
+
+  function refreshQueue(session) {
+    if (session.isCurrent()) onQueueChanged(session)
+  }
 
   function updateWorkspace(updater) {
     if (isDemo) {
@@ -174,6 +242,10 @@ function JobAgentPage({
   }
 
   async function handleFinishApplying(lead) {
+    const session = captureJobSession()
+    const origin = getRoute()
+    const revision = navigationRevision.current
+    const canShow = () => active.current && session.isCurrent() && navigationRevision.current === revision && getRoute() === origin
     const confirmed = window.confirm(
       `Confirm that you submitted your application for ${lead.title} at ${lead.company}? ApplyTrack will add it to your pipeline.`,
     )
@@ -182,9 +254,7 @@ function JobAgentPage({
       return
     }
 
-    setIsUpdating(true)
-    setPageError('')
-    setPageNotice('')
+    if (!beginMutation(session)) return
 
     try {
       if (isDemo) {
@@ -218,7 +288,7 @@ function JobAgentPage({
               : currentLead,
           ),
         }))
-        onApplicationCreated(application)
+        onApplicationCreated(application, session)
         setPageNotice(
           `${application.role} at ${application.company} was added to your sample pipeline.`,
         )
@@ -229,28 +299,22 @@ function JobAgentPage({
         lead.id,
         getTodayIsoDate(),
       )
-      updateWorkspace((current) => ({
-        ...current,
-        leads: current.leads.map((currentLead) =>
-          currentLead.id === lead.id
-            ? {
-                ...currentLead,
-                applicationId: application.id,
-                state: 'applied',
-              }
-            : currentLead,
-        ),
-      }))
-      onApplicationCreated(application)
-      setPageNotice(`${application.role} at ${application.company} was added to your pipeline.`)
+      if (!session.isCurrent()) return
+      onApplicationCreated(application, session)
+      if (canShow()) setPageNotice(`${application.role} at ${application.company} was added to your pipeline.`)
     } catch (error) {
-      setPageError(error.message)
+      if (canShow()) setPageError(`Application could not be confirmed. ${error.message} Reload to check before retrying.`)
     } finally {
-      setIsUpdating(false)
+      refreshQueue(session)
+      endMutation(session)
     }
   }
 
   async function handleRemoveLead(lead) {
+    const session = captureJobSession()
+    const origin = getRoute()
+    const revision = navigationRevision.current
+    const canShow = () => active.current && session.isCurrent() && navigationRevision.current === revision && getRoute() === origin
     const confirmed = window.confirm(
       `Remove ${lead.title} at ${lead.company} from your application queue?`,
     )
@@ -259,9 +323,7 @@ function JobAgentPage({
       return
     }
 
-    setIsUpdating(true)
-    setPageError('')
-    setPageNotice('')
+    if (!beginMutation(session)) return
 
     try {
       if (isDemo) {
@@ -269,7 +331,6 @@ function JobAgentPage({
           ...current,
           leads: current.leads.filter((currentLead) => currentLead.id !== lead.id),
         }))
-        onJobLeadRemoved()
         setPageNotice(
           `${lead.title} at ${lead.company} was removed from your sample queue.`,
         )
@@ -277,62 +338,43 @@ function JobAgentPage({
       }
 
       await removeJobLead(lead.id, user.id)
-      updateWorkspace((current) => ({
-        ...current,
-        leads: current.leads.filter((currentLead) => currentLead.id !== lead.id),
-      }))
-      onJobLeadRemoved()
-      setPageNotice(`${lead.title} at ${lead.company} was removed from your queue.`)
+      if (canShow()) setPageNotice(`${lead.title} at ${lead.company} was removed from your queue.`)
     } catch (error) {
-      setPageError(error.message)
+      if (canShow()) setPageError(`Removal could not be confirmed. ${error.message} Reload to check before retrying.`)
     } finally {
-      setIsUpdating(false)
+      refreshQueue(session)
+      endMutation(session)
     }
   }
 
   async function handleRemoveAllLeads() {
-    const waitingLeads = activeWorkspace.leads.filter(
-      (lead) => lead.state !== 'applied' && lead.state !== 'expired',
-    )
-
-    if (waitingLeads.length === 0) {
-      return
-    }
-
-    const confirmed = window.confirm(
-      `Remove all ${waitingLeads.length} jobs from your application queue? This cannot be undone.`,
-    )
-
-    if (!confirmed) {
-      return
-    }
-
-    const leadIds = waitingLeads.map((lead) => lead.id)
-
-    setIsUpdating(true)
-    setPageError('')
-    setPageNotice('')
+    const session = captureJobSession()
+    if (!beginMutation(session)) return
+    const origin = getRoute()
+    const revision = navigationRevision.current
+    const canShow = () => active.current && session.isCurrent() && navigationRevision.current === revision && getRoute() === origin
 
     try {
-      const removedLeadIds = isDemo
-        ? leadIds
-        : await removeJobLeads(leadIds, user.id)
-      const removedLeadIdSet = new Set(removedLeadIds)
-
-      updateWorkspace((current) => ({
-        ...current,
-        leads: current.leads.filter((lead) => !removedLeadIdSet.has(lead.id)),
-      }))
-      onJobLeadRemoved(removedLeadIds.length)
-      setPageNotice(
-        isDemo
-          ? `${removedLeadIds.length} jobs were removed from your sample queue.`
-          : `${removedLeadIds.length} jobs were removed from your queue.`,
-      )
+      const scope = isDemo ? { count: demoWaiting.length } : await fetchJobLeadRemovalScope(user.id)
+      if (!canShow() || scope.count === 0) return
+      if (!window.confirm(`Remove all ${scope.count} jobs from your application queue? New alerts may still add jobs. This cannot be undone.`)) return
+      if (isDemo) {
+        const ids = new Set(demoWaiting.filter((lead) => !lead.applicationId).map((lead) => lead.id))
+        updateWorkspace((current) => ({ ...current,
+          leads: current.leads.filter((lead) => !ids.has(lead.id) || lead.state !== 'new' || lead.applicationId),
+        }))
+        setPageNotice(`${ids.size} removals confirmed in your sample queue.`)
+        return
+      }
+      const outcome = await removeAllWaitingJobLeads(user.id, scope, session.isCurrent)
+      if (!canShow()) return
+      if (outcome.status === 'error') setPageError(outcome.message)
+      else if (outcome.status === 'removed') setPageNotice(`${outcome.removedCount} removals confirmed. New alerts may still add jobs.`)
     } catch (error) {
-      setPageError(error.message)
+      if (canShow()) setPageError(`Removal could not be confirmed. ${error.message} Reload to check before retrying.`)
     } finally {
-      setIsUpdating(false)
+      refreshQueue(session)
+      endMutation(session)
     }
   }
 
@@ -378,18 +420,13 @@ function JobAgentPage({
           >
             <SearchCheck aria-hidden="true" size={19} />
             Matches
-            {activeWorkspace?.leads && (
-              <span>
-                {activeWorkspace.leads.filter(
-                  (lead) => lead.state !== 'applied' && lead.state !== 'expired',
-                ).length}
-              </span>
-            )}
+            {displayedQueue && !queueLoading && <span>{displayedQueue.pendingCount}</span>}
           </button>
         </div>
 
         {pageNotice && <p className="agent-page-notice" role="status">{pageNotice}</p>}
         {pageError && <p className="form-error agent-page-error" role="alert">{pageError}</p>}
+        {mutationPending && <p className="loading-message" role="status">Updating your queue...</p>}
 
         {isLoading ? (
           <section className="page-loading-state" role="status">
@@ -399,8 +436,20 @@ function JobAgentPage({
         ) : activeWorkspace && view === 'matches' ? (
           <JobMatches
             inbox={activeWorkspace.inbox}
-            isUpdating={isUpdating}
-            leads={activeWorkspace.leads}
+            isUpdating={mutationPending}
+            leads={displayedQueue?.leads || []}
+            waitingLeadCount={displayedQueue?.pendingCount ?? null}
+            resultCount={displayedQueue?.resultCount ?? null}
+            isLoading={queueLoading}
+            error={queueError}
+            onReload={() => setReload((current) => current + 1)}
+            query={query}
+            source={source}
+            page={page}
+            onQueryChange={(value) => { setQuery(value); setPage(1) }}
+            onSourceChange={(value) => { setSource(value); setPage(1) }}
+            onPageChange={setPage}
+            onClearFilters={() => { setQuery(''); setSource('all'); setPage(1) }}
             messages={activeWorkspace.messages}
             onFinishApplying={handleFinishApplying}
             onRemove={handleRemoveLead}

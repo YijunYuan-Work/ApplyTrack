@@ -173,7 +173,7 @@ test('Excel import duplicate selection and atomic failure feedback', async ({ pa
   await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(notes)
 })
 
-test('Job conversion, pagination top scroll, filter and remove; BUG empty search mislabels queue', async ({ page, context }) => {
+test('RF-10 F16: conversion, pagination, filtering and removal preserve truthful search feedback', async ({ page, context }) => {
   const state = await backend(context, [], Array.from({ length: 25 }, (_, i) => lead(i + 1)))
   await signIn(page)
   await page.goto('/#/job-agent/matches')
@@ -188,7 +188,7 @@ test('Job conversion, pagination top scroll, filter and remove; BUG empty search
   const importedNotes = state.applications[0].notes
   expect(importedNotes).toMatch(/^Added from (LinkedIn|Indeed) after the application was confirmed as submitted\.$/)
   await page.getByLabel('Search jobs waiting to be applied').fill('no-such-job')
-  await expect(page.getByRole('heading', { name: 'No applications waiting' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'No matching jobs' })).toBeVisible()
   expect(state.leads.filter((row) => row.state === 'new')).toHaveLength(24)
   await page.getByLabel('Search jobs waiting to be applied').fill('')
   page.once('dialog', (dialog) => dialog.accept())
@@ -232,17 +232,17 @@ for (const width of [1440, 768, 390]) {
   })
 }
 
-test('BUG: remove all uses only fetched 500 leads and leaves an unseen lead', async ({ page, context }) => {
+test('RF-10 F07: remove all includes jobs beyond the former 500-row window', async ({ page, context }) => {
   const state = await backend(context, [], Array.from({ length: 501 }, (_, i) => lead(i + 1)))
   await signIn(page)
   await page.goto('/#/job-agent/matches')
-  await expect(page.getByText('500 waiting')).toBeVisible()
+  await expect(page.getByText('501 waiting')).toBeVisible()
   page.once('dialog', (dialog) => dialog.accept())
   await nav(page, 'Remove all')
   await expect(page.getByRole('heading', { name: 'No applications waiting' })).toBeVisible()
-  expect(state.leads).toHaveLength(1)
+  expect(state.leads).toHaveLength(0)
   await page.reload()
-  await expect(page.getByText('1 waiting')).toBeVisible()
+  await expect(page.getByText('0 waiting')).toBeVisible()
 })
 
 for (const width of [1440, 768, 390]) {

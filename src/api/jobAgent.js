@@ -134,8 +134,46 @@ function mapAlertMessage(row) {
   }
 }
 
+function waitingQuery(userId, columns = '*', options) {
+  if (!userId) throw new Error('Authentication required.')
+  return supabase.from('job_leads').select(columns, options)
+    .eq('user_id', userId).eq('state', 'new')
+}
+
+function exactCount(result) {
+  throwIfError(result.error)
+  if (!Number.isSafeInteger(result.count) || result.count < 0) {
+    throw new Error('Could not confirm the queue count. Reload to try again.')
+  }
+  return result.count
+}
+
+export async function fetchJobLeadQueue(userId, { page = 1, query = '', source = 'all' } = {}) {
+  const totalResult = await waitingQuery(userId, 'id', { count: 'exact', head: true })
+  let pendingCount = exactCount(totalResult)
+  let request = waitingQuery(userId, '*', { count: 'exact' })
+  if (source !== 'all') request = request.eq('source', source)
+  if (query.trim()) {
+    // Quote the PostgREST value; escape pattern characters so search stays literal.
+    const pattern = `%${query.trim().replace(/[\\%_]/g, '\\$&')}%`
+    const value = JSON.stringify(pattern)
+    request = request.or(['company', 'title', 'location'].map((field) => `${field}.ilike.${value}`).join(','))
+  }
+  const result = await request.order('discovered_at', { ascending: false })
+    .order('id', { ascending: false }).range((page - 1) * 20, page * 20 - 1)
+  const resultCount = exactCount(result)
+  if (!query.trim() && source === 'all') pendingCount = resultCount
+  else if (resultCount > pendingCount) throw new Error('The queue changed while loading. Reload to try again.')
+  const leads = (result.data || []).map(mapLead)
+  const expected = Math.min(20, Math.max(0, resultCount - (page - 1) * 20))
+  if (leads.length !== expected) {
+    throw new Error('Queue results are incomplete or changed while loading. Reload to try again.')
+  }
+  return { leads, pendingCount, resultCount }
+}
+
 export async function fetchJobAgentWorkspace(userId) {
-  const [inboxResult, messagesResult, leadsResult] =
+  const [inboxResult, messagesResult] =
     await Promise.all([
       supabase.from('job_alert_inboxes').select('*').eq('user_id', userId).maybeSingle(),
       supabase
@@ -144,26 +182,18 @@ export async function fetchJobAgentWorkspace(userId) {
         .eq('user_id', userId)
         .order('received_at', { ascending: false })
         .limit(20),
-      supabase
-        .from('job_leads')
-        .select('*')
-        .eq('user_id', userId)
-        .order('discovered_at', { ascending: false })
-        .order('posted_at', { ascending: false, nullsFirst: false })
-        .limit(500),
     ])
 
-  ;[inboxResult, messagesResult, leadsResult].forEach(({ error }) => throwIfError(error))
+  ;[inboxResult, messagesResult].forEach(({ error }) => throwIfError(error))
 
   return {
     inbox: mapInbox(inboxResult.data),
-    leads: (leadsResult.data || []).map(mapLead),
     messages: (messagesResult.data || []).map(mapAlertMessage),
   }
 }
 
 export async function fetchJobAgentSummary(userId) {
-  const [inboxResult, messagesResult, leadsResult] = await Promise.all([
+  const [inboxResult, messagesResult, waitingResult, appliedResult] = await Promise.all([
     supabase
       .from('job_alert_inboxes')
       .select('enabled, last_received_at')
@@ -175,31 +205,27 @@ export async function fetchJobAgentSummary(userId) {
       .eq('user_id', userId)
       .order('received_at', { ascending: false })
       .limit(20),
-    supabase.from('job_leads').select('filtered, source, state').eq('user_id', userId),
+    waitingQuery(userId, 'id', { count: 'exact', head: true }),
+    supabase.from('job_leads').select('id', { count: 'exact', head: true })
+      .eq('user_id', userId).eq('state', 'applied'),
   ])
 
-  ;[inboxResult, messagesResult, leadsResult].forEach(({ error }) =>
+  ;[inboxResult, messagesResult].forEach(({ error }) =>
     throwIfError(error),
   )
 
-  const leads = leadsResult.data || []
-  const alertLeads = leads.filter(
-    (lead) => lead.source === 'linkedin' || lead.source === 'indeed',
-  )
   const messages = messagesResult.data || []
 
   return {
     alertEnabled: Boolean(inboxResult.data?.enabled),
-    appliedCount: alertLeads.filter((lead) => lead.state === 'applied').length,
+    appliedCount: exactCount(appliedResult),
     available: true,
     enabled: Boolean(inboxResult.data?.enabled),
     failedAlertCount: messages.filter((message) => message.status === 'failed').length,
     indeedConnected: messages.some((message) => message.provider === 'indeed'),
     lastAlertAt: inboxResult.data?.last_received_at || null,
     linkedInConnected: messages.some((message) => message.provider === 'linkedin'),
-    pendingCount: alertLeads.filter(
-      (lead) => lead.state !== 'applied' && lead.state !== 'expired',
-    ).length,
+    pendingCount: exactCount(waitingResult),
   }
 }
 
@@ -403,25 +429,64 @@ export async function removeJobLead(leadId, userId) {
     .delete()
     .eq('id', leadId)
     .eq('user_id', userId)
+    .eq('state', 'new')
+    .is('application_id', null)
     .select('id')
     .single()
 
   throwIfError(error)
+  if (data?.id !== leadId) throw new Error('The job removal was not confirmed.')
   return data.id
 }
 
-export async function removeJobLeads(leadIds, userId) {
-  if (leadIds.length === 0) {
-    return []
+export async function fetchJobLeadRemovalScope(userId) {
+  const result = await waitingQuery(userId, 'id', { count: 'exact' })
+    .order('id', { ascending: false }).limit(1)
+  const count = exactCount(result)
+  if (count && !result.data?.[0]?.id) throw new Error('Could not confirm the removal scope.')
+  return { count, upperId: result.data?.[0]?.id ?? null }
+}
+
+export async function removeAllWaitingJobLeads(userId, scope, isCurrent = () => true) {
+  let cursor = 0
+  let removedCount = 0
+  try {
+    while (scope.upperId !== null && isCurrent()) {
+      const batch = await waitingQuery(userId, 'id').gt('id', cursor)
+        .lte('id', scope.upperId).order('id').limit(100)
+      throwIfError(batch.error)
+      if (!isCurrent()) return { status: 'stale', removedCount }
+      if (!batch.data?.length) break
+      const ids = batch.data.map((row) => row.id)
+      const deletion = await supabase.from('job_leads').delete({ count: 'exact' })
+        .eq('user_id', userId).eq('state', 'new').is('application_id', null)
+        .in('id', ids).select('id')
+      const { data, error } = deletion
+      throwIfError(error)
+      if (!isCurrent()) return { status: 'stale', removedCount }
+      const deleted = new Set((data || []).map((row) => row.id))
+      if (!Array.isArray(data) || deleted.size !== data.length || data.some((row) => !ids.includes(row.id))) {
+        throw new Error('Invalid deletion confirmation.')
+      }
+      removedCount += data.length
+      if (exactCount(deletion) !== data.length) {
+        throw new Error('Deletion confirmations were incomplete. Reload to check saved records.')
+      }
+      // Missing confirmations are not successes. A concurrent conversion/deletion
+      // can explain them, but a still-waiting row requires an explicit retry.
+      if (deleted.size !== ids.length) {
+        const remaining = await waitingQuery(userId, 'id').in('id', ids)
+        throwIfError(remaining.error)
+        if (remaining.data?.length) throw new Error('Some jobs could not be removed; their state or permissions may have changed.')
+      }
+      cursor = ids.at(-1)
+    }
+    if (!isCurrent()) return { status: 'stale', removedCount }
+    const remaining = await waitingQuery(userId, 'id', { count: 'exact', head: true }).lte('id', scope.upperId ?? 0)
+    if (exactCount(remaining) !== 0) throw new Error('The queue changed during removal. Reload and retry remaining jobs.')
+    return { status: 'removed', removedCount }
+  } catch (error) {
+    return { status: 'error', removedCount,
+      message: `${removedCount} removals confirmed. Further removal could not be confirmed. ${error.message} Reload to check remaining jobs before retrying.` }
   }
-
-  const { data, error } = await supabase
-    .from('job_leads')
-    .delete()
-    .eq('user_id', userId)
-    .in('id', leadIds)
-    .select('id')
-
-  throwIfError(error)
-  return (data || []).map((lead) => lead.id)
 }
