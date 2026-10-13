@@ -1,6 +1,6 @@
 # RF-08: Application Form and Save Lifecycle
 
-Status: In Progress; implementation prepared for ChatGPT review.
+Status: Completed; reviewed and released to Vercel Production (2026-10-13 America/Toronto).
 Baseline: `14e2e1e` (latest origin/main at task start, 2026-10-12).
 
 ## Causes and Correction
@@ -72,12 +72,34 @@ Final full runs passed without retries. Screenshots/traces/cache and temp files
 remain in ignored workspace directories. Browser race evidence is synthetic
 Chromium, not a production database concurrency test; Firefox/WebKit untested.
 
-## Boundaries and Limits
+## Production Release and Independent Verification (2026-10-13)
 
-Frontend-only release through the normal reviewed main deployment; no SQL,
-Edge Function deployment, secret, Auth or permission change is required.
-Supabase auto-production-sync and Vercel Preview holds are not changed. No merge,
-manual deployment, production write or paid infrastructure is authorized here.
+The user approved Squash Merge of PR #20 after the pending-input-lock review.
+GitHub confirmed the PR is merged into `main` as
+`4b4e22aad562d3ae641926881babd9acde0b7a25`.
+
+ChatGPT independently verified the merged-commit GitHub Actions workflow completed
+with success: 39 unit tests, 27 audit tests, 12 Auth UI cases, 72 Chromium
+functional cases, lint and production build. The Supabase Preview check was
+skipped by design. Vercel deployment history confirms the Production deployment
+for the exact merge commit reached READY.
+
+This release is frontend-only. No production Supabase SQL, migration, Edge Function
+redeploy, Auth/secret/permission or infrastructure configuration change was
+performed or needed. The existing automatic Supabase production sync OFF hold
+was not changed.
+
+Concurrency and failure cases were verified with deterministic synthetic HTTP
+fixtures. No live production database write/race test was performed.
+The implementation limitations documented below remain.
+
+## Implementation-era Boundaries and Ongoing Limits
+
+The release used the normal reviewed main deployment; no SQL, Edge Function
+deployment, secret, Auth, permission or paid infrastructure change was required.
+The original implementation did not authorize a merge or deployment; both were
+subsequently completed under the user's explicit approval as verified above.
+Supabase automatic production synchronization remains under its existing OFF hold.
 
 Conditional writes use the existing timestamp trigger and bounded retries,
 not global cross-tab/device intent ordering. Unchanged fields preserve current
@@ -93,7 +115,7 @@ is never reported as saved, even if a write may have committed. Failures during
 post-save reconciliation report uncertainty rather than claiming confirmation.
 
 RF-09 bulk mutation outcomes, historical-date decisions and unrelated known bugs
-remain separate. RF-08 is not marked Done before independent review/release.
+remain separate. RF-08 was marked Done only after independent review, merged CI and Vercel Production verification.
 
 ## PR 20 Follow-up: Pending Input Lock (2026-10-13)
 

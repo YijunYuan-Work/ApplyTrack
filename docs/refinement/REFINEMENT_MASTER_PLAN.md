@@ -266,28 +266,18 @@ Scope and outcome:
 **Priority:** P1  
 **Size:** Medium  
 **Findings:** F13, F14, CQ01  
-**Status:** [~] In Progress
-**PR:** TBD
+**Status:** [x] Done — merged CI and Vercel Production independently verified (2026-10-13 America/Toronto)  
+**PR:** [#20](https://github.com/YijunYuan-Work/ApplyTrack/pull/20) — Squash merged as `4b4e22aad562d3ae641926881babd9acde0b7a25`  
+**Evidence:** [RF-08 Application Form & Save Lifecycle](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md)
 
-Scope:
+Scope and outcome:
 
-- Validate whitespace-only required fields.
-- Provide actionable submission errors.
-- Prevent late save responses from overriding subsequent user navigation.
-- Improve explicit mutation outcome handling.
-
-Acceptance:
-
-- Invalid input cannot fail silently.
-- Save errors remain visible and actionable.
-- User navigation is not unexpectedly reversed by delayed responses.
-- Real and Demo behavior remains consistent.
-
-Implementation evidence: [RF-08 form/save lifecycle](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md).
-Trimmed validation and explicit save outcomes are shared by Real/Demo; navigation
-is scoped to the originating form/session. Full edits preserve untouched fields
-and reuse RF-07's owner/version conditional writes and local reconciliation.
-Production release and independent review remain pending; no migration is required.
+- Trimmed Company/Role validation now announces actionable errors, focuses the first invalid field and prevents silent failure in Real and Demo.
+- Explicit saved/invalid/error/canceled results preserve inputs on failure and scope post-save navigation and errors to the originating form and session.
+- Full edits use owner-scoped, version-checked partial writes and reconciliation compatible with RF-07 status updates, preserving unrelated fields.
+- Review follow-up fixed editing during a pending save by disabling only the form input fieldsets, preserving navigation and restoring editability on failure; four deterministic regressions cover create/edit success/failure.
+- PR #20 merged after review; merged-commit GitHub Actions passed (39 unit tests, 27 audit tests, 12 Auth UI cases, 72 Chromium functional cases, lint and build). Vercel Production deployment for the merged SHA reported READY; Supabase Preview was intentionally skipped.
+- No new schema migration, Edge Function deployment, new dependencies or production Supabase writes were necessary. Synthetic browser tests do not certify production database race conditions. Offline ambiguous creates and cross-tab/device intent ordering remain documented limits.
 
 ## RF-09 — Destructive Operation Reliability
 
@@ -619,7 +609,7 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 5 | RF-05 — Ingestion Failure Handling | P0 | Done — migration and Edge v22 verified | [#17](https://github.com/YijunYuan-Work/ApplyTrack/pull/17); [evidence](RF_05_ALERT_PROCESSING_RELIABILITY.md) |
 | 6 | RF-06 — Lead State Consistency | P0 | Done — production conversion RPC verified | [#18](https://github.com/YijunYuan-Work/ApplyTrack/pull/18); [evidence](RF_06_JOB_LEAD_STATE_CONSISTENCY.md) |
 | 7 | RF-07 — Status Mutation Reliability | P0 | Done — CI and Vercel Production READY | [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19); [evidence](RF_07_APPLICATION_STATUS_RELIABILITY.md) |
-| 8 | RF-08 — Form & Save Lifecycle | P1 | In Progress | [evidence](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md) |
+| 8 | RF-08 — Form & Save Lifecycle | P1 | Done — CI and Vercel Production READY | [#20](https://github.com/YijunYuan-Work/ApplyTrack/pull/20); [evidence](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md) |
 | 9 | RF-09 — Destructive Operations | P1 | Planned | — |
 | 10 | RF-10 — Job Agent Queue | P1 | Planned | — |
 | 11 | RF-11 — Dashboard Selection | P1 | Planned | — |
