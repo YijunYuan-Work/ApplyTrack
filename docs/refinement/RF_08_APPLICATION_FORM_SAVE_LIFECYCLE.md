@@ -94,3 +94,29 @@ post-save reconciliation report uncertainty rather than claiming confirmation.
 
 RF-09 bulk mutation outcomes, historical-date decisions and unrelated known bugs
 remain separate. RF-08 is not marked Done before independent review/release.
+
+## PR 20 Follow-up: Pending Input Lock (2026-10-13)
+
+Review found that controls remained editable after the submitted snapshot was
+captured: a held save of Notes B could succeed and navigate away after the user
+had typed unsaved C. A regression reproduced that exact B-request/C-input mismatch
+on the original code before the correction.
+
+The shared Real/Demo form now natively disables its three input fieldsets while
+saving, and the existing synchronous save ref also guards the change handler.
+Navigation stays outside those fieldsets and available. Failure re-enables all
+inputs with their values intact, so C can then be edited and saved on retry.
+Save outcomes, validation, route/session fencing and RF-07 writes are unchanged.
+No API, schema, style, dependency or infrastructure changes were necessary.
+
+Four deterministic create/edit success/failure regressions hold the save while
+attempting keyboard input C after submitting B. They check every form input is
+disabled, navigation stays enabled, saved B survives reload, and failure permits
+editing/retrying C. Responsive pending screenshots and disabled-state checks
+cover 1440/768/390px; pending screenshots were visually inspected.
+
+Follow-up verification: 39 unit tests, 27 audit tests, 12 auth UI tests and 72
+Chromium audit cases passed; lint, build and diff checks passed. The first full
+UI run had one login-initialization timeout before entering its form scenario
+(71 passed). An unchanged complete rerun passed all 72 without configured test
+retries. No Auth code or test timeout was changed to obtain that result.

@@ -66,6 +66,7 @@ function ApplicationFormPage({
   }, [isDirty, isSaving])
 
   function handleChange(event) {
+    if (saving.current) return
     const { name, value } = event.target
     setFieldErrors((current) => ({ ...current, [name]: undefined }))
     setFormData((currentData) => {
@@ -182,7 +183,7 @@ function ApplicationFormPage({
             </p>
           )}
 
-          <fieldset className="application-form-section">
+          <fieldset className="application-form-section" disabled={isSaving}>
             <legend>Essentials</legend>
 
             <div className="application-form-section-fields">
@@ -257,7 +258,7 @@ function ApplicationFormPage({
             </div>
           </fieldset>
 
-          <fieldset className="application-form-section">
+          <fieldset className="application-form-section" disabled={isSaving}>
             <legend>Dates and interviews</legend>
 
             <div className="application-form-section-fields">
@@ -299,7 +300,7 @@ function ApplicationFormPage({
             </div>
           </fieldset>
 
-          <fieldset className="application-form-section">
+          <fieldset className="application-form-section" disabled={isSaving}>
             <legend>Optional details</legend>
 
             <div className="application-form-section-fields">

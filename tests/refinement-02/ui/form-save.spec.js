@@ -101,6 +101,50 @@ test('pending save prevents repeated submit events and sends exactly one request
   expect(state.applications).toHaveLength(1)
 })
 
+for (const edit of [false, true]) {
+  for (const failure of [false, true]) {
+    test(`saving locks post-submit Notes edits without locking navigation (${edit ? 'edit' : 'create'}, ${failure ? 'failure/retry' : 'success'})`, async ({ page, context }) => {
+      const state = await setup(page, context, edit ? [application(1, { notes: 'A' })] : [])
+      if (edit) await nav(page, 'Edit')
+      else await newForm(page)
+      const notes = page.getByRole('textbox', { name: 'Notes', exact: true })
+      await notes.fill('A')
+      await notes.fill('B')
+      // Submit without moving focus away from Notes, then attempt C before responding.
+      await page.locator('form.application-form').evaluate((form) => form.requestSubmit())
+      const save = await operation(state)
+      expect(save.body.notes).toBe('B')
+      await page.keyboard.press('ControlOrMeta+A')
+      await page.keyboard.insertText('C')
+      await expect(notes).toHaveValue('B')
+      for (const field of await page.locator('fieldset input, fieldset select, fieldset textarea').all()) {
+        await expect(field).toBeDisabled()
+      }
+      await expect(page.getByRole('button', { name: 'Back to dashboard', exact: true })).toBeEnabled()
+      await expect(page.getByRole('button', { name: 'Progress', exact: true }).filter({ visible: true })).toBeEnabled()
+      if (failure) {
+        await save.fail()
+        await expect(page.getByRole('alert')).toHaveText('Synthetic save failure')
+        for (const field of await page.locator('fieldset input, fieldset select, fieldset textarea').all()) {
+          await expect(field).toBeEnabled()
+        }
+        await expect(notes).toHaveValue('B')
+        await notes.fill('C')
+        await submit(page).click()
+        const retry = await operation(state, 1)
+        expect(retry.body.notes).toBe('C')
+        await retry.respond()
+      } else await save.respond()
+      await expect(page).toHaveURL(/dashboard$/)
+      expect(state.applications).toHaveLength(1)
+      expect(state.applications[0].notes).toBe(failure ? 'C' : 'B')
+      await page.reload()
+      await nav(page, 'List')
+      await expect(page.locator('.notes-block p')).toHaveText(failure ? 'C' : 'B')
+    })
+  }
+}
+
 for (const failure of [false, true]) {
   test(`late ${failure ? 'failure' : 'success'} cannot affect another form at the same route`, async ({ page, context }) => {
     const state = await setup(page, context)
@@ -343,9 +387,12 @@ for (const width of [1440, 768, 390]) {
     await page.getByLabel('Company', { exact: false }).fill('Valid company')
     await submit(page).click()
     const save = await operation(state)
+    await expect(page.locator('fieldset:disabled')).toHaveCount(3)
     await noOverflow(page)
+    await page.screenshot({ path: `tmp/rf08-tests.local/pending-fields-${width}.png`, fullPage: true })
     await save.fail()
     await expect(submit(page)).toBeEnabled()
+    await expect(page.locator('fieldset:disabled')).toHaveCount(0)
     await expect(page.getByRole('alert')).toHaveText('Synthetic save failure')
     await noOverflow(page)
     await page.screenshot({ path: `tmp/rf08-tests.local/failure-${width}.png`, fullPage: true })
