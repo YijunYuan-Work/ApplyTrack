@@ -22,6 +22,7 @@ export function spreadsheet(rows) {
 export async function backend(context, rows = [], leads = []) {
   const state = { applications: structuredClone(rows), leads: structuredClone(leads), requests: [], blocked: [], pending: [], holdUpdates: false, holdInserts: false, failDelete: false, failInsert: false, inbox: { id: 1, user_id: userId, address_alias: 'a'.repeat(32), enabled: true, last_received_at: '2026-01-01T00:00:00Z' }, messages: [] }
   Object.assign(state, { user, version: 0, controlStatus: false, statusUpdates: [], controlSaves: false, saves: [], holdReads: false, reads: [], failStatusReads: false, holdUsers: false, users: [], failUsers: false })
+  Object.assign(state, { controlDeletes: false, deletes: [], deleteAllowedIds: null })
   await context.route('**/*', async (route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -117,9 +118,29 @@ export async function backend(context, rows = [], leads = []) {
     }
     if (method === 'DELETE') {
       if (state.failDelete) return route.fulfill({ status: 400, json: { message: 'Synthetic delete failure' } })
-      const kept = source.filter((row) => !result.includes(row))
-      if (table === 'applications') state.applications = kept
-      if (table === 'job_leads') state.leads = kept
+      const commit = () => {
+        const current = table === 'applications' ? state.applications : source
+        result = current.filter((row) => matches(row) &&
+          (table !== 'applications' || state.deleteAllowedIds === null || state.deleteAllowedIds.includes(row.id)),
+        )
+        const kept = current.filter((row) => !result.includes(row))
+        if (table === 'applications') state.applications = kept
+        if (table === 'job_leads') state.leads = kept
+        return structuredClone(url.searchParams.get('select') === 'id' ? result.map(({ id }) => ({ id })) : result)
+      }
+      if (state.controlDeletes && table === 'applications') {
+        let response
+        const operation = {
+          query: url.search,
+          commit: () => response ??= commit(),
+          respond: (override) => route.fulfill({ json: override === undefined ? operation.commit() : override }),
+          fail: () => route.fulfill({ status: 400, json: { message: 'Synthetic delete failure' } }),
+          abort: () => route.abort('failed'),
+        }
+        state.deletes.push(operation)
+        return
+      }
+      return route.fulfill({ json: commit() })
     }
     if (method === 'GET') {
       if (table === 'applications' && url.searchParams.get('select') !== '*' && state.failStatusReads) {

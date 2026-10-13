@@ -42,20 +42,28 @@ test('CRUD, details, sorting, filtering, pagination and persisted refresh', asyn
   expect(state.blocked).toEqual([])
 })
 
-test('BUG: board select-all selects ten of twenty-five rendered cards; canceled delete clears selection', async ({ page, context }) => {
-  const state = await backend(context, Array.from({ length: 25 }, (_, i) => application(i + 1)))
+test('BUG F09: board select-all selects ten of twenty-five rendered cards (RF-11)', async ({ page, context }) => {
+  await backend(context, Array.from({ length: 25 }, (_, i) => application(i + 1)))
   await signIn(page)
   await expect(page.locator('.board-card')).toHaveCount(25)
   await nav(page, 'Enter multi-select')
   await nav(page, 'Select all')
   await expect(page.getByText('10 selected', { exact: true })).toBeVisible()
-  page.once('dialog', (dialog) => dialog.dismiss())
-  await nav(page, 'Delete selected')
-  await expect(page.getByText('0 selected', { exact: true })).toBeVisible()
-  expect(state.applications).toHaveLength(25)
 })
 
-test('BUG: failed bulk delete clears selection and does not announce dashboard error', async ({ page, context }) => {
+test('F10: canceling bulk deletion preserves records and selection', async ({ page, context }) => {
+  const state = await backend(context, [application(1)])
+  await signIn(page)
+  await nav(page, 'Enter multi-select')
+  await nav(page, 'Select all')
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await nav(page, 'Delete selected')
+  await expect(page.getByText('1 selected', { exact: true })).toBeVisible()
+  expect(state.applications).toHaveLength(1)
+  expect(state.requests.filter((r) => r.method === 'DELETE')).toEqual([])
+})
+
+test('F10: failed bulk deletion preserves selection and announces a retryable error', async ({ page, context }) => {
   const state = await backend(context, [application(1)])
   state.failDelete = true
   await signIn(page)
@@ -64,8 +72,8 @@ test('BUG: failed bulk delete clears selection and does not announce dashboard e
   page.once('dialog', (dialog) => dialog.accept())
   await nav(page, 'Delete selected')
   await expect(page.locator('.form-error')).toContainText('Synthetic delete failure')
-  await expect(page.getByText('0 selected', { exact: true })).toBeVisible()
-  await expect(page.locator('.form-error')).not.toHaveAttribute('role', 'alert')
+  await expect(page.getByText('1 selected', { exact: true })).toBeVisible()
+  await expect(page.locator('.form-error')).toHaveAttribute('role', 'alert')
   expect(state.applications).toHaveLength(1)
 })
 
