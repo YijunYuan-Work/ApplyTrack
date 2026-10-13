@@ -2,6 +2,45 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { fromApplicationRow, toApplicationRow, toApplicationStatusRow } from './applicationRows.js'
 import { normalizeApplication } from './applications.js'
+import { applicationFormChanges, mergeApplicationFormChanges, prepareApplicationForm, validateApplicationForm } from './applicationForm.js'
+
+test('RF-08: required fields validate trimmed values without changing literal notes', () => {
+  assert.deepEqual(validateApplicationForm({ company: ' \t ', role: ' \n ' }), {
+    company: 'Enter a company name.', role: 'Enter a role name.',
+  })
+  const input = normalizeApplication({ company: '  Acme  ', role: '  Engineer  ', salary: '  90000 ', notes: ' \r\nReferral: No  ' })
+  assert.deepEqual(validateApplicationForm(input), {})
+  const prepared = prepareApplicationForm(input)
+  assert.equal(prepared.company, 'Acme')
+  assert.equal(prepared.role, 'Engineer')
+  assert.equal(prepared.salary, '90000')
+  assert.equal(prepared.notes, input.notes)
+  assert.equal(prepared.location, 'Not specified')
+})
+
+test('RF-08: edit intent excludes unchanged status/rounds and optional fields', () => {
+  const initial = fromApplicationRow({ ...baseRow, notes: 'Original', salary: '90000' })
+  const prepared = prepareApplicationForm({ ...initial, notes: 'Edited note', salary: ' 100000 ' }, initial.id)
+  assert.deepEqual(applicationFormChanges(prepared, initial), {
+    notes: 'Edited note', salary: '100000', lastUpdated: prepared.lastUpdated,
+  })
+})
+
+test('RF-08: explicit form status/count edits retain the Interview promotion business rule', () => {
+  const initial = normalizeApplication({ id: 1, company: 'Acme', role: 'Engineer', interviewCount: 0 })
+  const prepared = prepareApplicationForm({ ...initial, status: 'Interview' }, initial.id)
+  assert.equal(prepared.interviewCount, 1)
+  const changes = applicationFormChanges(prepared, initial)
+  assert.equal(changes.status, 'Interview')
+  assert.equal(changes.interviewCount, 1)
+})
+
+test('RF-08: Real/Demo merges promote existing Interview/zero and preserve fresh unrelated data', () => {
+  const current = normalizeApplication({ id: 1, company: 'Acme', role: 'Engineer', status: 'Interview', interviewCount: 0, notes: 'Server note\r\nReferral: No', salary: 'Fresh salary', date: '2025-12-30' })
+  const merged = mergeApplicationFormChanges(current, { role: 'Updated role', lastUpdated: '2026-10-12' })
+  assert.deepEqual(merged, { ...current, role: 'Updated role', lastUpdated: '2026-10-12', interviewCount: 1 })
+  assert.equal(mergeApplicationFormChanges({ ...current, interviewCount: 4 }, { notes: 'Edit' }).interviewCount, 4)
+})
 
 const baseRow = {
   id: 1, company: 'Synthetic', role: 'Engineer', status: 'Applied',

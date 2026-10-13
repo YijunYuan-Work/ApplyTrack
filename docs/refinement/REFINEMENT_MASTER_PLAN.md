@@ -266,7 +266,7 @@ Scope and outcome:
 **Priority:** P1  
 **Size:** Medium  
 **Findings:** F13, F14, CQ01  
-**Status:** [ ] Planned  
+**Status:** [~] In Progress
 **PR:** TBD
 
 Scope:
@@ -282,6 +282,12 @@ Acceptance:
 - Save errors remain visible and actionable.
 - User navigation is not unexpectedly reversed by delayed responses.
 - Real and Demo behavior remains consistent.
+
+Implementation evidence: [RF-08 form/save lifecycle](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md).
+Trimmed validation and explicit save outcomes are shared by Real/Demo; navigation
+is scoped to the originating form/session. Full edits preserve untouched fields
+and reuse RF-07's owner/version conditional writes and local reconciliation.
+Production release and independent review remain pending; no migration is required.
 
 ## RF-09 — Destructive Operation Reliability
 
@@ -613,7 +619,7 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 5 | RF-05 — Ingestion Failure Handling | P0 | Done — migration and Edge v22 verified | [#17](https://github.com/YijunYuan-Work/ApplyTrack/pull/17); [evidence](RF_05_ALERT_PROCESSING_RELIABILITY.md) |
 | 6 | RF-06 — Lead State Consistency | P0 | Done — production conversion RPC verified | [#18](https://github.com/YijunYuan-Work/ApplyTrack/pull/18); [evidence](RF_06_JOB_LEAD_STATE_CONSISTENCY.md) |
 | 7 | RF-07 — Status Mutation Reliability | P0 | Done — CI and Vercel Production READY | [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19); [evidence](RF_07_APPLICATION_STATUS_RELIABILITY.md) |
-| 8 | RF-08 — Form & Save Lifecycle | P1 | Planned | — |
+| 8 | RF-08 — Form & Save Lifecycle | P1 | In Progress | [evidence](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md) |
 | 9 | RF-09 — Destructive Operations | P1 | Planned | — |
 | 10 | RF-10 — Job Agent Queue | P1 | Planned | — |
 | 11 | RF-11 — Dashboard Selection | P1 | Planned | — |

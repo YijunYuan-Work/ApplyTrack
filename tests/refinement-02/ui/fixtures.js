@@ -21,7 +21,7 @@ export function spreadsheet(rows) {
 
 export async function backend(context, rows = [], leads = []) {
   const state = { applications: structuredClone(rows), leads: structuredClone(leads), requests: [], blocked: [], pending: [], holdUpdates: false, holdInserts: false, failDelete: false, failInsert: false, inbox: { id: 1, user_id: userId, address_alias: 'a'.repeat(32), enabled: true, last_received_at: '2026-01-01T00:00:00Z' }, messages: [] }
-  Object.assign(state, { user, version: 0, controlStatus: false, statusUpdates: [], holdReads: false, reads: [], failStatusReads: false, holdUsers: false, users: [], failUsers: false })
+  Object.assign(state, { user, version: 0, controlStatus: false, statusUpdates: [], controlSaves: false, saves: [], holdReads: false, reads: [], failStatusReads: false, holdUsers: false, users: [], failUsers: false })
   await context.route('**/*', async (route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -66,6 +66,23 @@ export async function backend(context, rows = [], leads = []) {
     let result = source.filter(matches)
     if (method === 'POST') {
       if (state.failInsert) return route.fulfill({ status: 400, json: { message: 'Synthetic insert failure' } })
+      if (state.controlSaves && table === 'applications') {
+        let response
+        const operation = {
+          body, query: url.search,
+          commit: () => {
+            if (!response) {
+              response = (Array.isArray(body) ? body : [body]).map((row, index) => ({ id: 1000 + source.length + index, updated_at: '2026-01-01T00:00:00.000Z', ...row }))
+              source.push(...structuredClone(response))
+            }
+            return response
+          },
+          respond: () => route.fulfill({ json: single ? operation.commit()[0] : operation.commit() }),
+          fail: () => route.fulfill({ status: 400, json: { message: 'Synthetic save failure' } }),
+        }
+        state.saves.push(operation)
+        return
+      }
       result = (Array.isArray(body) ? body : [body]).map((row, index) => ({ id: 1000 + source.length + index, updated_at: '2026-01-01T00:00:00.000Z', ...row }))
       source.push(...result)
       if (state.holdInserts) { state.pending.push(() => route.fulfill({ json: structuredClone(result[0]) })); return }
@@ -77,7 +94,8 @@ export async function backend(context, rows = [], leads = []) {
         result.forEach((row) => Object.assign(row, body, { updated_at: new Date(Date.UTC(2026, 0, 1) + ++state.version).toISOString() }))
         return structuredClone(result)
       }
-      if (state.controlStatus && table === 'applications' && url.searchParams.has('updated_at')) {
+      const isStatus = url.searchParams.get('select') !== '*'
+      if (table === 'applications' && ((state.controlStatus && isStatus) || (state.controlSaves && !isStatus))) {
         let response
         const operation = {
           body, query: url.search,
@@ -86,10 +104,11 @@ export async function backend(context, rows = [], leads = []) {
             const rows = operation.commit()
             return route.fulfill({ json: single ? rows[0] ?? null : rows })
           },
-          fail: () => route.fulfill({ status: 400, json: { message: 'Synthetic status failure' } }),
+          fail: () => route.fulfill({ status: 400, json: { message: isStatus ? 'Synthetic status failure' : 'Synthetic save failure' } }),
           abort: () => route.abort('failed'),
         }
-        state.statusUpdates.push(operation)
+        const operations = isStatus ? state.statusUpdates : state.saves
+        operations.push(operation)
         return
       }
       commit()
@@ -114,7 +133,7 @@ export async function backend(context, rows = [], leads = []) {
       if (url.searchParams.has('limit')) result = result.slice(0, Number(url.searchParams.get('limit')))
       if (table === 'applications' && url.searchParams.get('select') === '*' && state.holdReads) {
         const snapshot = structuredClone(result)
-        state.reads.push(() => route.fulfill({ json: snapshot }))
+        state.reads.push(() => route.fulfill({ json: single ? snapshot[0] ?? null : snapshot }))
         return
       }
     }
