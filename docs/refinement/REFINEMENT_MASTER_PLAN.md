@@ -284,27 +284,19 @@ Scope and outcome:
 **Priority:** P1  
 **Size:** Small–Medium  
 **Findings:** F10, CQ01  
-**Status:** [~] In Progress
-**PR:** TBD
+**Status:** [x] Done — merged CI and manually triggered Vercel Production deployment independently verified (2026-10-13 America/Toronto)  
+**PR:** [#21](https://github.com/YijunYuan-Work/ApplyTrack/pull/21) — Squash merged as `c1fb3a3f403725928b26af90b15c8dd53822d833`  
+**Evidence:** [RF-09 Destructive Operation Reliability](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md)
 
-Scope:
+Scope and outcome:
 
-- Preserve selections when bulk deletion is canceled or fails.
-- Only clear selection after successful deletion.
-- Improve failure announcements and retry behavior.
-
-Acceptance:
-
-- Cancel leaves records and selection intact.
-- API failure leaves records and selection intact.
-- Success removes only intended records.
-- Errors are accessible and understandable.
-
-Implementation evidence: [RF-09 deletion reliability](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md).
-Explicit confirmed deletion outcomes preserve selection on cancellation/failure,
-scope errors to the active Dashboard/session and prevent duplicate requests.
-F09 Board Select All remains unchanged and characterized for RF-11.
-Independent review and frontend release remain pending; no SQL/Edge release is needed.
+- Single/bulk application delete callbacks now distinguish confirmed deleted IDs from canceled, unconfirmed/error, pending and stale-session outcomes. Cancel or failure preserves the selection for retry.
+- Owner-scoped DELETE returns IDs and rejects incomplete or unexpected confirmations; Dashboard removes only the confirmed IDs from current selection while retaining newer, unrelated selections.
+- Workspace-level deletion lock and session/route fencing guard stale responses and duplicate requests; accessible deletion progress/error feedback and local Demo parity are preserved.
+- RF-07/RF-08 status and full-edit behaviors remain tested. F09 Board Select All is intentionally deferred to RF-11 and its known-bug test remains.
+- PR #21 merged; merged-commit GitHub CI passed: 39 unit tests, 27 audit tests, 12 authentication UI tests, 99 Chromium functional tests; lint and build passed. Supabase Preview intentionally skipped.
+- Git-driven automatic Vercel deployment did not appear for the merge SHA despite successful CI. Following explicit user authorization, one Vercel Production deployment was triggered from GitHub `main` pinned to the exact merge SHA. Deployment `dpl_8VLNVg9ojF1JSDHqWxEcR16ueX2Q` reached READY, and the project production aliases were confirmed.
+- No Supabase production SQL/data write, schema migration, Edge deployment, Auth/RLS changes, dependency additions or production settings modification occurred. Manual deploy does not resolve the separate automatic-deployment trigger issue. Synthetic/browser tests do not certify live production DELETE races or true transactional all-or-nothing batch semantics.
 
 ## RF-10 — Job Agent Queue Accuracy
 
@@ -616,7 +608,7 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 6 | RF-06 — Lead State Consistency | P0 | Done — production conversion RPC verified | [#18](https://github.com/YijunYuan-Work/ApplyTrack/pull/18); [evidence](RF_06_JOB_LEAD_STATE_CONSISTENCY.md) |
 | 7 | RF-07 — Status Mutation Reliability | P0 | Done — CI and Vercel Production READY | [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19); [evidence](RF_07_APPLICATION_STATUS_RELIABILITY.md) |
 | 8 | RF-08 — Form & Save Lifecycle | P1 | Done — CI and Vercel Production READY | [#20](https://github.com/YijunYuan-Work/ApplyTrack/pull/20); [evidence](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md) |
-| 9 | RF-09 — Destructive Operations | P1 | In Progress | [evidence](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md) |
+| 9 | RF-09 — Destructive Operations | P1 | Done — CI and Vercel Production READY | [#21](https://github.com/YijunYuan-Work/ApplyTrack/pull/21); [evidence](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md) |
 | 10 | RF-10 — Job Agent Queue | P1 | Planned | — |
 | 11 | RF-11 — Dashboard Selection | P1 | Planned | — |
 | 12 | RF-12 — Historical Analytics | P1 | Decision required | — |

@@ -1,6 +1,6 @@
 # RF-09: Destructive Operation Reliability
 
-Status: In Progress, pending independent review/release.
+Status: Done; merged-commit CI and Vercel Production independently verified (2026-10-13 America/Toronto).
 Baseline: `fe0822059060ddafc82349ddb19e7ef8f9265276` (latest origin/main).
 
 ## Correction
@@ -68,6 +68,35 @@ intercepted by their decorative spans. Tests now click the existing labels, the
 same control a user operates; no checkbox UI changes were made. The complete
 final suites passed without retries. No production data was accessed for testing.
 
+## Production Release and Independent Verification (2026-10-13)
+
+After independent review, the user explicitly approved Squash Merge of
+[PR #21](https://github.com/YijunYuan-Work/ApplyTrack/pull/21).
+GitHub merged the PR into `main` at
+`c1fb3a3f403725928b26af90b15c8dd53822d833`. ChatGPT independently
+verified the merged-commit GitHub Actions workflow completed successfully:
+39 unit tests, 27 audit tests, 12 authentication UI cases, 99 Chromium
+functional tests, lint and build; Supabase Preview was skipped as intended.
+
+Automatic Git-triggered Vercel Production deployment was not observed for this
+merge commit even after GitHub CI finished successfully. The user separately
+approved one manual Vercel Production trigger. A deployment was created using
+the existing project GitHub connection, `main` ref and the exact reviewed
+merge SHA. Vercel build logs confirmed it cloned `c1fb3a3`.
+Deployment `dpl_8VLNVg9ojF1JSDHqWxEcR16ueX2Q`
+(`apply-track-mih2h0ghw-yijun-yuan-s-projects.vercel.app`) reached READY
+with `target=production` and matching `githubCommitSha`. Project aliases,
+including `apply-track-six.vercel.app`, were confirmed on this deployment.
+No other deployment was intentionally triggered for RF-09.
+
+No production Supabase migration/data write or Edge Function redeployment was
+required or performed. Existing Supabase auto-production-sync and Vercel Preview
+holds were not changed. Production release metadata and deterministic local
+synthetic HTTP regressions are not a live production DELETE race test.
+The reason for the missing automatic Vercel trigger remains a separate
+operational issue to investigate; this manual release must not be taken as
+confirmation that automatic deploys are healthy.
+
 ## Limits and Release
 
 An HTTP failure can occur after commit, and a partial result can reflect a row
@@ -84,8 +113,11 @@ live-polled. The workspace deletion lock is in-memory, not a durable job system.
 Browser evidence uses synthetic HTTP, not live production RLS/race probes;
 Firefox/WebKit are not included in the required Chromium gate.
 
-Frontend-only normal reviewed release. No migration, Edge Function deploy, Auth,
-RLS, permission, secret or production configuration change is required or done.
-Supabase automatic production sync and Vercel Preview holds are not changed.
-Temporary files, cache, screenshots and traces stay in ignored workspace paths.
-RF-09 remains In Progress until independent review and release verification.
+Frontend-only release completed through an explicitly approved manual
+Vercel Production deployment because the usual Git-triggered deployment was
+not observed. No migration, Edge Function deploy, Auth, RLS, permission,
+secret or production configuration change was required or performed.
+Supabase automatic production sync and Vercel Preview holds were not changed.
+Temporary files, cache, screenshots and traces stayed in ignored workspace paths.
+RF-09 was marked Done after independent code review, merged-commit CI success
+and Vercel Production READY confirmation.
