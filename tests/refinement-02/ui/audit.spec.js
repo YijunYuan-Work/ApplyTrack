@@ -342,9 +342,9 @@ test('F14: delayed save preserves deliberately chosen Progress navigation', asyn
   await expect(page.getByText('Pending fixture', { exact: true })).toBeVisible()
 })
 
-test('BUG: editing a rejected record moves its historical rejection date', async ({ page, context }) => {
+test('F08: editing Notes preserves the known historical rejection week', async ({ page, context }) => {
   await page.clock.setFixedTime(new Date('2026-01-09T17:00:00Z'))
-  const state = await backend(context, [application(1, { status: 'Rejected', applied_date: '2025-12-30', last_updated: '2025-12-31' })])
+  const state = await backend(context, [application(1, { status: 'Rejected', applied_date: '2025-12-30', last_updated: '2025-12-31', rejected_date: '2025-12-31' })])
   await signIn(page)
   await nav(page, 'Progress')
   await nav(page, 'Calendar')
@@ -357,7 +357,8 @@ test('BUG: editing a rejected record moves its historical rejection date', async
   await expect.poll(() => state.applications[0].last_updated).toBe('2026-01-09')
   await nav(page, 'Progress')
   await nav(page, 'Calendar')
-  await expect(page.locator('.calendar-range')).toContainText('January 4')
+  expect(state.applications[0].rejected_date).toBe('2025-12-31')
+  await expect(page.locator('.calendar-range')).toContainText('December 28')
   await expect(page.locator('.calendar-event-rejected')).toHaveCount(1)
   await nav(page, 'Previous week')
   await expect(page.locator('.calendar-event-rejected')).toHaveCount(0)

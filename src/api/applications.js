@@ -4,6 +4,7 @@ import {
   toApplicationStatusRow,
 } from '../data/applicationRows'
 import { mergeApplicationFormChanges } from '../data/applicationForm'
+import { normalizeRejectedDate } from '../data/applications'
 import { supabase } from '../lib/supabase'
 
 export async function fetchApplications(userId) {
@@ -20,7 +21,7 @@ export async function fetchApplications(userId) {
   return data.map(fromApplicationRow)
 }
 
-const statusColumns = 'id,status,last_updated,interview_count,updated_at'
+const statusColumns = 'id,status,last_updated,rejected_date,interview_count,updated_at'
 
 export async function fetchApplicationStatus(applicationId, userId) {
   const { data, error } = await supabase
@@ -37,6 +38,7 @@ export function applicationStatusFields(row) {
   return {
     status: row.status,
     lastUpdated: row.last_updated || '',
+    rejectedDate: normalizeRejectedDate(row.rejected_date),
     interviewCount: Number(row.interview_count) || 0,
   }
 }
@@ -50,7 +52,7 @@ export async function updateApplicationStatus(applicationId, status, userId, dat
     if (!current.updated_at) throw new Error('Cannot safely update this application. Reload and try again.')
     const { data, error } = await supabase
       .from('applications')
-      .update(toApplicationStatusRow(status, current.interview_count, date))
+      .update(toApplicationStatusRow(status, current.interview_count, date, current.status))
       .eq('id', applicationId)
       .eq('user_id', userId)
       .eq('updated_at', current.updated_at)

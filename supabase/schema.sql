@@ -6,6 +6,7 @@ create table if not exists public.applications (
   location text default '',
   status text not null default 'Applied',
   applied_date date,
+  rejected_date date,
   job_url text default '',
   contact text default '',
   salary text default '',
@@ -24,6 +25,7 @@ alter table public.applications
   add column if not exists cover_letter text default 'No',
   add column if not exists referral text default 'No',
   add column if not exists last_updated date,
+  add column if not exists rejected_date date,
   add column if not exists interview_count integer not null default 0;
 
 alter table public.applications

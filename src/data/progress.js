@@ -68,8 +68,7 @@ export function buildCalendarEvents(applications) {
   }
   applications.forEach((application) => {
     addEvent(application.date, application, 'Applied')
-    // F08 persistence semantics remain behind the RF-12 approval gate.
-    if (application.status === 'Rejected') addEvent(application.lastUpdated, application, 'Rejected')
+    addEvent(application.rejectedDate, application, 'Rejected')
   })
   groupedEvents.forEach((events) => events.sort((first, second) =>
     first.application.company.localeCompare(second.application.company) ||

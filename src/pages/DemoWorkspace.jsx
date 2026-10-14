@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useRef, useState } from 'react'
 import AppLayout from '../components/AppLayout'
-import { demoApplications, getTodayIsoDate, normalizeApplication } from '../data/applications'
+import { demoApplications, getRejectionDate, getTodayIsoDate, normalizeApplication } from '../data/applications'
 import { applicationFormChanges, mergeApplicationFormChanges, prepareApplicationForm, validateApplicationForm } from '../data/applicationForm'
 import {
   createDemoJobAgentWorkspace,
@@ -104,6 +104,7 @@ function DemoWorkspace({ route }) {
   }
 
   async function handleStatusChange(applicationId, nextStatus) {
+    const date = getTodayIsoDate()
     setApplications((current) =>
       current.map((application) => {
         if (application.id !== applicationId || application.status === nextStatus) return application
@@ -111,11 +112,12 @@ function DemoWorkspace({ route }) {
         return normalizeApplication({
           ...application,
           status: nextStatus,
+          rejectedDate: getRejectionDate(application, nextStatus, date),
           interviewCount:
             nextStatus === 'Interview' && Number(application.interviewCount || 0) === 0
               ? 1
               : application.interviewCount,
-          lastUpdated: getTodayIsoDate(),
+          lastUpdated: date,
         })
       }),
     )

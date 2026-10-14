@@ -115,12 +115,13 @@ try {
   $schema = Get-Content -Raw (Join-Path $root 'supabase/schema.sql')
   Sql ($schema.Substring(0,$schema.IndexOf('-- Job Agent phases'))) 'replay'
   # Restore the original application baseline before replaying historical migrations.
-  Sql 'alter table public.applications drop constraint applications_user_id_id_key;' 'replay'
+  Sql 'alter table public.applications drop constraint applications_user_id_id_key; alter table public.applications drop column rejected_date;' 'replay'
   $ownershipMigration = '20261011042500_job_lead_ownership_integrity.sql'
   $alertMigration = '20261012005112_job_alert_processing_reliability.sql'
   $stateMigration = '20261012025412_job_lead_state_consistency.sql'
+  $rejectionMigration = '20261014033558_application_rejection_date.sql'
   foreach ($file in (Get-ChildItem -LiteralPath (Join-Path $root 'supabase/migrations') -Filter '*.sql' | Sort-Object Name)) {
-    if ($file.Name -in @($ownershipMigration, $alertMigration, $stateMigration)) { continue }
+    if ($file.Name -in @($ownershipMigration, $alertMigration, $stateMigration, $rejectionMigration)) { continue }
     Sql (Get-Content -Raw -LiteralPath $file.FullName) 'replay'
     Write-Output "PASS: migration $($file.Name)"
   }
@@ -149,6 +150,10 @@ try {
   $afterState = Sql "select jsonb_build_object('owner',proowner,'acl',proacl::text,'leads',(select jsonb_agg(to_jsonb(l) order by id) from public.job_leads l),'applications',(select jsonb_agg(to_jsonb(a) order by id) from public.applications a)) from pg_proc where oid='public.complete_job_lead_application(bigint,date)'::regprocedure;" 'replay'
   if (($beforeState -join "`n") -ne ($afterState -join "`n")) { throw 'RF-06 migration changed existing data or RPC ownership/ACL.' }
   Write-Output "PASS: migration $stateMigration preserves existing data and RPC ownership/ACL"
+  Sql ((Get-Content -Raw (Join-Path $PSScriptRoot 'rejection-migration-before.sql')) + "`n" +
+    (Get-Content -Raw (Join-Path $root "supabase/migrations/$rejectionMigration")) + "`n" +
+    (Get-Content -Raw (Join-Path $PSScriptRoot 'rejection-migration-after.sql'))) 'replay'
+  Write-Output "PASS: migration $rejectionMigration preserves existing data/security and leaves every legacy date NULL"
   Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'assertions.sql')) 'replay'
   Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'ownership.sql')) 'replay'
   ConcurrentConversion 'replay'
@@ -169,6 +174,7 @@ try {
   }
   Write-Output 'PASS: fresh schema and incremental migration alert RPCs and permissions are equivalent'
   foreach ($database in @('postgres','replay')) {
+    Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'rejection-date.sql')) $database
     Sql (Get-Content -Raw (Join-Path $PSScriptRoot 'state-consistency.sql')) $database
     Sql "insert into public.applications(id,user_id,company,role) values (980,'00000000-0000-4000-8000-000000000001','Race','Race parent first'),(981,'00000000-0000-4000-8000-000000000001','Race','Race lead first'); insert into public.job_leads(id,user_id,source,external_id,title,company) values (980,'00000000-0000-4000-8000-000000000001','linkedin','980','Race','Race'),(981,'00000000-0000-4000-8000-000000000001','linkedin','981','Race','Race');" $database
     OwnershipRace $database 'rf04-parent-first' "update public.applications set user_id='00000000-0000-4000-8000-000000000002' where id=980" "select public.audit_expect_owner_fk('update public.job_leads set application_id=980 where id=980','concurrent parent owner change rejects stale lead association')"

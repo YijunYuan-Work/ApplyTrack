@@ -1,4 +1,4 @@
-import { getTodayIsoDate, normalizeApplication } from './applications.js'
+import { getRejectionDate, getTodayIsoDate, normalizeApplication } from './applications.js'
 
 export function validateApplicationForm(data) {
   const errors = {}
@@ -29,12 +29,17 @@ export function prepareApplicationForm(data, applicationId) {
 export function applicationFormChanges(prepared, initial) {
   const baseline = prepareApplicationForm(initial, initial.id)
   return Object.fromEntries(Object.entries(prepared).filter(([key, value]) =>
-    key !== 'id' && (key === 'lastUpdated' || value !== baseline[key]),
+    key !== 'id' && key !== 'rejectedDate' && (key === 'lastUpdated' || value !== baseline[key]),
   ))
 }
 
 export function mergeApplicationFormChanges(current, changes) {
-  const next = normalizeApplication({ ...current, ...changes })
+  // Form intent carries the local operation day, not the stored Last Updated.
+  const next = normalizeApplication({
+    ...current,
+    ...changes,
+    rejectedDate: getRejectionDate(current, changes.status ?? current.status, changes.lastUpdated),
+  })
   if (next.status === 'Interview' && next.interviewCount === 0) next.interviewCount = 1
   return next
 }

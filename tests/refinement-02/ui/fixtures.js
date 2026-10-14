@@ -6,7 +6,7 @@ export const userId = '00000000-0000-4000-8000-000000000001'
 const user = { id: userId, aud: 'authenticated', role: 'authenticated', email: 'auditor@127.0.0.1', user_metadata: { username: 'auditor', name: 'Auditor', profileEmail: 'synthetic@example.invalid' }, app_metadata: { provider: 'email', providers: ['email'] }, created_at: '2026-01-01T00:00:00Z' }
 
 export function application(id, overrides = {}) {
-  return { id, user_id: userId, company: `Synthetic ${id}`, role: 'Engineer', location: 'Toronto', status: 'Applied', applied_date: `2026-01-${String(id % 28 + 1).padStart(2, '0')}`, last_updated: '2026-01-01', updated_at: '2026-01-01T00:00:00.000Z', follow_up: null, job_url: 'https://example.invalid/job', notes: '', salary: '', contact: '', cover_letter: 'No', referral: 'No', interview_count: 0, ...overrides }
+  return { id, user_id: userId, company: `Synthetic ${id}`, role: 'Engineer', location: 'Toronto', status: 'Applied', applied_date: `2026-01-${String(id % 28 + 1).padStart(2, '0')}`, last_updated: '2026-01-01', rejected_date: null, updated_at: '2026-01-01T00:00:00.000Z', follow_up: null, job_url: 'https://example.invalid/job', notes: '', salary: '', contact: '', cover_letter: 'No', referral: 'No', interview_count: 0, ...overrides }
 }
 
 export function lead(id, overrides = {}) {

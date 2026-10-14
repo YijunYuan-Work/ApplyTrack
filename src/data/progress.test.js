@@ -78,10 +78,10 @@ test('G03: valid dates, century leap rules and ISO prefixes; malformed dates are
 
 test('G03: Applied/Rejected events share dates, sort deterministically, and ignore unrelated dates', () => {
   const input = [
-    { ...record(2, 'Rejected', 0, '2024-02-29'), company: 'Zeta', lastUpdated: '2024-02-29' },
+    { ...record(2, 'Rejected', 0, '2024-02-29'), company: 'Zeta', rejectedDate: '2024-02-29', lastUpdated: '2099-01-01' },
     { ...record(1, 'Interview', 1, '2024-02-29'), company: 'Alpha', lastUpdated: '2099-01-01', followUp: '2099-01-01' },
     { ...record(3, 'Offer', 0, ''), lastUpdated: '2099-01-01' },
-    { ...record(4, 'Rejected', 0, 'bad'), lastUpdated: '2024-02-30' },
+    { ...record(4, 'Rejected', 0, 'bad'), rejectedDate: '2024-02-30' },
   ]
   const before = structuredClone(input)
   const events = buildCalendarEvents(input)
@@ -94,7 +94,7 @@ test('G03: Applied/Rejected events share dates, sort deterministically, and igno
 
 test('G03: invalid latest date cannot shift the week or crash; all-undated falls back to local today', () => {
   const events = buildCalendarEvents([record(1, 'Applied', 0, '2026-02-28'), record(2, 'Applied', 0, 'zzzz'),
-    { ...record(3, 'Rejected', 0, '2026-02-30'), lastUpdated: '9999-99-99' }])
+    { ...record(3, 'Rejected', 0, '2026-02-30'), rejectedDate: '9999-99-99' }])
   assert.equal(getLatestEventWeek(events), '2026-02-22')
   const today = new Date(2026, 0, 1, 0, 30)
   assert.equal(getLatestEventWeek(new Map(), today), '2025-12-28')
@@ -122,6 +122,16 @@ test('G03: Real row mapping and Demo normalization yield identical analytics', (
   assert.deepEqual(buildProgressData(real), buildProgressData(demo))
   const signature = (rows) => [...buildCalendarEvents(rows)].map(([date, events]) => [date, events.map(({ key, type }) => ({ key, type }))])
   assert.deepEqual(signature(real), signature(demo))
+})
+
+test('F08: unknown rejection dates have no event; reopened records retain only latest known event', () => {
+  const unknown = { ...record(1, 'Rejected', 0, '2026-01-01'), rejectedDate: null, lastUpdated: '2026-01-09' }
+  assert.deepEqual([...buildCalendarEvents([unknown]).keys()], ['2026-01-01'])
+  assert.equal(buildProgressData([unknown]).data.nodes.at(-1).name, 'Rejected before interview')
+  const reopened = { ...unknown, status: 'Applied', rejectedDate: '2026-01-08' }
+  assert.equal(buildCalendarEvents([reopened]).get('2026-01-08')[0].type, 'Rejected')
+  const rerejected = { ...reopened, status: 'Rejected', rejectedDate: '2026-01-10' }
+  assert.deepEqual([...buildCalendarEvents([rerejected]).keys()], ['2026-01-01', '2026-01-10'])
 })
 
 test('G03: weeks can straddle the edges of four-digit event years without invalid internal dates', () => {

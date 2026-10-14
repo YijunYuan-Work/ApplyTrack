@@ -1,4 +1,4 @@
-import { normalizeApplication } from './applications.js'
+import { getRejectionDate, normalizeApplication, normalizeRejectedDate } from './applications.js'
 
 export function fromApplicationRow(row) {
   return normalizeApplication({
@@ -8,6 +8,7 @@ export function fromApplicationRow(row) {
     location: row.location,
     status: row.status,
     date: row.applied_date || '',
+    rejectedDate: row.rejected_date,
     jobUrl: row.job_url,
     contact: row.contact,
     salary: row.salary,
@@ -28,6 +29,7 @@ export function toApplicationRow(application, userId) {
     location: application.location,
     status: application.status,
     applied_date: application.date || null,
+    rejected_date: normalizeRejectedDate(application.rejectedDate),
     job_url: application.jobUrl,
     contact: application.contact,
     salary: application.salary,
@@ -40,10 +42,13 @@ export function toApplicationRow(application, userId) {
   }
 }
 
-export function toApplicationStatusRow(status, interviewCount, lastUpdated) {
+export function toApplicationStatusRow(status, interviewCount, lastUpdated, currentStatus) {
   return {
     status,
     last_updated: lastUpdated,
+    ...(status === 'Rejected' && currentStatus !== 'Rejected'
+      ? { rejected_date: getRejectionDate({ status: currentStatus }, status, lastUpdated) }
+      : {}),
     ...(status === 'Interview' && (Number(interviewCount) || 0) === 0
       ? { interview_count: 1 }
       : {}),
