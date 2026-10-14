@@ -2,15 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ResponsiveContainer, Sankey, Tooltip } from 'recharts'
 import AppLayout from '../components/AppLayout'
-
-const flowColors = {
-  applications: '#64748b',
-  interviewed: '#31766b',
-  offer: '#5f965e',
-  pending: '#7b8fa1',
-  rejected: '#bd5d67',
-  rejectedBeforeInterview: '#d97745',
-}
+import {
+  buildCalendarDays,
+  buildCalendarEvents,
+  buildProgressData,
+  getDateFromKey,
+  getLatestEventWeek,
+  shiftWeek,
+} from '../data/progress'
 
 const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const weekDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -19,73 +18,12 @@ const weekDateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
-function getDateKey(dateValue) {
-  return String(dateValue || '').slice(0, 10)
-}
-
-function getLocalDateKey(date) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-')
-}
-
-function getDateFromKey(dateKey) {
-  const [year, month, day] = dateKey.split('-').map(Number)
-  return new Date(year, month - 1, day)
-}
-
-function getWeekStart(date) {
-  const weekStart = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay())
-  return weekStart
-}
-
-function getWeekKey(date) {
-  return getLocalDateKey(getWeekStart(date))
-}
-
-function getWeekFromKey(weekKey) {
-  return getDateFromKey(weekKey)
-}
-
-function shiftWeek(weekKey, offset) {
-  const weekDate = getWeekFromKey(weekKey)
-  weekDate.setDate(weekDate.getDate() + offset * 7)
-  return getWeekKey(weekDate)
-}
-
 function getWeekRangeLabel(weekKey) {
-  const weekStart = getWeekFromKey(weekKey)
+  const weekStart = getDateFromKey(weekKey)
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekStart.getDate() + 6)
 
   return `${weekDateFormatter.format(weekStart)} - ${weekDateFormatter.format(weekEnd)}`
-}
-
-function buildCalendarDays(weekKey, eventsByDate) {
-  const weekStart = getWeekFromKey(weekKey)
-
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(weekStart)
-    date.setDate(weekStart.getDate() + index)
-    const dateKey = getLocalDateKey(date)
-
-    return {
-      events: eventsByDate.get(dateKey) || [],
-      date,
-      dateKey,
-    }
-  })
-}
-
-function sortCalendarEvents(first, second) {
-  return (
-    first.application.company.localeCompare(second.application.company) ||
-    first.application.role.localeCompare(second.application.role) ||
-    first.type.localeCompare(second.type)
-  )
 }
 
 const compactNodeLabels = {
@@ -140,92 +78,6 @@ function ProgressNode({ compact = false, height, payload, width, x, y }) {
   )
 }
 
-function buildProgressData(applications) {
-  const nodes = [
-    {
-      name: 'Applications',
-      count: applications.length,
-      color: flowColors.applications,
-    },
-  ]
-  const links = []
-
-  function addBranch(source, name, count, color) {
-    if (count === 0) {
-      return null
-    }
-
-    const target = nodes.length
-    nodes.push({ name, count, color })
-    links.push({ source, target, value: count })
-    return target
-  }
-
-  const hasInterview = (application) =>
-    Number(application.interviewCount || 0) > 0 ||
-    application.status === 'Interview' ||
-    application.status === 'Offer'
-
-  const interviewedApplications = applications.filter(hasInterview)
-  const rejectedBeforeInterview = applications.filter(
-    (application) => application.status === 'Rejected' && !hasInterview(application),
-  ).length
-  const awaitingInterview =
-    applications.length - interviewedApplications.length - rejectedBeforeInterview
-  const offers = interviewedApplications.filter(
-    (application) => application.status === 'Offer',
-  ).length
-  const rejectedAfterInterview = interviewedApplications.filter(
-    (application) => application.status === 'Rejected',
-  ).length
-  const activeAfterInterview =
-    interviewedApplications.length - offers - rejectedAfterInterview
-
-  const interviewedNode = addBranch(
-    0,
-    'Reached interview',
-    interviewedApplications.length,
-    flowColors.interviewed,
-  )
-
-  if (interviewedNode !== null) {
-    addBranch(interviewedNode, 'Offers', offers, flowColors.offer)
-    addBranch(
-      interviewedNode,
-      'Rejected after interview',
-      rejectedAfterInterview,
-      flowColors.rejected,
-    )
-    addBranch(
-      interviewedNode,
-      'Still in progress',
-      activeAfterInterview,
-      flowColors.pending,
-    )
-  }
-
-  addBranch(0, 'No interview yet', awaitingInterview, flowColors.pending)
-  addBranch(
-    0,
-    'Rejected before interview',
-    rejectedBeforeInterview,
-    flowColors.rejectedBeforeInterview,
-  )
-
-  return {
-    data: { nodes, links },
-    summary: {
-      applications: applications.length,
-      interviewEvents: applications.reduce(
-        (total, application) => total + Number(application.interviewCount || 0),
-        0,
-      ),
-      interviewedApplications: interviewedApplications.length,
-      offers,
-    },
-  }
-}
-
 function useCompactViewport() {
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
     typeof window === 'undefined'
@@ -266,56 +118,14 @@ function ProgressPage({
   const [visibleWeekOverride, setVisibleWeekOverride] = useState('')
   const [expandedDays, setExpandedDays] = useState(new Set())
   const isCompactViewport = useCompactViewport()
-  const latestEventWeek = useMemo(() => {
-    const latestDateKey = applications
-      .flatMap((application) =>
-        application.status === 'Rejected'
-          ? [getDateKey(application.date), getDateKey(application.lastUpdated)]
-          : [getDateKey(application.date)],
-      )
-      .filter(Boolean)
-      .sort()
-      .at(-1)
-
-    return latestDateKey ? getWeekKey(getDateFromKey(latestDateKey)) : getWeekKey(new Date())
-  }, [applications])
+  const eventsByDate = useMemo(() => buildCalendarEvents(applications), [applications])
+  const latestEventWeek = useMemo(() => getLatestEventWeek(eventsByDate), [eventsByDate])
   const visibleWeek = visibleWeekOverride || latestEventWeek
 
   const { data, summary } = useMemo(
     () => buildProgressData(applications),
     [applications],
   )
-  const eventsByDate = useMemo(() => {
-    const groupedEvents = new Map()
-
-    function addCalendarEvent(dateKey, event) {
-      if (!dateKey) {
-        return
-      }
-
-      const eventsForDay = groupedEvents.get(dateKey) || []
-      eventsForDay.push(event)
-      groupedEvents.set(dateKey, eventsForDay.sort(sortCalendarEvents))
-    }
-
-    applications.forEach((application) => {
-      addCalendarEvent(getDateKey(application.date), {
-        application,
-        key: `${application.id}-applied`,
-        type: 'Applied',
-      })
-
-      if (application.status === 'Rejected') {
-        addCalendarEvent(getDateKey(application.lastUpdated), {
-          application,
-          key: `${application.id}-rejected`,
-          type: 'Rejected',
-        })
-      }
-    })
-
-    return groupedEvents
-  }, [applications])
   const calendarDays = useMemo(
     () => buildCalendarDays(visibleWeek, eventsByDate),
     [eventsByDate, visibleWeek],
