@@ -358,13 +358,15 @@ Acceptance:
 **Priority:** P1  
 **Size:** Medium; potentially larger if persistence semantics change  
 **Findings:** F08, G03  
-**Status:** [~] In Progress; historical-date persistence decision pending
-**PR:** [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24)
+**Status:** [~] In Progress; semantics approved, local F08 implementation; production release held
+**PR:** G03 [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24) merged; F08 review pending
 
-Investigation, recommended semantics and independent G03 fixes/tests:
+Approved semantics, F08 implementation, release order and independent G03 evidence:
 [RF-12 Historical Analytics Correctness](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md).
-F08 remains unresolved behind the explicit historical-date/schema approval gate;
-this slice does not add a migration or change the rejection-date source.
+G03 squash merge: `c1c3a5de5bfa578a05bef94f5d3fca37314960be`.
+F08 adds nullable `rejected_date` with no default/backfill and uses it independently
+of Last Updated. Production remains unresolved: migration verification must precede
+the separately authorized merge/frontend release. Supabase automatic sync stays OFF.
 
 Scope:
 
@@ -629,7 +631,7 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 9 | RF-09 — Destructive Operations | P1 | Done — CI and Vercel Production READY | [#21](https://github.com/YijunYuan-Work/ApplyTrack/pull/21); [evidence](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md) |
 | 10 | RF-10 — Job Agent Queue | P1 | Done; matching Vercel Production READY | [#22](https://github.com/YijunYuan-Work/ApplyTrack/pull/22); [evidence](RF_10_JOB_AGENT_QUEUE_ACCURACY.md) |
 | 11 | RF-11 — Dashboard Selection | P1 | Done | [#23](https://github.com/YijunYuan-Work/ApplyTrack/pull/23), verified Production READY |
-| 12 | RF-12 — Historical Analytics | P1 | In Progress; decision pending | [evidence](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md) |
+| 12 | RF-12 — Historical Analytics | P1 | In Progress; F08 release held | [evidence](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md) |
 | 13 | RF-13 — Responsive Navigation | P1 | Planned | — |
 | 14 | RF-14 — Demo Interaction Accuracy | P1 | Planned | — |
 | 15 | RF-15 — Salary Interpretation | P1 | Planned | — |

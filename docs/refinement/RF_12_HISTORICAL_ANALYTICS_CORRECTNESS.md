@@ -1,9 +1,10 @@
 # RF-12: Historical Analytics Correctness
 
-Status: In Progress. F08 historical-date persistence requires ChatGPT/user approval.
-Review: [PR #24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24).
-Baseline: `99dfb56000aa52b3d94231e83a1bab19b94ada08` (latest origin/main).
-This slice implements only independent G03 calculations/tests; no schema change.
+Status: In Progress. Product semantics approved; F08 implementation prepared locally.
+Production migration and merge/deployment ordering require separate approval.
+G03 investigation: [PR #24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24),
+squash `c1c3a5de5bfa578a05bef94f5d3fca37314960be` (F08 implementation baseline).
+F08 review PR: pending creation. Neither migration nor frontend has been released.
 
 ## F08 Investigation
 
@@ -12,7 +13,9 @@ for its initial calendar week. This field means record modification, not rejecti
 Notes edits therefore move an event without a status transition. It is not possible
 to recover the actual rejection day reliably from existing metadata.
 
-| Path | Current behavior / implication |
+The following table records the pre-F08 behavior investigated in PR #24.
+
+| Path | Pre-F08 behavior / implication |
 | --- | --- |
 | Quick status, `src/App.jsx`, `src/api/applications.js` | RF-07 queues per record, captures local request day, reads canonical status/version, performs guarded partial update, reconciles ambiguous outcomes. `last_updated` changes on a successful status write, including leaving/re-entering Rejected. |
 | Full saves, `src/data/applicationForm.js`, `src/api/applications.js` | RF-08 always advances Last Updated on edits. Changed-field intent is merged into a fresh row and guarded by `updated_at`; a note edit does not need to include status. |
@@ -24,69 +27,49 @@ to recover the actual rejection day reliably from existing metadata.
 | Demo, `src/pages/DemoWorkspace.jsx` | Uses the same form helpers and Progress component. Quick status changes advance local Last Updated, preserving the same F08 defect. |
 | Calendar / pipeline | Calendar shows an Applied event regardless of current status and a Rejected event only for currently-Rejected records. Pipeline is a current snapshot, not a transition history. |
 
-Transitions away from Rejected currently remove its calendar event. A later return
+Transitions away from Rejected previously removed its calendar event. A later return
 uses the new Last Updated day. Duplicate Rejected selections are ordinarily ignored
 by RF-07; notes/full saves still move the event. A failed HTTP response can follow a
 committed write, so a future date must be read back with canonical status, not stamped
-optimistically in React. No existing rows or metadata were rewritten here.
+optimistically in React. The fix must not rewrite unknown historical dates.
 
-## Options and Recommended Contract (NOT Implemented)
+## Approved Contract and Implementation
 
-1. Freeze or copy Last Updated: insufficient. It already mixes imports, notes,
-   status changes and normalization fallbacks; copying it would invent history.
-2. One nullable persisted `rejected_date` / frontend `rejectedDate`: smallest useful
-   correction; represents the latest known confirmed transition, not a full log.
-3. Append-only transition history: preserves every rejection/reopening event, but
-   adds storage, permissions and product rules unnecessary for this approved slice.
+`20261014033558_application_rejection_date.sql` adds one nullable `date` column,
+`rejected_date`, with no default, backfill, new trigger or permission change. Canonical
+schema/defaults/mappers expose `rejectedDate`, normalizing absent/invalid values to
+NULL, never another record date. The old F08 characterization is replaced by a
+desired-behavior regression.
 
-Recommend option 2, subject to explicit approval of ALL following semantics:
+- An existing non-Rejected -> Rejected transition writes the local operation day
+  atomically with status. It describes when the transition was recorded, not when
+  the employer actually decided. Repeated Rejected updates preserve date or NULL.
+- Notes, Salary and unrelated edits never change it. Leaving Rejected retains the
+  date/event. Re-entering replaces it; this is latest-known history, not an event log.
+- New Rejected snapshots and legacy/imported records remain NULL unless a valid
+  explicit date is supplied. No inference from applied/updated/import dates.
+- Calendar uses only `rejectedDate`, regardless of current status. Unknown dates
+  still contribute to current-status counts, not dated events. G03 pipeline metrics,
+  date validation, local calendar navigation and presentation are preserved.
 
-- Existing legacy rows: NULL, with no automatic backfill from any existing date.
-- Existing non-Rejected -> Rejected: persist the local request day with the confirmed
-  status mutation. Notes/unrelated updates and Rejected -> Rejected retries preserve
-  the existing value, including unknown NULL. Retry must not manufacture a new day.
-- Rejected -> another status: retain the latest known date. Recommend retaining its
-  dated calendar event as historical evidence even while the pipeline is reopened.
-  This differs from today's current-status-only calendar and needs approval.
-- A later confirmed transition back into Rejected replaces the single latest date.
-  Earlier rejection occurrences are not retained. If all events must remain visible,
-  reject this recommendation and explicitly approve option 3 instead.
-- Newly created Rejected records and historical Excel imports: NULL unless a valid,
-  explicit rejection date is supplied. Creating/importing a current snapshot is not
-  proof of a transition that occurred today. Never infer from Applied/Last Updated.
-- Optional explicit historical-date entry/import and date correction rules need a
-  separately approved minimal UI/import contract. No new visible field is added now.
-- Unknown dates contribute to snapshot rejection counts, but not dated calendar
-  events. No fallback to Last Updated. Any new unknown-date indicator requires design
-  approval; no such UI is invented by this PR.
-- Preserve date-only local-calendar semantics; do not silently switch to UTC days.
-  Document operation day versus actual employer decision day (which may be unknown).
+Quick writes pass each fresh canonical status to the existing partial-payload mapper.
+Full saves derive the date from canonical status plus merged intent inside every
+`updated_at` guarded attempt. The form's stale `rejectedDate` is excluded from edit
+intent. Its freshly prepared Last Updated is the operation-day input, NOT the stored
+metadata value. The pure transition helper is reused in Demo. Invalid operation days
+fail before a transition write instead of inventing a date.
 
-### Next Implementation Slice After Approval
+RF-07's status response/reconciliation projection now includes the date; RF-08's full
+row reads/merge remain canonical. Lost acknowledgments and later retries re-read the
+already-Rejected row and omit a new date. Existing response/session fences, bounded
+contention, queues, navigation, form locks and RF-09 deletion behavior are unchanged.
+No manual date-entry or new UI is introduced.
 
-Add only a nullable date column with no default/backfill in a reviewed migration;
-update schema, defaults, row mappings and status-select/reconciliation fields.
-Reuse RF-07/RF-08's canonical read + `updated_at` compare-and-swap: compute date
-changes from the freshly read stored status and the merged intended status inside
-each guarded attempt. Do not compute a transition from an old form snapshot.
-Reuse a small pure transition helper in Real and Demo instead of new queues.
-Late responses, lost acknowledgments and retries must return/reconcile the stored
-date with status. Never alter application date or the existing timestamp fence.
-
-This proposed client-write approach covers all first-party writers; it would NOT
-automatically enforce transitions for arbitrary direct SQL/third-party writers.
-If universal database enforcement is required, separately review a trigger/RPC and
-its local-date input contract, rather than defaulting to server UTC `current_date`.
-Do not add both competing implementations. SQL/schema code is deliberately absent.
-Older already-open browser clients would also remain date-unaware until reloaded;
-rollout must accept resulting unknown dates or approve database enforcement before
-claiming every writer is covered. No historical backfill can compensate safely.
-
-Future tests must cover legacy NULL, note edits, duplicate/lost-response retries,
-leave/re-enter, first-party create/import with explicit/absent dates, concurrent form
-and status writes, session changes and canonical reconciliation, with Real/Demo parity.
-The existing F08 `BUG` characterization remains intentionally unchanged until that
-slice. A green test suite in this PR does NOT claim F08 has been fixed.
+Excel optionally accepts `Rejected Date`, `Rejection Date`, `Date Rejected` or
+`Rejected On`: strict ISO date-only strings, valid Excel dates or serial dates.
+Missing/invalid values stay NULL; typed dates use local calendar components.
+Existing Applied/Follow-up/Last Updated parsing is untouched. Synthetic Demo fixtures
+now explicitly declare their known dates; this is not a user-data backfill.
 
 ## Independent G03 Findings and Corrections
 
@@ -97,9 +80,9 @@ days could normalize to another day/week while their original invalid key had no
 renderable event, causing a phantom latest week. Real DB date/integer columns normally
 exclude these inputs, but frontend analytics should not crash on malformed datasets.
 
-`src/data/progress.js` now holds the existing pure Progress calculations so unit tests
+PR #24 moved existing pure Progress calculations into `src/data/progress.js` so tests
 exercise the actual page logic without JSX/source emulation. Progress UI, colors,
-labels, CSS, form/status APIs and persistence are unchanged.
+labels and CSS remain unchanged. Its metric and date-validation fixes are retained.
 
 - Validate real Gregorian date keys (including leap/century rules); preserve valid
   ISO timestamp prefix compatibility without converting the key to a UTC day.
@@ -131,7 +114,7 @@ Dashboard's interviewed-application subtitle counts only positive recorded round
 unlike Progress's status-aware reached count. Both preserve current definitions;
 unifying wording/semantics is a product decision, not silently changed here.
 
-## Verification
+## G03 Verification (PR #24)
 
 Deterministic Node coverage includes an independently counted mixed dataset, all
 4,096 subsets of a 12-record status/count matrix, Sankey conservation at every node,
@@ -170,21 +153,113 @@ while reporting `Loading your workspace`; subsequent results are recorded separa
 without removing that test or weakening its assertions.
 The final full run passed with the original timeout and no automatic retries.
 
-## Boundaries, Risks and Approval Gate
+## F08 Verification
 
-- F08 remains visible until approved persistence and calendar semantics are implemented.
-- Historical rejection dates cannot be reconstructed from the current schema. Accept
-  NULL or approve explicit user input; no inference/backfill is authorized.
+New unit cases cover row/null/explicit mappings, transitions, stale form intent,
+reopen/re-enter, unknown calendar dates and explicit/absent/invalid XLS/XLSX imports.
+Nineteen focused Playwright cases cover local midnight, both save paths, failed and
+ambiguous commits, next-day retries, canonical conflicts, concurrent notes/status in
+both orders, delayed full/quick responses, old-session fencing, create/import and
+Real/Demo workflows at 1440/390px. G03 responsive/calendar regressions are retained.
+
+PostgreSQL 17 runner: fresh schema and migration replay both passed. The exact new
+migration preserved legacy rows (including a rejected fixture with unrelated dates),
+RLS, ACLs, RPCs and triggers, leaving all old rejection dates NULL. Owner operations,
+invalid Gregorian dates and cross-owner denial passed in both databases, alongside
+existing RF-04/05/06 SQL/concurrency/real-handler tests. This is synthetic PostgreSQL,
+not a hosted Auth/PostgREST integration or production history-registration claim.
+The first run failed in the image's pre-existing GraphQL schema hook before the new
+migration; the unchanged runner passed on retry. No image/schema workaround was added.
+
+Initial new browser tests were corrected for Dashboard remounts, form-route readiness,
+ambiguous Status labels, required Real ID/version fixtures and import confirmation.
+The first full Chromium run passed 170 cases and exposed one old RF-07 expectation
+of NULL after Interview -> Rejected -> Offer. That assertion now checks the approved
+retained date, and the final full run passed all 171 cases without automatic retries.
+All artifacts use synthetic records and stay Git-ignored inside the workspace.
+
+Final local gates (2026-10-14, America/Toronto):
+
+- `npm test`: 60 passed.
+- `npm run test:audit`: 28 passed.
+- `npm run test:audit-ui -- --project chromium`: 171 passed.
+- `npm run test:audit-ui -- rejection-dates.spec.js progress-analytics.spec.js
+  --project firefox --project webkit`: 52 passed (26 per browser: 19 F08 and 7 G03).
+- `npm run test:auth-ui`: 12 passed with the synthetic backend.
+- `npm run test:audit-db`: fresh schema and migration replay passed, including
+  RF-04/05/06 compatibility and 26 real-handler SQL tests in each database.
+- Lint, build and `git diff --check` passed. Progress presentation JSX, CSS, Auth,
+  Edge Functions, integration configuration and dependencies are unchanged.
+- Desktop/tablet/phone Calendar screenshots were inspected; inherited tablet
+  clipping remains a separately documented limitation, not a claimed fix.
+
+Browser runs used no automatic retries. Vite emitted nonfatal EBUSY warnings while
+watching workspace-local Firefox profile locks; those tests passed.
+
+## Production Release Procedure (NOT Executed)
+
+Keep this PR unmerged until the migration/application order is separately approved.
+Vercel's main merge may deploy the frontend automatically: **do not merge first**.
+Supabase Git automatic production synchronization must remain OFF.
+
+1. Gate A: independent code/migration review and explicit production migration
+   authorization. Use the approved PR revision, not an unreviewed working copy.
+2. Verify the linked project is `qotipygmwlovxklkexjb`. Use the reviewed Supabase CLI;
+   list history and dry-run. STOP unless every historical version matches and the
+   ONLY pending file is `20261014033558_application_rejection_date.sql`.
+3. Apply that migration through the version-preserving CLI only after Gate A. Do not
+   repair history, include unrelated migrations/seeds/roles or update shared secrets.
+   CLI 2.120.0 help shows Vault updates are otherwise included, so use `--skip-vault`:
+
+```powershell
+npx --no-install supabase migration list --linked
+npx --no-install supabase db push --linked --dry-run --skip-vault
+# Requires separate production write approval; NOT executed during this task:
+npx --no-install supabase db push --linked --skip-vault
+```
+
+4. Read-only verification must confirm exact history version/name, nullable date with
+   no default, preserved row counts/security and no historical backfill. STOP on any
+   discrepancy or partial error; no unreviewed repairs.
+
+```sql
+select version, name from supabase_migrations.schema_migrations
+where version = '20261014033558';
+select data_type, is_nullable, column_default from information_schema.columns
+where table_schema = 'public' and table_name = 'applications'
+  and column_name = 'rejected_date';
+select count(*) as applications, count(rejected_date) as known_rejection_dates
+from public.applications;
+```
+
+5. Confirm the Data API schema cache exposes the new column using an authorized
+   owner read. Gate B: separately authorize merge/application release ONLY after
+   database verification. No Edge Function deployment is needed. Keep auto-sync OFF.
+6. Verify Vercel Production READY on the approved merge SHA. With an independently
+   authorized operator-owned test record, verify rejection, notes edit, reopening,
+   re-entry, reload and Calendar. Do not mutate real records or create live test data
+   without explicit permission. No production smoke mutations occurred in this task.
+
+Rollback: stop the frontend rollout or restore the approved prior frontend through
+the normal separately authorized process. Leave the additive column, recorded values
+and migration history intact. Do not DROP the column, null dates or undo history.
+Old clients do not provide the new historical semantics; do not claim they do.
+
+## Remaining Risks and Release Hold
+
+- F08 is implemented locally, not resolved in production until the reviewed release.
+- Historical unknown dates cannot be reconstructed; no inference/backfill is allowed.
+- First-party CAS handles supported writers. Direct SQL/third-party writers and old
+  already-open browser clients do not automatically record transitions. Require users
+  to reload into the approved frontend for supported behavior; old writers may leave
+  NULL or a retained older date. Database universal enforcement is not implemented.
 - Selection/analytics cover the currently loaded dataset; R02's Applications API cap
   risk remains separate. No completeness claim for an unbounded server dataset.
-- Excel's existing Date/UTC parsing and missing-date defaults are not changed here.
-  Import provenance/date policy needs explicit treatment in the next historical slice.
+- Existing date parsing/defaults outside the new explicit rejection column remain unchanged.
 - Screenshot inspection found the tablet calendar can clip its Next control and
   inner calendar content despite passing document-overflow checks. Progress JSX
   presentation and CSS are unchanged; this inherited responsive issue is not fixed
   or claimed resolved by an analytics PR. It needs a separately scoped UI refinement.
-- No Auth, migrations, schema, API writes, Edge Functions, secrets, production data,
-  cloud settings, dependencies or presentation redesign changed. Supabase auto-sync
-  stays under the existing OFF hold; no manual deploy or merge performed.
-- Stop for ChatGPT/user approval of date meaning, legacy/create/import NULL policy,
-  leave/re-entry behavior and any explicit-date UI before implementing persistence.
+- Migration/schema/frontend changes are prepared in the PR only. No production data,
+  Auth, Edge Functions, secrets, integrations, dependencies or UI redesign changed.
+  No production migration, deployment or merge performed. Stop for independent review.

@@ -1,3 +1,5 @@
+import { getDateKey } from './progress.js'
+
 export const applicationsKey = 'applytrack-applications'
 export const userKey = 'applytrack-user'
 
@@ -109,6 +111,7 @@ export const demoApplications = [
     location: 'Waterloo, ON',
     status: 'Rejected',
     date: '2026-06-20',
+    rejectedDate: '2026-07-01',
     jobUrl: '',
     contact: 'Recruiting team',
     salary: '',
@@ -143,6 +146,7 @@ export const demoApplications = [
     location: 'Markham, ON',
     status: 'Rejected',
     date: '2026-06-11',
+    rejectedDate: '2026-06-18',
     jobUrl: '',
     contact: '',
     salary: '$80k - $100k',
@@ -162,6 +166,7 @@ export function createBlankApplication() {
     location: '',
     status: 'Applied',
     date: getTodayIsoDate(),
+    rejectedDate: null,
     jobUrl: '',
     contact: '',
     salary: '',
@@ -186,6 +191,20 @@ export function normalizeApplication(application) {
     location: application.location || '',
     notes: typeof application.notes === 'string' ? application.notes : '',
     referral: application.referral || 'No',
+    rejectedDate: normalizeRejectedDate(application.rejectedDate),
     status: statuses.includes(application.status) ? application.status : 'Applied',
   }
+}
+
+export function normalizeRejectedDate(value) {
+  return typeof value === 'string' && value !== '' && getDateKey(value) === value ? value : null
+}
+
+export function getRejectionDate(current, nextStatus, operationDate) {
+  if (current.status !== 'Rejected' && nextStatus === 'Rejected') {
+    const date = normalizeRejectedDate(operationDate)
+    if (!date) throw new Error('Cannot record rejection without a valid local date.')
+    return date
+  }
+  return normalizeRejectedDate(current.rejectedDate)
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { fromApplicationRow, toApplicationRow, toApplicationStatusRow } from './applicationRows.js'
-import { normalizeApplication } from './applications.js'
+import { getRejectionDate, normalizeApplication, normalizeRejectedDate } from './applications.js'
 import { applicationFormChanges, mergeApplicationFormChanges, prepareApplicationForm, validateApplicationForm } from './applicationForm.js'
 
 test('RF-08: required fields validate trimmed values without changing literal notes', () => {
@@ -52,11 +52,56 @@ test('RF-07: quick status payload is partial and promotes only zero interview ro
   assert.deepEqual(toApplicationStatusRow('Interview', 0, '2026-10-12'), {
     status: 'Interview', last_updated: '2026-10-12', interview_count: 1,
   })
-  for (const [status, count] of [['Interview', 2], ['Rejected', 0], ['Offer', 3]]) {
+  for (const [status, count] of [['Interview', 2], ['Offer', 3]]) {
     assert.deepEqual(toApplicationStatusRow(status, count, '2026-10-12'), {
       status, last_updated: '2026-10-12',
     })
   }
+  assert.deepEqual(toApplicationStatusRow('Rejected', 0, '2026-10-12', 'Applied'), {
+    status: 'Rejected', last_updated: '2026-10-12', rejected_date: '2026-10-12',
+  })
+  assert.deepEqual(toApplicationStatusRow('Rejected', 0, '2026-10-13', 'Rejected'), {
+    status: 'Rejected', last_updated: '2026-10-13',
+  })
+})
+
+test('F08: row mapping preserves nullable/explicit dates without inferring legacy history', () => {
+  for (const value of [undefined, null, '', '2024-02-30', '2026-01-01T00:00:00Z']) {
+    const model = fromApplicationRow({ ...baseRow, status: 'Rejected', rejected_date: value })
+    assert.equal(model.rejectedDate, null)
+    assert.equal(toApplicationRow(model, 'synthetic').rejected_date, null)
+  }
+  const model = fromApplicationRow({ ...baseRow, rejected_date: '2024-02-29' })
+  assert.equal(model.rejectedDate, '2024-02-29')
+  assert.equal(toApplicationRow(model, 'synthetic').rejected_date, '2024-02-29')
+  assert.equal(normalizeApplication({ status: 'Rejected' }).rejectedDate, null)
+  assert.equal(normalizeRejectedDate('2024-02-29'), '2024-02-29')
+})
+
+test('F08: fresh canonical transition, reopen/re-enter and duplicate rejection semantics', () => {
+  const initial = normalizeApplication({ company: 'Synthetic', role: 'Engineer', status: 'Applied' })
+  const rejected = mergeApplicationFormChanges(initial, { status: 'Rejected', lastUpdated: '2026-01-09' })
+  assert.equal(rejected.rejectedDate, '2026-01-09')
+  const notes = mergeApplicationFormChanges(rejected, { notes: 'Edited', salary: '100000', rejectedDate: null, lastUpdated: '2026-01-10' })
+  assert.equal(notes.rejectedDate, '2026-01-09')
+  const duplicate = mergeApplicationFormChanges(notes, { status: 'Rejected', lastUpdated: '2026-01-11' })
+  assert.equal(duplicate.rejectedDate, '2026-01-09')
+  const reopened = mergeApplicationFormChanges(duplicate, { status: 'Interview', lastUpdated: '2026-01-12' })
+  assert.equal(reopened.rejectedDate, '2026-01-09')
+  assert.equal(mergeApplicationFormChanges(reopened, { status: 'Rejected', lastUpdated: '2026-01-13' }).rejectedDate, '2026-01-13')
+  assert.equal(getRejectionDate({ status: 'Rejected' }, 'Rejected', '2026-01-14'), null)
+  assert.throws(() => getRejectionDate(initial, 'Rejected', '2026-02-30'), /valid local date/)
+})
+
+test('F08: stale form cannot clear a canonical rejection date or force an artificial transition', () => {
+  const initial = normalizeApplication({ id: 1, company: 'Synthetic', role: 'Engineer' })
+  const intent = applicationFormChanges(prepareApplicationForm({ ...initial, notes: 'Note', rejectedDate: '2020-01-01' }, 1), initial)
+  assert.equal(Object.hasOwn(intent, 'rejectedDate'), false)
+  const current = { ...initial, status: 'Rejected', rejectedDate: '2026-01-09' }
+  assert.equal(mergeApplicationFormChanges(current, intent).rejectedDate, '2026-01-09')
+  assert.equal(mergeApplicationFormChanges(current, { ...intent, status: 'Rejected' }).rejectedDate, '2026-01-09')
+  assert.equal(prepareApplicationForm({ ...initial, status: 'Rejected' }).rejectedDate, null)
+  assert.equal(prepareApplicationForm({ ...initial, status: 'Rejected', rejectedDate: '2024-02-29' }).rejectedDate, '2024-02-29')
 })
 
 for (const [name, notes] of [

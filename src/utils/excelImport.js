@@ -2,8 +2,10 @@ import {
   createBlankApplication,
   getTodayIsoDate,
   normalizeApplication,
+  normalizeRejectedDate,
   statuses,
 } from '../data/applications.js'
+import { getLocalDateKey } from '../data/progress.js'
 
 const maximumSpreadsheetBytes = 5 * 1024 * 1024
 
@@ -22,6 +24,7 @@ const fieldAliases = {
   referral: ['referral'],
   interviewStage: ['interview stage', 'stage'],
   lastUpdated: ['last updated', 'updated'],
+  rejectedDate: ['rejected date', 'rejection date', 'date rejected', 'rejected on'],
 }
 
 function normalizeHeader(value) {
@@ -105,6 +108,14 @@ function normalizeStatus(value, interviewStage) {
   }
 
   return 'Applied'
+}
+
+function toRejectedDate(value, XLSX) {
+  if (value instanceof Date && Number.isFinite(value.getTime())) {
+    return normalizeRejectedDate(getLocalDateKey(value))
+  }
+  if (typeof value === 'number') return normalizeRejectedDate(toIsoDate(value, XLSX))
+  return normalizeRejectedDate(typeof value === 'string' ? value.trim() : value)
 }
 
 function inferInterviewCount(interviewStage) {
@@ -228,6 +239,7 @@ export async function parseExcelApplications(file) {
         coverLetter: getCell(row, headerMap, 'coverLetter'),
         referral: getCell(row, headerMap, 'referral'),
         lastUpdated: toIsoDate(row[headerMap.lastUpdated], XLSX) || getTodayIsoDate(),
+        rejectedDate: toRejectedDate(row[headerMap.rejectedDate], XLSX),
         interviewCount: inferInterviewCount(interviewStage),
         notes: buildNotes(row, headerMap),
       }

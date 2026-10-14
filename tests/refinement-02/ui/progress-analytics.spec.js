@@ -50,7 +50,7 @@ test('G03: invalid dates do not crash Progress or choose a phantom latest week',
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
   await backend(context, [application(1, { applied_date: '2024-02-29' }),
-    application(2, { applied_date: 'zzzz', status: 'Rejected', last_updated: '9999-99-99' }),
+    application(2, { applied_date: 'zzzz', status: 'Rejected', rejected_date: '9999-99-99' }),
     application(3, { applied_date: '2024-02-30', last_updated: '2024-02-30' }),
     application(4, { applied_date: null })])
   await signIn(page)
@@ -64,8 +64,8 @@ test('G03: invalid dates do not crash Progress or choose a phantom latest week',
 })
 
 test('G03: year/month navigation and Applied plus Rejected on the same local day', async ({ page, context }) => {
-  await backend(context, [application(1, { applied_date: '2025-12-31', status: 'Rejected', last_updated: '2026-01-01' }),
-    application(2, { applied_date: '2026-01-01', status: 'Rejected', last_updated: '2026-01-01' }),
+  await backend(context, [application(1, { applied_date: '2025-12-31', status: 'Rejected', rejected_date: '2026-01-01' }),
+    application(2, { applied_date: '2026-01-01', status: 'Rejected', rejected_date: '2026-01-01' }),
     application(3, { applied_date: '2026-01-04' })])
   await signIn(page)
   await nav(page, 'Progress')
