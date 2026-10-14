@@ -5680,6 +5680,15 @@ dd {
   }
 }
 
+.dashboard-workspace .tracker-control-bar:has(.bulk-toolbar) {
+  grid-template-columns: minmax(0, 1fr);
+  height: auto;
+}
+
+.dashboard-workspace .tracker-control-bar:has(.bulk-toolbar) .view-toggle {
+  justify-self: start;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .spin {
     animation: none;
