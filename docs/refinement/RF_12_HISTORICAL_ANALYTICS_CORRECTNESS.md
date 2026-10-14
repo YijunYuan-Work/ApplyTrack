@@ -1,6 +1,7 @@
 # RF-12: Historical Analytics Correctness
 
 Status: In Progress. F08 historical-date persistence requires ChatGPT/user approval.
+Review: [PR #24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24).
 Baseline: `99dfb56000aa52b3d94231e83a1bab19b94ada08` (latest origin/main).
 This slice implements only independent G03 calculations/tests; no schema change.
 

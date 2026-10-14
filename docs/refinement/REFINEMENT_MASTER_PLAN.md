@@ -359,7 +359,7 @@ Acceptance:
 **Size:** Medium; potentially larger if persistence semantics change  
 **Findings:** F08, G03  
 **Status:** [~] In Progress; historical-date persistence decision pending
-**PR:** TBD
+**PR:** [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24)
 
 Investigation, recommended semantics and independent G03 fixes/tests:
 [RF-12 Historical Analytics Correctness](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md).
