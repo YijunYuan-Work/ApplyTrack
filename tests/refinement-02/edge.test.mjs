@@ -134,6 +134,22 @@ test('Edge valid ingestion completes; repeated message is idempotent', async () 
   assert.equal(state.retrievals, 1)
 })
 
+test('RF-15: signed ingestion persists expanded annual bounds, never hourly or unitless annual guesses', async () => {
+  for (const [salary, minimum, maximum] of [
+    ['$90k - $120k a year', 90000, 120000], ['$40 per hour', null, null],
+    ['$100k', null, null], ['$120k - $90k a year', null, null],
+  ]) {
+    const h = await harness()
+    h.email.html = `<section><a href="https://www.linkedin.com/jobs/view/123">Engineer</a><p>Synthetic Company</p><p>Toronto</p><p>${salary}</p></section>`
+    assert.equal((await h.handler(h.request())).status, 200)
+    const job = h.state.tables.job_leads[0]
+    assert.equal(job.salary_min, minimum)
+    assert.equal(job.salary_max, maximum)
+    assert.equal(job.description, salary)
+    assert.equal(h.state.tables.job_alert_messages[0].status, 'completed')
+  }
+})
+
 test('RF-10 R04: removal is not suppression; only a later distinct alert recreates a lead', async () => {
   const h = await harness()
   assert.equal((await h.handler(h.request())).status, 200)

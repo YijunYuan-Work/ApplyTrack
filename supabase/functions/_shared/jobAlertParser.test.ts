@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { parseHTML } from 'linkedom'
 import { detectAlertProvider, parseJobAlert, type EmailAnchor } from './jobAlertParser.ts'
+import { salaryCases, rejectedSalaryCases } from '../../../tests/fixtures/salaryCases.js'
+import { getJobLeadPresentation } from '../../../src/data/jobAgent.js'
 
 function anchorsFromHtml(html: string): EmailAnchor[] {
   const { document } = parseHTML(html)
@@ -109,4 +111,42 @@ test('reports unknown for unrelated mail', () => {
     }),
     'unknown',
   )
+})
+
+for (const [text, minimum, maximum, period] of salaryCases) {
+  test(`RF-15: email annual fields and presentation agree for ${text}`, () => {
+    for (const source of ['linkedin', 'indeed']) {
+      const href = source === 'linkedin' ? 'https://www.linkedin.com/jobs/view/123' : 'https://ca.indeed.com/viewjob?jk=salary123'
+      const result = parseJobAlert({ anchors: [{ href, text: 'Engineer', segments: ['Synthetic Company', 'Toronto', text] }] })
+      assert.equal(result.jobs.length, 1)
+      const job = result.jobs[0]
+      assert.equal(job.salaryMin, period === 'year' ? minimum : null)
+      assert.equal(job.salaryMax, period === 'year' ? maximum : null)
+      assert.equal(getJobLeadPresentation(job).salaryLabel, text)
+      assert.equal(getJobLeadPresentation({ description: text }).salaryLabel, text)
+    }
+  })
+}
+
+for (const text of rejectedSalaryCases) {
+  test(`RF-15: email rejects incomplete/ambiguous salary ${text}`, () => {
+    const { jobs } = parseJobAlert({ anchors: [{ href: 'https://ca.indeed.com/viewjob?jk=salary123', text: 'Engineer', segments: ['Synthetic Company', 'Toronto', text] }] })
+    assert.equal(jobs[0].salaryMin, null)
+    assert.equal(jobs[0].salaryMax, null)
+    assert.equal(jobs[0].description, text)
+    assert.equal(getJobLeadPresentation(jobs[0]).salaryLabel, null)
+  })
+}
+
+test('RF-15: LinkedIn and Indeed HTML alerts preserve explicit currency and hourly units', () => {
+  for (const [href, salary, minimum] of [
+    ['https://www.linkedin.com/jobs/view/123', 'USD $90k - $120k a year', 90000],
+    ['https://ca.indeed.com/viewjob?jk=salary123', '$40 per hour', null],
+  ] as const) {
+    const { jobs } = parseJobAlert({ anchors: anchorsFromHtml(`<article><a href="${href}">Engineer</a><p>Synthetic Company</p><p>Toronto</p><p>${salary} · Easily apply</p></article>`) })
+    assert.equal(jobs.length, 1)
+    assert.equal(jobs[0].salaryMin, minimum)
+    assert.equal(getJobLeadPresentation(jobs[0]).salaryLabel, salary)
+    assert.deepEqual(getJobLeadPresentation(jobs[0]).highlights, ['Easy Apply'])
+  }
 })

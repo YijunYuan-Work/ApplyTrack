@@ -1,3 +1,5 @@
+import { parseSalaryText } from '../../supabase/functions/_shared/salary.js'
+
 export const emptyJobAgentProfile = {
   addressCountryCode: 'ca',
   addressLine1: '',
@@ -163,19 +165,23 @@ export function sortJobLeadsNewestFirst(leads) {
   })
 }
 
-export function formatSalary(minimum, maximum, currency = 'CAD') {
+export function formatSalary(minimum, maximum, currency) {
+  const validAmount = (value) => value == null ||
+    ((typeof value === 'number' || (typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value))) &&
+      Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= Number.MAX_SAFE_INTEGER / 100)
+  if (!validAmount(minimum) || !validAmount(maximum) ||
+    (minimum != null && maximum != null && Number(minimum) > Number(maximum))) return null
   const formatter = new Intl.NumberFormat(undefined, {
-    currency,
-    maximumFractionDigits: 0,
-    style: 'currency',
+    ...(currency ? { currency, style: 'currency' } : {}),
+    maximumFractionDigits: 20,
   })
 
-  if (minimum && maximum) {
+  if (minimum != null && maximum != null) {
     return `${formatter.format(minimum)} - ${formatter.format(maximum)}`
   }
 
-  if (minimum || maximum) {
-    return formatter.format(minimum || maximum)
+  if (minimum != null || maximum != null) {
+    return formatter.format(minimum ?? maximum)
   }
 
   return 'Salary not listed'
@@ -188,35 +194,15 @@ function cleanLeadText(value) {
     .trim()
 }
 
-function parseSalaryFromText(value) {
-  const match = cleanLeadText(value).match(
-    /\$\s*([\d,.]+)(?:\s*(?:-|–|—|to)\s*\$?\s*([\d,.]+))?\s*(?:(?:a|per)\s*)?(year|yr|hour|hr|week|month)?/i,
-  )
-
-  if (!match) {
-    return null
-  }
-
-  const minimum = Number(match[1].replace(/,/g, ''))
-  const maximum = match[2] ? Number(match[2].replace(/,/g, '')) : null
-  const period = String(match[3] || '').toLowerCase()
-  const isAnnual = !period || period === 'year' || period === 'yr'
-
-  if (!Number.isFinite(minimum) || (maximum !== null && !Number.isFinite(maximum))) {
-    return null
-  }
-
-  return {
-    annualMaximum: isAnnual ? maximum : null,
-    annualMinimum: isAnnual ? minimum : null,
-    label: cleanLeadText(match[0]),
-    matchedText: match[0],
-  }
-}
-
 export function getJobLeadPresentation(lead) {
   const text = cleanLeadText(lead?.description)
-  const salary = parseSalaryFromText(text)
+  const salary = parseSalaryText(text)
+  const hasStructuredSalary = lead?.salaryMin != null || lead?.salaryMax != null
+  const structuredLabel = hasStructuredSalary ? formatSalary(lead.salaryMin, lead.salaryMax) : null
+  const textSalary = salary && (!hasStructuredSalary || (structuredLabel &&
+    Number(lead.salaryMin) === salary.minimum &&
+    (lead.salaryMax == null ? salary.maximum === null : Number(lead.salaryMax) === salary.maximum)))
+    ? salary : null
   const highlights = []
 
   function addHighlight(value) {
@@ -246,11 +232,15 @@ export function getJobLeadPresentation(lead) {
         .replace(/\b(?:easy|easily) apply\b/gi, '')
         .replace(/\bactively recruiting\b/gi, '')
 
-      if (salary?.matchedText) {
-        cleaned = cleaned.replace(salary.matchedText, '')
+      if (textSalary) {
+        cleaned = cleaned.replace(textSalary.matchedText, '')
       }
 
-      cleaned = cleanLeadText(cleaned).replace(/^[-–—:;,.\s]+|[-–—:;,.\s]+$/g, '')
+      cleaned = cleanLeadText(cleaned)
+      // Preserve rejected/conflicting compensation text, including negative or incomplete bounds.
+      if (textSalary || !/[$\u00a3\u20ac]|\b(?:CAD|USD|AUD|GBP|EUR)\b/i.test(cleaned)) {
+        cleaned = cleaned.replace(/^[-–—:;,.\s]+|[-–—:;,.\s]+$/g, '')
+      }
 
       if (/^remote$/i.test(cleaned)) {
         addHighlight('Remote')
@@ -266,12 +256,7 @@ export function getJobLeadPresentation(lead) {
 
   return {
     highlights,
-    salaryLabel:
-      lead?.salaryMin || lead?.salaryMax
-        ? formatSalary(lead.salaryMin, lead.salaryMax)
-        : salary?.annualMinimum
-          ? formatSalary(salary.annualMinimum, salary.annualMaximum)
-          : salary?.label || null,
+    salaryLabel: textSalary?.matchedText || structuredLabel,
     summary: summaryParts.join(' · '),
   }
 }
