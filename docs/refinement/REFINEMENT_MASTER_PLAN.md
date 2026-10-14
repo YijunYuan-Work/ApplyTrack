@@ -434,7 +434,7 @@ Acceptance:
 **Size:** Small  
 **Finding:** F12  
 **Status:** [~] In Progress
-**PR:** TBD
+**PR:** [#27](https://github.com/YijunYuan-Work/ApplyTrack/pull/27)
 
 Implementation and verification: [RF-14 Public Demo Interaction Accuracy](RF_14_PUBLIC_DEMO_INTERACTION_ACCURACY.md).
 Local implementation replaces the Demo password form with an account-limitation
