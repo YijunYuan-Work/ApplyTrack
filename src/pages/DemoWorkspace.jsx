@@ -184,12 +184,7 @@ function DemoWorkspace({ route }) {
   }
 
   if (route === '/demo/profile') {
-    return (
-      <ProfilePage
-        {...sharedPageProps}
-        onUpdatePassword={async () => {}}
-      />
-    )
+    return <ProfilePage {...sharedPageProps} />
   }
 
   if (route === '/demo/progress') {

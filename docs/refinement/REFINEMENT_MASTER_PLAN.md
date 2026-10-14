@@ -401,10 +401,17 @@ Focus on functional usability and visual implementation quality, without adding 
 **Priority:** P1  
 **Size:** Small–Medium  
 **Findings:** F11, CQ05, G06  
-**Status:** [~] In Progress
+**Status:** [x] Done
 **PR:** [#26](https://github.com/YijunYuan-Work/ApplyTrack/pull/26)
 
 Implementation and verification: [RF-13 Responsive Navigation](RF_13_RESPONSIVE_NAVIGATION.md).
+
+Closed 2026-10-14: PR #26 squash merge `187125a1ea3d0483574664d5fbaf137d6d7a1774`;
+merged-main CI [38598273428](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/38598273428)
+passed. Matching Vercel Production deployment `dpl_kNnEuA8jq1g5BBAbGCpr5LBYQ1kA`
+is READY (CI/deployment metadata independently rechecked read-only during RF-14).
+User UI acceptance is complete, as reported by the user. Existing limitations in
+the RF-13 report remain documented; no production operation was performed for this closure.
 
 Scope:
 
@@ -426,8 +433,12 @@ Acceptance:
 **Priority:** P1  
 **Size:** Small  
 **Finding:** F12  
-**Status:** [ ] Planned  
+**Status:** [~] In Progress
 **PR:** TBD
+
+Implementation and verification: [RF-14 Public Demo Interaction Accuracy](RF_14_PUBLIC_DEMO_INTERACTION_ACCURACY.md).
+Local implementation replaces the Demo password form with an account-limitation
+explanation; independent review, acceptance and release remain pending.
 
 Scope:
 
@@ -640,8 +651,8 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 10 | RF-10 — Job Agent Queue | P1 | Done; matching Vercel Production READY | [#22](https://github.com/YijunYuan-Work/ApplyTrack/pull/22); [evidence](RF_10_JOB_AGENT_QUEUE_ACCURACY.md) |
 | 11 | RF-11 — Dashboard Selection | P1 | Done | [#23](https://github.com/YijunYuan-Work/ApplyTrack/pull/23), verified Production READY |
 | 12 | RF-12 — Historical Analytics | P1 | Done; Production READY and user acceptance | [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24), [#25](https://github.com/YijunYuan-Work/ApplyTrack/pull/25); [evidence](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md) |
-| 13 | RF-13 — Responsive Navigation | P1 | In Progress | [evidence](RF_13_RESPONSIVE_NAVIGATION.md) |
-| 14 | RF-14 — Demo Interaction Accuracy | P1 | Planned | — |
+| 13 | RF-13 — Responsive Navigation | P1 | Done | [evidence](RF_13_RESPONSIVE_NAVIGATION.md) |
+| 14 | RF-14 — Demo Interaction Accuracy | P1 | In Progress | [evidence](RF_14_PUBLIC_DEMO_INTERACTION_ACCURACY.md) |
 | 15 | RF-15 — Salary Interpretation | P1 | Planned | — |
 | 16 | RF-16–18 — Codebase Cleanup | P2 | Planned | — |
 | 17 | RF-19–21 — Final Quality Gate | P1–P2 | Planned | — |
