@@ -283,17 +283,11 @@ for (const width of [1440, 768, 390]) {
   })
 }
 
-test('BUG: both Sign out controls are hidden throughout tablet breakpoint', async ({ page, context }, info) => {
+test('RF-13 F11: exactly one Sign out control is reachable across responsive boundaries', async ({ page, context }, info) => {
   await backend(context)
   await signIn(page)
   await nav(page, 'Profile')
-  for (const width of [722, 768, 898]) {
-    await page.setViewportSize({ width, height: 900 })
-    await expect.poll(() => page.evaluate(() => innerWidth)).toBe(width)
-    await expect(page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })).toHaveCount(0)
-  }
-  await page.screenshot({ path: info.outputPath('tablet-no-sign-out.png'), fullPage: true })
-  for (const width of [390, 902, 1440]) {
+  for (const width of [390, 720, 721, 768, 898, 900, 901, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     await expect.poll(() => page.evaluate(() => innerWidth)).toBe(width)
     await expect(page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })).toHaveCount(1)
@@ -303,7 +297,7 @@ test('BUG: both Sign out controls are hidden throughout tablet breakpoint', asyn
     await page.setViewportSize({ width, height: 900 })
     await expect.poll(() => page.evaluate(() => innerWidth)).toBe(width)
     const media = await page.evaluate(() => ({ width: innerWidth, mobile: matchMedia('(max-width: 720px)').matches, compact: matchMedia('(max-width: 900px)').matches, visualWidth: visualViewport.width, dpr: devicePixelRatio }))
-    const expected = media.compact && !media.mobile ? 0 : 1
+    const expected = 1
     await expect(page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })).toHaveCount(expected)
     boundaries.push({ ...media, visibleSignOut: expected })
   }

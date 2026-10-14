@@ -358,16 +358,21 @@ Acceptance:
 **Priority:** P1  
 **Size:** Medium; potentially larger if persistence semantics change  
 **Findings:** F08, G03  
-**Status:** [~] In Progress; semantics approved, local F08 implementation; production release held
+**Status:** [x] Done; production migration, merged-main CI, Production READY and user acceptance verified
 **PR:** G03 [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24) merged;
-F08 [draft #25](https://github.com/YijunYuan-Work/ApplyTrack/pull/25), release held
+F08 [#25](https://github.com/YijunYuan-Work/ApplyTrack/pull/25) merged
 
 Approved semantics, F08 implementation, release order and independent G03 evidence:
 [RF-12 Historical Analytics Correctness](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md).
 G03 squash merge: `c1c3a5de5bfa578a05bef94f5d3fca37314960be`.
-F08 adds nullable `rejected_date` with no default/backfill and uses it independently
-of Last Updated. Production remains unresolved: migration verification must precede
-the separately authorized merge/frontend release. Supabase automatic sync stays OFF.
+F08 production migration `20261014033558_application_rejection_date.sql` was applied
+and verified before frontend release. Squash merge:
+`8e72507a3345ee7819960ad76f7baaaf1894da85`. Merged-main CI
+[38513271988](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/38513271988)
+passed; Vercel Production deployment `dpl_E9AcyAUnAFh9sdLoRJNmRraWn9jg` is READY
+on that SHA. User functional acceptance is complete (reported by the user).
+Unknown historical dates, older-client/direct-writer limitations and loaded-dataset
+completeness remain documented. Supabase automatic synchronization stays OFF.
 
 Scope:
 
@@ -396,8 +401,10 @@ Focus on functional usability and visual implementation quality, without adding 
 **Priority:** P1  
 **Size:** Small–Medium  
 **Findings:** F11, CQ05, G06  
-**Status:** [ ] Planned  
+**Status:** [~] In Progress
 **PR:** TBD
+
+Implementation and verification: [RF-13 Responsive Navigation](RF_13_RESPONSIVE_NAVIGATION.md).
 
 Scope:
 
@@ -632,8 +639,8 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 9 | RF-09 — Destructive Operations | P1 | Done — CI and Vercel Production READY | [#21](https://github.com/YijunYuan-Work/ApplyTrack/pull/21); [evidence](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md) |
 | 10 | RF-10 — Job Agent Queue | P1 | Done; matching Vercel Production READY | [#22](https://github.com/YijunYuan-Work/ApplyTrack/pull/22); [evidence](RF_10_JOB_AGENT_QUEUE_ACCURACY.md) |
 | 11 | RF-11 — Dashboard Selection | P1 | Done | [#23](https://github.com/YijunYuan-Work/ApplyTrack/pull/23), verified Production READY |
-| 12 | RF-12 — Historical Analytics | P1 | In Progress; F08 release held | [evidence](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md) |
-| 13 | RF-13 — Responsive Navigation | P1 | Planned | — |
+| 12 | RF-12 — Historical Analytics | P1 | Done; Production READY and user acceptance | [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24), [#25](https://github.com/YijunYuan-Work/ApplyTrack/pull/25); [evidence](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md) |
+| 13 | RF-13 — Responsive Navigation | P1 | In Progress | [evidence](RF_13_RESPONSIVE_NAVIGATION.md) |
 | 14 | RF-14 — Demo Interaction Accuracy | P1 | Planned | — |
 | 15 | RF-15 — Salary Interpretation | P1 | Planned | — |
 | 16 | RF-16–18 — Codebase Cleanup | P2 | Planned | — |
