@@ -52,6 +52,9 @@ function DashboardPage({
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState('board')
   const [activeBoardStatus, setActiveBoardStatus] = useState('Applied')
+  const [isCompactBoard, setIsCompactBoard] = useState(() =>
+    window.matchMedia('(max-width: 900px)').matches,
+  )
   const [deleteError, setDeleteError] = useState('')
   const [deletePending, setDeletePending] = useState(false)
   const pendingDelete = useRef(false)
@@ -62,6 +65,14 @@ function DashboardPage({
   useEffect(() => {
     active.current = true
     return () => { active.current = false }
+  }, [])
+
+  useEffect(() => {
+    // Match the theme's stage-tab breakpoint, including live viewport changes.
+    const mediaQuery = window.matchMedia('(max-width: 900px)')
+    const handleViewportChange = (event) => setIsCompactBoard(event.matches)
+    mediaQuery.addEventListener('change', handleViewportChange)
+    return () => mediaQuery.removeEventListener('change', handleViewportChange)
   }, [])
 
   const statusCounts = useMemo(
@@ -124,12 +135,19 @@ function DashboardPage({
       ? 0
       : Math.min(pageStartIndex + pageSize, filteredApplications.length)
 
-  const pagedApplicationIds = pagedApplications.map(
+  const selectionScope = viewMode === 'list'
+    ? pagedApplications
+    : isCompactBoard
+      ? filteredApplications.filter((application) =>
+          (statuses.includes(application.status) ? application.status : 'Applied') === activeBoardStatus,
+        )
+      : filteredApplications
+  const visibleApplicationIds = selectionScope.map(
     (application) => application.id,
   )
   const allVisibleSelected =
-    pagedApplicationIds.length > 0 &&
-    pagedApplicationIds.every((applicationId) =>
+    visibleApplicationIds.length > 0 &&
+    visibleApplicationIds.every((applicationId) =>
       selectedApplicationIds.includes(applicationId),
     )
 
@@ -147,13 +165,13 @@ function DashboardPage({
 
   function handleSelectAllVisible() {
     setSelectedApplicationIds((currentIds) => {
-      if (allVisibleSelected) {
+      if (visibleApplicationIds.every((id) => currentIds.includes(id))) {
         return currentIds.filter(
-          (applicationId) => !pagedApplicationIds.includes(applicationId),
+          (applicationId) => !visibleApplicationIds.includes(applicationId),
         )
       }
 
-      return Array.from(new Set([...currentIds, ...pagedApplicationIds]))
+      return Array.from(new Set([...currentIds, ...visibleApplicationIds]))
     })
   }
 
@@ -451,7 +469,7 @@ function DashboardPage({
                     <span>{selectedApplicationIds.length} selected</span>
                     <button
                       className="ghost-button"
-                      disabled={pagedApplications.length === 0}
+                      disabled={visibleApplicationIds.length === 0}
                       type="button"
                       onClick={handleSelectAllVisible}
                     >
@@ -481,7 +499,7 @@ function DashboardPage({
                 <button
                   aria-label={isSelectionMode ? 'Exit multi-select' : 'Enter multi-select'}
                   className={`icon-action ${isSelectionMode ? 'icon-action-active' : ''}`}
-                  disabled={filteredApplications.length === 0}
+                  disabled={!isSelectionMode && filteredApplications.length === 0}
                   title={isSelectionMode ? 'Exit multi-select' : 'Multi-select'}
                   type="button"
                   onClick={handleToggleSelectionMode}

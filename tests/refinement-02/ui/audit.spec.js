@@ -42,13 +42,15 @@ test('CRUD, details, sorting, filtering, pagination and persisted refresh', asyn
   expect(state.blocked).toEqual([])
 })
 
-test('BUG F09: board select-all selects ten of twenty-five rendered cards (RF-11)', async ({ page, context }) => {
+test('RF-11 F09: Board Select All selects all twenty-five displayed applications', async ({ page, context }) => {
   await backend(context, Array.from({ length: 25 }, (_, i) => application(i + 1)))
   await signIn(page)
   await expect(page.locator('.board-card')).toHaveCount(25)
   await nav(page, 'Enter multi-select')
   await nav(page, 'Select all')
-  await expect(page.getByText('10 selected', { exact: true })).toBeVisible()
+  await expect(page.getByText('25 selected', { exact: true })).toBeVisible()
+  await nav(page, 'Unselect all')
+  await expect(page.getByText('0 selected', { exact: true })).toBeVisible()
 })
 
 test('F10: canceling bulk deletion preserves records and selection', async ({ page, context }) => {

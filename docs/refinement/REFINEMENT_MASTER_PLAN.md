@@ -303,8 +303,10 @@ Scope and outcome:
 **Priority:** P1  
 **Size:** Medium  
 **Findings:** F07, F16, R04  
-**Status:** [~] In Progress; implementation prepared; independent review pending
-**PR:** TBD
+**Status:** [x] Done; merged and matching Vercel Production release verified
+**PR:** [#22](https://github.com/YijunYuan-Work/ApplyTrack/pull/22)
+**Merge commit:** `f7f0d98e8910f12b999488ac119038cc64306bd2`
+**Release verification:** Read-only Vercel metadata confirms Production deployment `dpl_4BGzdXTx8BTMMYCZLngaFRmGWmMZ` is READY, sourced from GitHub `main` at the exact merge SHA, with `apply-track-six.vercel.app` among its assigned aliases. Ready at 2026-10-13 23:00:19 UTC. No live authenticated ingestion/deletion test is claimed.
 
 Implementation and local evidence: [RF-10 Job Agent Queue Accuracy](RF_10_JOB_AGENT_QUEUE_ACCURACY.md).
 
@@ -327,8 +329,10 @@ Acceptance:
 **Priority:** P1  
 **Size:** Small  
 **Finding:** F09  
-**Status:** [ ] Planned  
+**Status:** [~] In Progress; implementation prepared; independent review pending
 **PR:** TBD
+
+Implementation and evidence: [RF-11 Dashboard Selection Consistency](RF_11_DASHBOARD_SELECTION_CONSISTENCY.md).
 
 Scope:
 
@@ -611,8 +615,8 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 7 | RF-07 — Status Mutation Reliability | P0 | Done — CI and Vercel Production READY | [#19](https://github.com/YijunYuan-Work/ApplyTrack/pull/19); [evidence](RF_07_APPLICATION_STATUS_RELIABILITY.md) |
 | 8 | RF-08 — Form & Save Lifecycle | P1 | Done — CI and Vercel Production READY | [#20](https://github.com/YijunYuan-Work/ApplyTrack/pull/20); [evidence](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md) |
 | 9 | RF-09 — Destructive Operations | P1 | Done — CI and Vercel Production READY | [#21](https://github.com/YijunYuan-Work/ApplyTrack/pull/21); [evidence](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md) |
-| 10 | RF-10 — Job Agent Queue | P1 | Planned | — |
-| 11 | RF-11 — Dashboard Selection | P1 | Planned | — |
+| 10 | RF-10 — Job Agent Queue | P1 | Done; matching Vercel Production READY | [#22](https://github.com/YijunYuan-Work/ApplyTrack/pull/22); [evidence](RF_10_JOB_AGENT_QUEUE_ACCURACY.md) |
+| 11 | RF-11 — Dashboard Selection | P1 | In Progress | [evidence](RF_11_DASHBOARD_SELECTION_CONSISTENCY.md) |
 | 12 | RF-12 — Historical Analytics | P1 | Decision required | — |
 | 13 | RF-13 — Responsive Navigation | P1 | Planned | — |
 | 14 | RF-14 — Demo Interaction Accuracy | P1 | Planned | — |
