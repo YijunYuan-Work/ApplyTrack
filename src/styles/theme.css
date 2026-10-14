@@ -1006,6 +1006,11 @@ dd {
   gap: 8px;
 }
 
+/* A scrolling desktop grid must not expand the toolbar's track. */
+.progress-calendar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .calendar-day {
   min-height: 150px;
   padding: 10px;
@@ -1076,57 +1081,6 @@ dd {
 
   .app-content {
     padding: 0 12px 92px;
-  }
-
-  .sidebar {
-    position: sticky;
-    top: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
-    height: auto;
-    padding: 8px;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 8px 22px rgba(37, 75, 105, 0.07);
-  }
-
-  .sidebar-identity {
-    display: none;
-  }
-
-  .sidebar-nav {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    grid-column: 1;
-    scrollbar-width: none;
-  }
-
-  .sidebar-nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .sidebar-nav button {
-    flex: 0 0 auto;
-    min-height: 42px;
-    padding: 0 10px;
-  }
-
-  .sidebar-actions {
-    display: none;
-  }
-
-  .sidebar-footer {
-    grid-column: 2;
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  .sidebar-footer-label,
-.sidebar-footer .sign-out-button {
-    display: none;
   }
 
   .dashboard-workspace {
@@ -1222,6 +1176,14 @@ dd {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .calendar-grid {
+    min-width: 0;
+  }
+
+  .calendar-weekday {
+    display: none;
+  }
+
   .application-record-details .detail-location,
   .application-record-details .detail-updated {
     grid-column: auto;
@@ -1264,7 +1226,7 @@ dd {
 
 
 /* Desktop dashboard mockup baseline. */
-@media (min-width: 901px) {
+@media (width > 900px) {
   .app-layout { grid-template-columns: 312px minmax(0, 1fr); background: #f8fbff; }
   .app-content { padding: 31px 47px 44px 44px; }
   .sidebar { width: 312px; padding: 30px 15px; border-right: 1px solid #d9e2ee; background: #fff; box-shadow: none; }
@@ -1323,7 +1285,7 @@ dd {
 }
 
 /* Desktop dashboard refinement. */
-@media (min-width: 901px) {
+@media (width > 900px) {
   .app-layout {
     grid-template-columns: 312px minmax(0, 1fr);
     min-height: 100vh;
@@ -1986,7 +1948,7 @@ dd {
 }
 
 /* Desktop scaling adjustments. */
-@media (min-width: 901px) {
+@media (width > 900px) {
   :root[data-theme='light'] .dashboard-command-panel,
   .dashboard-command-panel {
     border: 0;
@@ -2003,7 +1965,7 @@ dd {
   }
 }
 
-@media (min-width: 901px) and (max-width: 1500px) {
+@media (900px < width <= 1500px) {
   .app-content {
     padding: 28px 39px 32px 40px;
   }
@@ -2148,7 +2110,7 @@ dd {
 }
 
 /* Desktop sidebar and board date readability. */
-@media (min-width: 901px) {
+@media (width > 900px) {
   .app-layout {
     grid-template-columns: 312px minmax(0, 1fr);
   }
@@ -2282,7 +2244,7 @@ dd {
 }
 
 /* Laptop responsive layout. */
-@media (min-width: 901px) and (max-width: 1180px) {
+@media (900px < width <= 1180px) {
   .app-layout {
     grid-template-columns: 220px minmax(0, 1fr);
   }
@@ -2466,7 +2428,7 @@ dd {
   }
 }
 
-@media (min-width: 901px) and (max-width: 1040px) {
+@media (900px < width <= 1040px) {
   .dashboard-command-panel .app-header {
     display: grid;
   }
@@ -2694,7 +2656,7 @@ dd {
   width: 100%;
 }
 
-@media (min-width: 901px) {
+@media (width > 900px) {
   .dashboard-workspace .tracker-section {
     height: auto;
     min-height: 0;
@@ -2879,7 +2841,7 @@ dd {
   }
 }
 
-/* Stitch-inspired phone shell. Hidden above the phone breakpoint. */
+/* Compact shell: phone/tablet presentation below, visibility owned here. */
 .mobile-app-bar,
 .mobile-bottom-nav {
   display: none;
@@ -2893,15 +2855,33 @@ dd {
   display: none;
 }
 
+.mobile-nav-item:focus-visible,
+.mobile-profile-sign-out:focus-visible {
+  outline: 3px solid rgba(0, 107, 216, 0.28);
+  outline-offset: -2px;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    display: none;
+  }
+
+  .mobile-profile-sign-out {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+  }
+}
+
 @media (max-width: 720px) {
   .app-layout {
     display: block;
     min-height: 100svh;
     background: #f7f9fc;
-  }
-
-  .sidebar {
-    display: none;
   }
 
   .mobile-app-bar {
@@ -2982,11 +2962,6 @@ dd {
   .mobile-nav-item-active {
     background: #dcecff;
     color: #006bd8;
-  }
-
-  .mobile-nav-item:focus-visible {
-    outline: 3px solid rgba(0, 107, 216, 0.28);
-    outline-offset: -2px;
   }
 
   .app-content {
@@ -3501,16 +3476,6 @@ dd {
     min-height: 44px;
   }
 
-  .mobile-profile-sign-out {
-    display: flex;
-    width: 100%;
-    min-height: 48px;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    border-radius: 10px;
-  }
-
   .progress-summary {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3596,10 +3561,6 @@ dd {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 10px;
-  }
-
-  .calendar-weekday {
-    display: none;
   }
 
   .calendar-day {
@@ -3752,14 +3713,10 @@ dd {
   }
 }
 
-@media (min-width: 721px) and (max-width: 900px) {
+@media (720px < width <= 900px) {
   .app-layout {
     display: block;
     min-height: 100svh;
-  }
-
-  .sidebar {
-    display: none;
   }
 
   .mobile-app-bar {
@@ -3920,7 +3877,7 @@ dd {
   }
 }
 
-@media (min-width: 901px) {
+@media (width > 900px) {
   .board-card-list {
     grid-auto-rows: max-content;
     align-content: start;

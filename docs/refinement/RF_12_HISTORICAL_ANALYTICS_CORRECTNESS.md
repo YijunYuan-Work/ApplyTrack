@@ -1,11 +1,30 @@
 # RF-12: Historical Analytics Correctness
 
-Status: In Progress. Product semantics approved; F08 implementation prepared locally.
-Production migration and merge/deployment ordering require separate approval.
+Status: Done. Approved migration and frontend release completed; user acceptance complete.
 G03 investigation: [PR #24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24),
 squash `c1c3a5de5bfa578a05bef94f5d3fca37314960be` (F08 implementation baseline).
-F08 review: [draft PR #25](https://github.com/YijunYuan-Work/ApplyTrack/pull/25).
-Neither migration nor frontend has been released; keep the PR unmerged.
+F08 implementation: [PR #25](https://github.com/YijunYuan-Work/ApplyTrack/pull/25),
+squash `8e72507a3345ee7819960ad76f7baaaf1894da85`.
+
+## Production Closure (2026-10-14)
+
+- Authorized CLI release registered `20261014033558_application_rejection_date.sql`
+  as version `20261014033558`, name `application_rejection_date`, before frontend
+  release. All 12 historical migrations matched and it was the only pending file.
+- Migration-time verification: nullable DATE, no default; 420 applications before
+  and after, identical old-row/historical-date aggregate checksums, all new dates
+  NULL. RLS, policies, existing ACLs, RPCs and triggers were unchanged. A zero-row
+  Data API probe selected the column successfully (HTTP 200); project healthy.
+  These are the prior authorized release results, not new production SQL in RF-13.
+- Merged-main CI [38513271988](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/38513271988)
+  completed successfully on `8e72507a3345ee7819960ad76f7baaaf1894da85`.
+- Vercel Production `dpl_E9AcyAUnAFh9sdLoRJNmRraWn9jg` is READY on that exact SHA.
+  CI and deployment metadata were independently rechecked read-only during RF-13.
+- User functional acceptance is complete, as reported by the user. No additional
+  production-user mutation test was performed during RF-13.
+- Remaining data/client limitations are retained below. Tablet Calendar clipping
+  is investigated in [RF-13](RF_13_RESPONSIVE_NAVIGATION.md), not retroactively
+  claimed fixed by RF-12. Supabase automatic production synchronization remains OFF.
 
 ## F08 Investigation
 
@@ -197,11 +216,12 @@ Final local gates (2026-10-14, America/Toronto):
 Browser runs used no automatic retries. Vite emitted nonfatal EBUSY warnings while
 watching workspace-local Firefox profile locks; those tests passed.
 
-## Production Release Procedure (NOT Executed)
+## Reviewed Production Release Procedure (Historical)
 
-Keep this PR unmerged until the migration/application order is separately approved.
-Vercel's main merge may deploy the frontend automatically: **do not merge first**.
-Supabase Git automatic production synchronization must remain OFF.
+This records the reviewed migration-first procedure followed for the completed
+release above. Do not rerun it as part of RF-13. Vercel main merges may deploy the
+frontend automatically; database verification preceded the separately authorized
+merge. Supabase Git automatic production synchronization remains OFF.
 
 1. Gate A: independent code/migration review and explicit production migration
    authorization. Use the approved PR revision, not an unreviewed working copy.
@@ -215,7 +235,7 @@ Supabase Git automatic production synchronization must remain OFF.
 ```powershell
 npx --no-install supabase migration list --linked
 npx --no-install supabase db push --linked --dry-run --skip-vault
-# Requires separate production write approval; NOT executed during this task:
+# Prior authorized release used cached supabase.exe 2.120.0 with these flags:
 npx --no-install supabase db push --linked --skip-vault
 ```
 
@@ -246,9 +266,8 @@ the normal separately authorized process. Leave the additive column, recorded va
 and migration history intact. Do not DROP the column, null dates or undo history.
 Old clients do not provide the new historical semantics; do not claim they do.
 
-## Remaining Risks and Release Hold
+## Remaining Limitations
 
-- F08 is implemented locally, not resolved in production until the reviewed release.
 - Historical unknown dates cannot be reconstructed; no inference/backfill is allowed.
 - First-party CAS handles supported writers. Direct SQL/third-party writers and old
   already-open browser clients do not automatically record transitions. Require users
@@ -257,10 +276,11 @@ Old clients do not provide the new historical semantics; do not claim they do.
 - Selection/analytics cover the currently loaded dataset; R02's Applications API cap
   risk remains separate. No completeness claim for an unbounded server dataset.
 - Existing date parsing/defaults outside the new explicit rejection column remain unchanged.
-- Screenshot inspection found the tablet calendar can clip its Next control and
+- RF-12 screenshot inspection found the tablet calendar can clip its Next control and
   inner calendar content despite passing document-overflow checks. Progress JSX
-  presentation and CSS are unchanged; this inherited responsive issue is not fixed
-  or claimed resolved by an analytics PR. It needs a separately scoped UI refinement.
-- Migration/schema/frontend changes are prepared in the PR only. No production data,
-  Auth, Edge Functions, secrets, integrations, dependencies or UI redesign changed.
-  No production migration, deployment or merge performed. Stop for independent review.
+  presentation and CSS were unchanged by RF-12; clipping was not fixed or claimed
+  resolved by the analytics PR. The separately scoped RF-13 correction
+  and verification are documented in its implementation report.
+- RF-12's authorized additive migration and frontend release are complete. No
+  historical backfill or unrelated Auth, Edge Function, secret or integration change
+  was part of that release. RF-13 performs no new production Supabase operation.
