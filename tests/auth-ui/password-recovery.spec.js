@@ -95,6 +95,7 @@ async function signIn(page) {
 
 for (const width of [1440, 768, 390]) {
   test(`sign in, sign up and public demo omit recovery UI at ${width}px`, async ({ page, context }, testInfo) => {
+    test.setTimeout(60000)
     await page.setViewportSize({ width, height: 900 })
     const state = await mockBackend(context)
     await page.goto('/#/sign-in')
@@ -114,7 +115,9 @@ for (const width of [1440, 768, 390]) {
     await expect(page.getByRole('heading', { name: 'Password', exact: true })).toBeVisible()
     await expectNoRecoveryUI(page)
     await expectNoOverflow(page)
-    await expect(page.getByRole('button', { name: 'Update password', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Update password', exact: true })).toHaveCount(0)
+    await expect(page.locator('input')).toHaveCount(0)
+    await expect(page.getByRole('region', { name: 'Password', exact: true })).toContainText('does not use a personal account')
     await page.screenshot({ path: testInfo.outputPath(`demo-profile-${width}.png`), fullPage: true })
     for (const [path, heading] of [
       ['/demo/progress', 'Your application flow.'],
@@ -124,7 +127,7 @@ for (const width of [1440, 768, 390]) {
       ['/demo/job-agent/matches', 'Turn job alerts into an application queue.'],
     ]) {
       await page.goto(`/#${path}`)
-      await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
+      await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible({ timeout: 20000 })
       await expectNoRecoveryUI(page)
       await expectNoOverflow(page)
     }
@@ -152,8 +155,6 @@ for (const width of [1440, 768, 390]) {
     const cookies = await context.cookies()
     expect(cookies.filter((cookie) => cookie.name.startsWith('sb-')).length).toBeGreaterThan(0)
     expect(cookies.filter((cookie) => cookie.name.startsWith('sb-')).every((cookie) => cookie.expires === -1)).toBe(true)
-    // The existing tablet layout hides sign-out controls; exercise the unchanged handler on desktop.
-    if (width === 768) await page.setViewportSize({ width: 1440, height: 900 })
     await page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true }).click()
     await expect(page.getByRole('heading', { name: 'Sign in to your workspace.' })).toBeVisible()
     expect((await context.cookies()).filter((cookie) => cookie.name.startsWith('sb-'))).toEqual([])

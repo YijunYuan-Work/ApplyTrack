@@ -69,109 +69,126 @@ function ProfilePage({
         <div>
           <p className="eyebrow">Profile</p>
           <h1>{username}</h1>
-          <p>Manage your workspace identity and account security.</p>
+          <p>
+            {isDemo
+              ? 'Public demo workspace. No personal account.'
+              : 'Manage your workspace identity and account security.'}
+          </p>
         </div>
       </header>
 
       <section className="profile-section">
         <div className="profile-settings-grid">
-          <form className="profile-form" onSubmit={handlePasswordSubmit}>
-            <div>
-              <p className="eyebrow">Security</p>
-              <h2>Password</h2>
-              <p>Choose a new password for your account.</p>
-            </div>
+          {isDemo ? (
+            <section className="profile-form" aria-labelledby="demo-password-heading">
+              <div>
+                <p className="eyebrow">Security</p>
+                <h2 id="demo-password-heading">Password</h2>
+                <p>
+                  Password changes are unavailable in Demo mode because this
+                  workspace does not use a personal account.
+                </p>
+              </div>
+            </section>
+          ) : (
+            <form className="profile-form" onSubmit={handlePasswordSubmit}>
+              <div>
+                <p className="eyebrow">Security</p>
+                <h2>Password</h2>
+                <p>Choose a new password for your account.</p>
+              </div>
 
-            <div className="profile-field">
-              <label htmlFor="new-password">New password</label>
-              <span className="password-input-wrap">
-                <input
-                  autoComplete="new-password"
-                  id="new-password"
-                  minLength="6"
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={(event) => {
-                    setNewPassword(event.target.value)
-                    setPasswordError('')
-                    setPasswordSuccess('')
-                  }}
-                  placeholder="At least 6 characters"
-                  required
-                />
-                <button
-                  aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
-                  className="password-visibility-button"
-                  type="button"
-                  onClick={() => setShowNewPassword((isVisible) => !isVisible)}
-                >
-                  {showNewPassword ? (
-                    <EyeOff aria-hidden="true" size={19} />
-                  ) : (
-                    <Eye aria-hidden="true" size={19} />
-                  )}
-                </button>
-              </span>
-            </div>
+              <div className="profile-field">
+                <label htmlFor="new-password">New password</label>
+                <span className="password-input-wrap">
+                  <input
+                    autoComplete="new-password"
+                    id="new-password"
+                    minLength="6"
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(event) => {
+                      setNewPassword(event.target.value)
+                      setPasswordError('')
+                      setPasswordSuccess('')
+                    }}
+                    placeholder="At least 6 characters"
+                    required
+                  />
+                  <button
+                    aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                    className="password-visibility-button"
+                    type="button"
+                    onClick={() => setShowNewPassword((isVisible) => !isVisible)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff aria-hidden="true" size={19} />
+                    ) : (
+                      <Eye aria-hidden="true" size={19} />
+                    )}
+                  </button>
+                </span>
+              </div>
 
-            <div className="profile-field">
-              <label htmlFor="confirm-password">Confirm password</label>
-              <span className="password-input-wrap">
-                <input
-                  autoComplete="new-password"
-                  id="confirm-password"
-                  minLength="6"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(event) => {
-                    setConfirmPassword(event.target.value)
-                    setPasswordError('')
-                    setPasswordSuccess('')
-                  }}
-                  placeholder="Repeat your new password"
-                  required
-                />
-                <button
-                  aria-label={
-                    showConfirmPassword
-                      ? 'Hide confirmed password'
-                      : 'Show confirmed password'
-                  }
-                  className="password-visibility-button"
-                  type="button"
-                  onClick={() =>
-                    setShowConfirmPassword((isVisible) => !isVisible)
-                  }
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff aria-hidden="true" size={19} />
-                  ) : (
-                    <Eye aria-hidden="true" size={19} />
-                  )}
-                </button>
-              </span>
-            </div>
+              <div className="profile-field">
+                <label htmlFor="confirm-password">Confirm password</label>
+                <span className="password-input-wrap">
+                  <input
+                    autoComplete="new-password"
+                    id="confirm-password"
+                    minLength="6"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(event) => {
+                      setConfirmPassword(event.target.value)
+                      setPasswordError('')
+                      setPasswordSuccess('')
+                    }}
+                    placeholder="Repeat your new password"
+                    required
+                  />
+                  <button
+                    aria-label={
+                      showConfirmPassword
+                        ? 'Hide confirmed password'
+                        : 'Show confirmed password'
+                    }
+                    className="password-visibility-button"
+                    type="button"
+                    onClick={() =>
+                      setShowConfirmPassword((isVisible) => !isVisible)
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff aria-hidden="true" size={19} />
+                    ) : (
+                      <Eye aria-hidden="true" size={19} />
+                    )}
+                  </button>
+                </span>
+              </div>
 
-            <button
-              type="submit"
-              disabled={
-                isSavingPassword || !newPassword || !confirmPassword
-              }
-            >
-              {isSavingPassword ? 'Saving...' : 'Update password'}
-            </button>
+              <button
+                type="submit"
+                disabled={
+                  isSavingPassword || !newPassword || !confirmPassword
+                }
+              >
+                {isSavingPassword ? 'Saving...' : 'Update password'}
+              </button>
 
-            {passwordSuccess && (
-              <p className="form-success" role="status">
-                {passwordSuccess}
-              </p>
-            )}
-            {passwordError && (
-              <p className="form-error" role="alert">
-                {passwordError}
-              </p>
-            )}
-          </form>
+              {passwordSuccess && (
+                <p className="form-success" role="status">
+                  {passwordSuccess}
+                </p>
+              )}
+              {passwordError && (
+                <p className="form-error" role="alert">
+                  {passwordError}
+                </p>
+              )}
+            </form>
+          )}
         </div>
 
         {!isDemo && (

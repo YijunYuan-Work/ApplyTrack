@@ -1,8 +1,16 @@
 # RF-13: Responsive Navigation and Sign Out
 
-Status: In Progress; local implementation, pending independent PR review/release.
+Status: Done; merged, released and user UI acceptance completed.
 Baseline: main `8e72507a3345ee7819960ad76f7baaaf1894da85` (RF-12 F08, PR #25).
-Review: [PR #26](https://github.com/YijunYuan-Work/ApplyTrack/pull/26), unmerged.
+Review: [PR #26](https://github.com/YijunYuan-Work/ApplyTrack/pull/26), squash merged
+as `187125a1ea3d0483574664d5fbaf137d6d7a1774`.
+
+Release closure (2026-10-14): merged-main CI
+[38598273428](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/38598273428)
+passed; matching Vercel Production deployment `dpl_kNnEuA8jq1g5BBAbGCpr5LBYQ1kA`
+is READY. These metadata were independently rechecked read-only during RF-14;
+completed UI acceptance is reported by the user. The implementation evidence and
+remaining limitations below are retained. No release was triggered by RF-14.
 
 ## Findings and Fix
 
@@ -107,9 +115,10 @@ merged-main CI `38513271988`, and Vercel Production READY deployment
 completed functional acceptance is reported by the user. The prior migration
 verification is recorded as prior release evidence, not rerun in RF-13.
 
-No Supabase production operation, migration, Edge Function change, new dependency,
-integration toggle, manual deployment or merge is part of RF-13. Supabase automatic
-production synchronization stays OFF. PR review and normal release remain separate.
+RF-13 implementation performed no Supabase production operation, migration, Edge
+Function change, new dependency, integration toggle, manual deployment or merge.
+Supabase automatic production synchronization stays OFF. The subsequently approved
+merge and normal frontend release are recorded in the closure above.
 
 ## Remaining Limitations
 
