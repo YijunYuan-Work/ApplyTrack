@@ -4,7 +4,8 @@ Status: In Progress. Product semantics approved; F08 implementation prepared loc
 Production migration and merge/deployment ordering require separate approval.
 G03 investigation: [PR #24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24),
 squash `c1c3a5de5bfa578a05bef94f5d3fca37314960be` (F08 implementation baseline).
-F08 review PR: pending creation. Neither migration nor frontend has been released.
+F08 review: [draft PR #25](https://github.com/YijunYuan-Work/ApplyTrack/pull/25).
+Neither migration nor frontend has been released; keep the PR unmerged.
 
 ## F08 Investigation
 

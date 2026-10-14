@@ -359,7 +359,8 @@ Acceptance:
 **Size:** Medium; potentially larger if persistence semantics change  
 **Findings:** F08, G03  
 **Status:** [~] In Progress; semantics approved, local F08 implementation; production release held
-**PR:** G03 [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24) merged; F08 review pending
+**PR:** G03 [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24) merged;
+F08 [draft #25](https://github.com/YijunYuan-Work/ApplyTrack/pull/25), release held
 
 Approved semantics, F08 implementation, release order and independent G03 evidence:
 [RF-12 Historical Analytics Correctness](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md).
