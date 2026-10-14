@@ -462,7 +462,7 @@ Acceptance:
 **Size:** Small–Medium  
 **Findings:** F15, CQ02  
 **Status:** [~] In Progress
-**PR:** TBD
+**PR:** [#28](https://github.com/YijunYuan-Work/ApplyTrack/pull/28)
 
 Implementation and verification: [RF-15 Salary Interpretation](RF_15_JOB_AGENT_SALARY_INTERPRETATION.md).
 The shared parsing correction is local; independent review, frontend release and

@@ -2,7 +2,7 @@
 
 Status: In Progress; pending independent review, user acceptance and separately approved release.
 Baseline: main `ee5c6f621b4ef6c2c44ad2a1c72db450a6a609e0` (RF-14, PR #27).
-Review: PR link pending creation.
+Review: [PR #28](https://github.com/YijunYuan-Work/ApplyTrack/pull/28), unmerged.
 
 ## Root Cause and Scope
 
