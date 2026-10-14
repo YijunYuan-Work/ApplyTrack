@@ -329,10 +329,17 @@ Acceptance:
 **Priority:** P1  
 **Size:** Small  
 **Finding:** F09  
-**Status:** [~] In Progress; implementation prepared; independent review pending
-**PR:** TBD
+**Status:** [x] Done; reviewed, merged and Production READY verified
+**PR:** [#23](https://github.com/YijunYuan-Work/ApplyTrack/pull/23)
 
 Implementation and evidence: [RF-11 Dashboard Selection Consistency](RF_11_DASHBOARD_SELECTION_CONSISTENCY.md).
+
+Squash merge: `99dfb56000aa52b3d94231e83a1bab19b94ada08`.
+Merged-commit [CI #62](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/38500470379)
+completed successfully (push to main). Read-only Vercel list/detail checks verified
+Production deployment `dpl_kHhZb6rixsxcv1qWhaCayM9uiZ6X` is READY, matches that exact
+main SHA, and serves `apply-track-six.vercel.app`. This is deployment metadata
+verification, not a new production mutation or authenticated smoke test.
 
 Scope:
 
@@ -351,8 +358,13 @@ Acceptance:
 **Priority:** P1  
 **Size:** Medium; potentially larger if persistence semantics change  
 **Findings:** F08, G03  
-**Status:** [?] Product Semantics Required  
-**PR:** TBD
+**Status:** [~] In Progress; historical-date persistence decision pending
+**PR:** [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24)
+
+Investigation, recommended semantics and independent G03 fixes/tests:
+[RF-12 Historical Analytics Correctness](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md).
+F08 remains unresolved behind the explicit historical-date/schema approval gate;
+this slice does not add a migration or change the rejection-date source.
 
 Scope:
 
@@ -616,8 +628,8 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 8 | RF-08 — Form & Save Lifecycle | P1 | Done — CI and Vercel Production READY | [#20](https://github.com/YijunYuan-Work/ApplyTrack/pull/20); [evidence](RF_08_APPLICATION_FORM_SAVE_LIFECYCLE.md) |
 | 9 | RF-09 — Destructive Operations | P1 | Done — CI and Vercel Production READY | [#21](https://github.com/YijunYuan-Work/ApplyTrack/pull/21); [evidence](RF_09_DESTRUCTIVE_OPERATION_RELIABILITY.md) |
 | 10 | RF-10 — Job Agent Queue | P1 | Done; matching Vercel Production READY | [#22](https://github.com/YijunYuan-Work/ApplyTrack/pull/22); [evidence](RF_10_JOB_AGENT_QUEUE_ACCURACY.md) |
-| 11 | RF-11 — Dashboard Selection | P1 | In Progress | [evidence](RF_11_DASHBOARD_SELECTION_CONSISTENCY.md) |
-| 12 | RF-12 — Historical Analytics | P1 | Decision required | — |
+| 11 | RF-11 — Dashboard Selection | P1 | Done | [#23](https://github.com/YijunYuan-Work/ApplyTrack/pull/23), verified Production READY |
+| 12 | RF-12 — Historical Analytics | P1 | In Progress; decision pending | [evidence](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md) |
 | 13 | RF-13 — Responsive Navigation | P1 | Planned | — |
 | 14 | RF-14 — Demo Interaction Accuracy | P1 | Planned | — |
 | 15 | RF-15 — Salary Interpretation | P1 | Planned | — |
