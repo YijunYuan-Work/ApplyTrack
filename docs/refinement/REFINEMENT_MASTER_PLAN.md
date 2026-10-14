@@ -402,7 +402,7 @@ Focus on functional usability and visual implementation quality, without adding 
 **Size:** Small–Medium  
 **Findings:** F11, CQ05, G06  
 **Status:** [~] In Progress
-**PR:** TBD
+**PR:** [#26](https://github.com/YijunYuan-Work/ApplyTrack/pull/26)
 
 Implementation and verification: [RF-13 Responsive Navigation](RF_13_RESPONSIVE_NAVIGATION.md).
 

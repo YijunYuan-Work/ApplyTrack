@@ -2,7 +2,7 @@
 
 Status: In Progress; local implementation, pending independent PR review/release.
 Baseline: main `8e72507a3345ee7819960ad76f7baaaf1894da85` (RF-12 F08, PR #25).
-Review PR: pending creation.
+Review: [PR #26](https://github.com/YijunYuan-Work/ApplyTrack/pull/26), unmerged.
 
 ## Findings and Fix
 
