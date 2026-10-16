@@ -68,8 +68,8 @@ test('Job presentation: optional salary, deduplicated chips, annual and hourly s
   assert.match(getJobLeadPresentation({ description: '$40 per hour' }).salaryLabel, /40 per hour/)
 })
 
-test('Job salary characterization: shorthand $90k is interpreted as $90', () => {
+test('RF-15 F15: shorthand salary is never truncated to dollar-sized amounts', () => {
   const result = getJobLeadPresentation({ description: '$90k - $120k a year' })
-  assert.match(result.salaryLabel, /90/)
-  assert.doesNotMatch(result.salaryLabel, /90,000/)
+  assert.equal(result.salaryLabel, '$90k - $120k a year')
+  assert.equal(result.summary, '')
 })

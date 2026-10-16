@@ -433,12 +433,16 @@ Acceptance:
 **Priority:** P1  
 **Size:** Small  
 **Finding:** F12  
-**Status:** [~] In Progress
+**Status:** [x] Done
 **PR:** [#27](https://github.com/YijunYuan-Work/ApplyTrack/pull/27)
 
 Implementation and verification: [RF-14 Public Demo Interaction Accuracy](RF_14_PUBLIC_DEMO_INTERACTION_ACCURACY.md).
-Local implementation replaces the Demo password form with an account-limitation
-explanation; independent review, acceptance and release remain pending.
+Closed 2026-10-14: PR #27 squash merge `ee5c6f621b4ef6c2c44ad2a1c72db450a6a609e0`;
+merged-main CI [38639551805](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/38639551805)
+passed, with matching Vercel Production READY deployment
+`dpl_4TN6RDScDHsnKEJaU6x84q1V3ksc`. CI/deployment metadata were rechecked read-only
+during RF-15. User UI acceptance is completed as reported by the user; report
+limitations remain documented. No production operation was performed for this closure.
 
 Scope:
 
@@ -457,8 +461,12 @@ Acceptance:
 **Priority:** P1  
 **Size:** Small–Medium  
 **Findings:** F15, CQ02  
-**Status:** [ ] Planned  
-**PR:** TBD
+**Status:** [~] In Progress
+**PR:** [#28](https://github.com/YijunYuan-Work/ApplyTrack/pull/28)
+
+Implementation and verification: [RF-15 Salary Interpretation](RF_15_JOB_AGENT_SALARY_INTERPRETATION.md).
+The shared parsing correction is local; independent review, frontend release and
+separately authorized `ingest-job-alert` deployment remain pending.
 
 Scope:
 
@@ -652,8 +660,8 @@ SEC-02 retirement was independently verified in the production Supabase function
 | 11 | RF-11 — Dashboard Selection | P1 | Done | [#23](https://github.com/YijunYuan-Work/ApplyTrack/pull/23), verified Production READY |
 | 12 | RF-12 — Historical Analytics | P1 | Done; Production READY and user acceptance | [#24](https://github.com/YijunYuan-Work/ApplyTrack/pull/24), [#25](https://github.com/YijunYuan-Work/ApplyTrack/pull/25); [evidence](RF_12_HISTORICAL_ANALYTICS_CORRECTNESS.md) |
 | 13 | RF-13 — Responsive Navigation | P1 | Done | [evidence](RF_13_RESPONSIVE_NAVIGATION.md) |
-| 14 | RF-14 — Demo Interaction Accuracy | P1 | In Progress | [evidence](RF_14_PUBLIC_DEMO_INTERACTION_ACCURACY.md) |
-| 15 | RF-15 — Salary Interpretation | P1 | Planned | — |
+| 14 | RF-14 — Demo Interaction Accuracy | P1 | Done | [evidence](RF_14_PUBLIC_DEMO_INTERACTION_ACCURACY.md) |
+| 15 | RF-15 — Salary Interpretation | P1 | In Progress | [evidence](RF_15_JOB_AGENT_SALARY_INTERPRETATION.md) |
 | 16 | RF-16–18 — Codebase Cleanup | P2 | Planned | — |
 | 17 | RF-19–21 — Final Quality Gate | P1–P2 | Planned | — |
 

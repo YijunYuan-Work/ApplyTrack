@@ -1,3 +1,5 @@
+import { parseSalaryText } from './salary.js'
+
 export type AlertProvider = 'linkedin' | 'indeed' | 'unknown'
 
 export type EmailAnchor = {
@@ -164,31 +166,13 @@ function inferContractType(content: string) {
 }
 
 function inferAnnualSalary(content: string) {
-  const match = cleanText(content).match(
-    /\$\s*([\d,.]+)(?:\s*(?:-|–|—|to)\s*\$?\s*([\d,.]+))?\s*(?:(?:a|per)\s*)?(year|yr|hour|hr|week|month)?/i,
-  )
-
-  if (!match) {
-    return { salaryMax: null, salaryMin: null }
-  }
-
-  const salaryMin = Number(match[1].replace(/,/g, ''))
-  const salaryMax = match[2] ? Number(match[2].replace(/,/g, '')) : null
-  const period = String(match[3] || '').toLowerCase()
-  const isAnnual = !period || period === 'year' || period === 'yr'
-
-  if (
-    !isAnnual ||
-    !Number.isFinite(salaryMin) ||
-    (salaryMax !== null && !Number.isFinite(salaryMax))
-  ) {
-    return { salaryMax: null, salaryMin: null }
-  }
-
-  return { salaryMax, salaryMin }
+  const salary = parseSalaryText(content)
+  return salary?.period === 'year'
+    ? { salaryMax: salary.maximum, salaryMin: salary.minimum }
+    : { salaryMax: null, salaryMin: null }
 }
 
-function jobFromAnchor(anchor: EmailAnchor, expectedSource: AlertProvider) {
+function jobFromAnchor(anchor: EmailAnchor, expectedSource: AlertProvider): ParsedAlertJob | null {
   const url = unwrapUrl(anchor.href)
 
   if (!url) {
@@ -252,7 +236,7 @@ export function parseJobAlert({
   const provider = detectAlertProvider({ anchors, from, subject })
   const jobs = anchors
     .map((anchor) => jobFromAnchor(anchor, provider))
-    .filter((job): job is ParsedAlertJob => Boolean(job))
+    .filter((job): job is ParsedAlertJob => job !== null)
   const deduplicated = new Map<string, ParsedAlertJob>()
 
   jobs.forEach((job) => {

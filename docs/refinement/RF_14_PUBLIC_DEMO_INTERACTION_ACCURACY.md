@@ -1,8 +1,15 @@
 # RF-14: Public Demo Interaction Accuracy
 
-Status: In Progress; implementation pending independent review, acceptance and release.
+Status: Done; merged, released and user UI acceptance completed.
 Baseline: main `187125a1ea3d0483574664d5fbaf137d6d7a1774` (RF-13, PR #26).
-Review: [PR #27](https://github.com/YijunYuan-Work/ApplyTrack/pull/27), unmerged.
+Review: [PR #27](https://github.com/YijunYuan-Work/ApplyTrack/pull/27), squash merged
+as `ee5c6f621b4ef6c2c44ad2a1c72db450a6a609e0`.
+
+Release closure (2026-10-14): merged-main CI
+[38639551805](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/38639551805)
+passed; matching Vercel Production deployment `dpl_4TN6RDScDHsnKEJaU6x84q1V3ksc`
+is READY. Metadata were independently rechecked read-only during RF-15. Completed
+UI acceptance is reported by the user; limitations below remain documented.
 
 ## Root Cause and Correction
 
@@ -81,9 +88,9 @@ reported by the user. Existing RF-13 limitations remain documented.
 
 No database migration, Edge Function change, production operation, dependency,
 integration toggle, manual deployment or merge. Supabase automatic production
-synchronization remains OFF; no setting is modified by this task. No backend
-release is required. After independent review and user acceptance, this is a
-frontend-only release through the normal approved merge process.
+synchronization remains OFF; no setting was modified by this implementation. No
+backend release was required. The approved frontend merge/release subsequently
+completed as recorded above.
 
 Synthetic authentication tests validate the real client/UI contract, not live
 Supabase password delivery or account policy. Emulated browser checks and scoped

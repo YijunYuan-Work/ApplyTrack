@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { stripTypeScriptTypes } from 'node:module'
 import { createHmac, randomBytes, webcrypto } from 'node:crypto'
 import { createContext, SourceTextModule, SyntheticModule } from 'node:vm'
-import { parseHTML } from 'linkedom'
+import { DOMParser, parseHTML } from 'linkedom'
 import { Resend } from 'resend'
 import { parseJobAlert } from '../../supabase/functions/_shared/jobAlertParser.ts'
 
@@ -93,7 +93,7 @@ export async function harness(options = {}) {
   const code = stripTypeScriptTypes(await readFile(new URL('../../supabase/functions/ingest-job-alert/index.ts', import.meta.url), 'utf8'))
   const module = new SourceTextModule(code, { context })
   await module.link(async (specifier) => {
-    const exports = specifier.includes('supabase') ? { createClient: () => options.admin || ({ from: (table) => new Query(table), rpc }) } : specifier.includes('linkedom') ? { parseHTML } : specifier.includes('resend') ? { Resend: LocalResend } : { parseJobAlert }
+    const exports = specifier.includes('supabase') ? { createClient: () => options.admin || ({ from: (table) => new Query(table), rpc }) } : specifier.includes('linkedom') ? { DOMParser } : specifier.includes('resend') ? { Resend: LocalResend } : { parseJobAlert }
     return new SyntheticModule(Object.keys(exports), function () { for (const [name, value] of Object.entries(exports)) this.setExport(name, value) }, { context })
   })
   await module.evaluate()
@@ -115,6 +115,30 @@ test('Edge real Svix verification rejects forged signature and non-POST', async 
   assert.equal(state.retrievals, 0)
 })
 
+test('RF-15: typed HTML parsing preserves nested markup, entities and deduplication', async () => {
+  const h = await harness()
+  h.email.html = `<article><div>
+    <a href="https://www.linkedin.com/jobs/view/456?ref=alert&amp;source=email"><strong>QA &amp; Test Engineer</strong></a>
+    <p>Acme &amp; Co</p><p>Toronto, Ontario</p><p>$90k - $120k a year</p>
+    </div></article>
+    <a href="https://www.linkedin.com/jobs/view/456">View job</a>
+    <a href="https://www.linkedin.com/help">Help</a>`
+  const legacyDocument = parseHTML(h.email.html).document
+  const document = new DOMParser().parseFromString(h.email.html, 'text/html')
+  const anchors = (root) => [...root.querySelectorAll('a[href]')]
+    .map((anchor) => [anchor.getAttribute('href'), anchor.textContent])
+  assert.deepEqual(anchors(document), anchors(legacyDocument))
+  assert.equal((await h.handler(h.request())).status, 200)
+  const [lead] = h.state.tables.job_leads
+  assert.equal(h.state.tables.job_leads.length, 1)
+  assert.equal(lead.title, 'QA & Test Engineer')
+  assert.equal(lead.company, 'Acme & Co')
+  assert.equal(lead.location, 'Toronto, Ontario')
+  assert.equal(lead.salary_min, 90000)
+  assert.equal(lead.salary_max, 120000)
+  assert.equal(lead.external_id, '456')
+})
+
 test('Edge missing configuration and unrelated events do not retrieve mail', async () => {
   const missing = await harness({ env: { INBOUND_EMAIL_DOMAIN: '' } })
   assert.equal((await missing.handler(missing.request())).status, 503)
@@ -132,6 +156,22 @@ test('Edge valid ingestion completes; repeated message is idempotent', async () 
   assert.equal(state.tables.job_leads.length, 1)
   assert.equal((await (await handler(request())).json()).duplicate, true)
   assert.equal(state.retrievals, 1)
+})
+
+test('RF-15: signed ingestion persists expanded annual bounds, never hourly or unitless annual guesses', async () => {
+  for (const [salary, minimum, maximum] of [
+    ['$90k - $120k a year', 90000, 120000], ['$40 per hour', null, null],
+    ['$100k', null, null], ['$120k - $90k a year', null, null],
+  ]) {
+    const h = await harness()
+    h.email.html = `<section><a href="https://www.linkedin.com/jobs/view/123">Engineer</a><p>Synthetic Company</p><p>Toronto</p><p>${salary}</p></section>`
+    assert.equal((await h.handler(h.request())).status, 200)
+    const job = h.state.tables.job_leads[0]
+    assert.equal(job.salary_min, minimum)
+    assert.equal(job.salary_max, maximum)
+    assert.equal(job.description, salary)
+    assert.equal(h.state.tables.job_alert_messages[0].status, 'completed')
+  }
 })
 
 test('RF-10 R04: removal is not suppression; only a later distinct alert recreates a lead', async () => {

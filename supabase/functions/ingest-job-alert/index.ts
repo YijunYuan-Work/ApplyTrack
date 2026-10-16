@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { parseHTML } from 'npm:linkedom@0.18.13'
+import { DOMParser } from 'npm:linkedom@0.18.13'
 import { Resend } from 'npm:resend@6.18.0'
 import {
   parseJobAlert,
@@ -49,7 +49,7 @@ function anchorsFromHtml(html: string | null, text: string | null): EmailAnchor[
     })
   }
 
-  const { document } = parseHTML(html)
+  const document = new DOMParser().parseFromString(html, 'text/html')
 
   return [...document.querySelectorAll('a[href]')].map((anchor) => {
     let container = anchor.parentElement
