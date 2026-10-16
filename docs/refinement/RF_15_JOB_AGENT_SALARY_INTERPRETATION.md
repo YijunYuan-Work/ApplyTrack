@@ -93,15 +93,16 @@ input. No application interaction or assertion guarantee was weakened.
 
 ## Separate Production Release Gate
 
-Affected function: **`ingest-job-alert`** only. Its handler is unchanged, but its
-reachable shared dependencies are `jobAlertParser.ts` and the new `salary.js`.
+Affected function: **`ingest-job-alert`** only. Its HTML adapter uses linkedom's
+typed `DOMParser` API; reachable shared dependencies are `jobAlertParser.ts` and
+the new `salary.js`. Signature verification, processing and RPC logic are unchanged.
 RF-15 is not complete merely because this PR passes or the frontend is released.
 
 1. Obtain separate authorization for the reviewed function revision and frontend
    release. Confirm project `qotipygmwlovxklkexjb`, current ACTIVE function metadata,
    `verify_jwt=false`, and that automatic Supabase production sync remains OFF.
-   Check the native Deno/bundled dependency graph locally as a release prerequisite;
-   this implementation environment has no available Deno executable.
+   Recheck the native Deno/bundled dependency graph for the approved revision;
+   the local follow-up preflight below passed, without a production deployment.
 2. Deploy only `ingest-job-alert` from that approved checkout with its shared files.
    After checking the authenticated CLI's help/flags, the intended command is
    `npx --no-install supabase functions deploy ingest-job-alert --project-ref qotipygmwlovxklkexjb --no-verify-jwt`.
@@ -118,6 +119,74 @@ No deploy, merge, production operation or integration toggle was performed here.
 Until the Edge release, its old parser can still create inaccurate stored bounds;
 frontend structured precedence intentionally does not rewrite them.
 
+## Native Deno and Edge Runtime Follow-up
+
+The preflight of `791da120886d4f3ef59b94fe487be8f13210ead4` exposed five native
+Deno diagnostics. `satisfies ParsedAlertJob` validated the object without widening
+its inferred `postedAt: null`, making the later broader filter predicate invalid.
+An explicit `ParsedAlertJob | null` return contract and `job !== null` narrowing
+fix that mismatch. No parsing result or deduplication rule changes.
+
+Linkedom 0.18.13 declares `parseHTML()` as a browser `Window`, which has no
+`document` in Deno's ambient types. Its implementation already constructs a
+`DOMParser`, calls `parseFromString(html, 'text/html')` and returns `defaultView`.
+The handler now uses that same parser directly to obtain the typed document.
+No casts, `any`, suppressions, dependency upgrades or DOM-global configuration
+changes are needed. The signed real-handler regression compares the old/new
+HTML APIs and checks nested markup, decoded entities, rejected noise/duplicate
+links and expanded salary payloads.
+
+Local follow-up verification (2026-10-16):
+
+- Portable Deno 2.9.7 / TypeScript 6.0.3 and Supabase CLI 2.121.0; Docker 29.8.2.
+  Tools, caches, synthetic fixtures and artifacts stay in ignored
+  `tmp/rf15-preflight.local/`; no production credentials are loaded.
+- `deno check --no-config --no-lock --node-modules-dir=none
+  supabase/functions/ingest-job-alert/index.ts`: passed with zero errors.
+- `deno info --no-config --no-lock --node-modules-dir=none --json
+  supabase/functions/ingest-job-alert/index.ts`: all three local modules and 34
+  transitive npm packages resolved, no graph errors. The unchanged `@supabase/supabase-js@2`
+  import resolved to 2.118.0; linkedom remains 0.18.13 and Resend 6.18.0.
+  This floating major-version import can resolve differently on a later release;
+  dependency policy was not expanded in this type-only correction.
+- Supabase CLI `--help`, `functions serve --help` and `functions deploy --help`
+  were inspected. `functions serve` requires a running local database stack and
+  creates stack/cache resources. Instead, the database-free check invokes the
+  actual cached Supabase Edge Runtime directly via Docker, not a replacement
+  runtime or Node simulation. Full CLI stack/API-gateway orchestration is not tested.
+- Runtime image: `public.ecr.aws/supabase/edge-runtime:v1.77.4`, digest
+  `sha256:ad45164b7548bf5820ed7be714789c17ac2865edce79a09cfb4c3756c3d365a8`;
+  its version output reports Edge Runtime 0.1.0 / Deno 2.1.4.
+- `edge-runtime bundle --entrypoint /functions/ingest-job-alert/index.ts
+  --output /out/ingest-job-alert.eszip --timeout 120`: passed. SHA256:
+  `475bbdefbd65228e6f5109ea54e7309c4c809b6609a28329e52d1a19f10b2b81`.
+- `edge-runtime start --main-service /out/ingest-job-alert.eszip --port 9000`:
+  passed. Network-disabled loopback probes returned GET 405, missing-config POST
+  503, forged-signature POST 401, signed unrelated event 200 and signed wrong
+  recipient 200. No Resend retrieval or database operation is needed for these cases.
+- An additional ignored, explicitly bundled bootstrap used
+  `EdgeRuntime.userWorkers.create()` to execute byte-identical copies of the
+  actual handler and shared sources. The same signature probes passed in user
+  workers. A runtime-native HTML/shared-parser probe returned annual bounds
+  90000/120000 and hourly 40 without annualization. All runtime containers used
+  read-only roots, workspace-bound caches/output and `--network none`.
+  Initial test-bootstrap absolute imports were not relocatable; relative imports
+  under one fixture root fixed the test setup without application changes.
+- `npm test`: 204 passed; `npm run test:audit`: 30 passed (17 handler cases).
+- Relevant Chromium salary/queue/audit suite: 56 passed; RF-15 salary suite on
+  Chromium/Firefox/WebKit at 1440/768/390px: 9 passed, no retries.
+- Lint, production build and `git diff --check`: passed. Firefox's workspace
+  profile-lock watcher warnings were nonfatal. Short-lived test user workers
+  emitted expected configured wall-clock lifetime warnings after serving requests.
+
+This verifies imports, bundling, runtime startup, HTML/salary parsing and safe
+request handling. Successful persistence/retry/concurrency remain covered by the
+existing synthetic client/RPC handler harness, not a real database or live email
+service. The malformed initial wrong-recipient probe omitted `received_for`; it
+was corrected to match the existing Resend fixture contract, with no handler change.
+Only `ingest-job-alert` needs a separately authorized release; `verify_jwt=false`,
+schema, migrations, production configuration and shared secrets remain unchanged.
+
 ## Closure and Limitations
 
 RF-14 is closed with PR #27, squash `ee5c6f621b4ef6c2c44ad2a1c72db450a6a609e0`,
@@ -130,6 +199,7 @@ understanding. Decimal-comma formats, million suffixes, postfix currencies and
 unsupported periods/qualifiers are not inferred. Currency/period metadata cannot
 be reconstructed from stored numeric-only rows without reliable source text.
 No historical correction, exchange-rate conversion or annualization is performed.
-Native Deno runtime/type-check and production deployment are not exercised; Node
-executes the actual parser/shared module and handler harness, and Vite bundles the
-shared dependency. Emulated browser checks are not physical-device certification.
+Native Deno checks and local Supabase Edge Runtime checks passed as recorded above;
+production deployment is not exercised. Node executes the actual parser/shared
+module and handler harness, and Vite bundles the shared dependency. Emulated
+browser checks are not physical-device certification.

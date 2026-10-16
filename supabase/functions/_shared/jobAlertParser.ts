@@ -172,7 +172,7 @@ function inferAnnualSalary(content: string) {
     : { salaryMax: null, salaryMin: null }
 }
 
-function jobFromAnchor(anchor: EmailAnchor, expectedSource: AlertProvider) {
+function jobFromAnchor(anchor: EmailAnchor, expectedSource: AlertProvider): ParsedAlertJob | null {
   const url = unwrapUrl(anchor.href)
 
   if (!url) {
@@ -236,7 +236,7 @@ export function parseJobAlert({
   const provider = detectAlertProvider({ anchors, from, subject })
   const jobs = anchors
     .map((anchor) => jobFromAnchor(anchor, provider))
-    .filter((job): job is ParsedAlertJob => Boolean(job))
+    .filter((job): job is ParsedAlertJob => job !== null)
   const deduplicated = new Map<string, ParsedAlertJob>()
 
   jobs.forEach((job) => {
