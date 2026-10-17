@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { application, backend, nav, noOverflow, signIn, userId } from './fixtures.js'
+import { application, backend, nav, noOverflow, signIn, userId, openDetails, closeDetails } from './fixtures.js'
 
 const card = (page, company) => page.locator('.application-card').filter({ has: page.getByText(company, { exact: true }) })
 const selected = (page, count) => expect(page.getByText(`${count} selected`, { exact: true })).toBeVisible()
@@ -332,8 +332,10 @@ test('pending deletion leaves unrelated editing usable and preserves newly saved
   await expect(page).toHaveURL(/dashboard$/)
   await first.respond()
   await nav(page, 'List')
+  await openDetails(page)
   await expect(page.locator('.notes-block p')).toHaveText('Keep the new note')
   await expect(page.locator('.detail-salary dd')).toHaveText('130000')
+  await closeDetails(page)
   expect(state.applications[0]).toMatchObject({ id: 2, notes: 'Keep the new note', salary: '130000' })
   expect(state.applications).toHaveLength(1)
 })

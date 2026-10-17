@@ -10,11 +10,23 @@ function ApplicationList({
   onEditApplication,
   onSelectApplication,
   onStatusChange,
+  onViewApplication,
   selectionMode = false,
   statusMutations = {},
 }) {
   return (
     <div className="application-list">
+      {applications.length > 0 && (
+        <div className="application-list-heading" aria-hidden="true">
+          <span>Role</span>
+          <span>Status</span>
+          <span className="list-location">Location</span>
+          <span className="list-applied">Applied</span>
+          <span className="list-salary">Salary</span>
+          <span className="list-interviews">Interviews</span>
+          <span>Actions</span>
+        </div>
+      )}
       {applications.map((application) => (
         <ApplicationCard
           application={application}
@@ -26,6 +38,7 @@ function ApplicationList({
           onEditApplication={onEditApplication}
           onSelectApplication={onSelectApplication}
           onStatusChange={onStatusChange}
+          onViewApplication={onViewApplication}
           selectionMode={selectionMode}
           statusMutation={statusMutations[application.id]}
         />

@@ -3,6 +3,15 @@ import { expect } from '@playwright/test'
 import * as XLSX from 'xlsx'
 
 export const userId = '00000000-0000-4000-8000-000000000001'
+export async function openDetails(page) {
+  await page.getByRole('button', { name: /^View details for/ }).filter({ visible: true }).first().click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+}
+
+export async function closeDetails(page) {
+  await page.getByRole('button', { name: 'Close application details', exact: true }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+}
 const user = { id: userId, aud: 'authenticated', role: 'authenticated', email: 'auditor@127.0.0.1', user_metadata: { username: 'auditor', name: 'Auditor', profileEmail: 'synthetic@example.invalid' }, app_metadata: { provider: 'email', providers: ['email'] }, created_at: '2026-01-01T00:00:00Z' }
 
 export function application(id, overrides = {}) {

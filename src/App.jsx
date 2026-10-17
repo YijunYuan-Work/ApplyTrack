@@ -35,6 +35,7 @@ import SignInPage from './pages/SignInPage'
 import { getEditingApplicationId, getRoute, navigate } from './utils/routes'
 import './App.css'
 import './styles/theme.css'
+import './styles/applications.css'
 
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const JobAgentPage = lazy(() => import('./pages/JobAgentPage'))

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { application, backend, nav, noOverflow, signIn } from './fixtures.js'
+import { application, backend, nav, noOverflow, signIn, openDetails, closeDetails } from './fixtures.js'
 
 const submit = (page) => page.locator('button[type="submit"]')
 const status = (page) => page.getByRole('combobox', { name: 'Status for Synthetic 1', exact: true }).filter({ visible: true })
@@ -49,9 +49,11 @@ for (const demo of [false, true]) {
     await nav(page, 'List')
     await page.getByLabel('Search', { exact: true }).fill('Corrected company')
     await expect(page.locator('.application-card')).toContainText('Corrected role')
+    await openDetails(page)
     await expect(page.locator('.notes-block')).toContainText('Literal notes\nReferral: No')
     await expect(page.locator('.detail-salary dd')).toHaveText('95000')
     await expect(page.locator('.detail-interviews dd')).toHaveText('1')
+    await closeDetails(page)
     if (!demo) {
       expect(state.applications[0]).toMatchObject({ company: 'Corrected company', role: 'Corrected role', salary: '95000', interview_count: 1 })
       await page.reload()
@@ -80,7 +82,9 @@ for (const edit of [false, true]) {
     expect(state.applications[0].notes).toBe('Keep these unsaved notes')
     await page.reload()
     await nav(page, 'List')
+    await openDetails(page)
     await expect(page.locator('.notes-block p')).toHaveText('Keep these unsaved notes')
+    await closeDetails(page)
   })
 }
 
@@ -140,7 +144,9 @@ for (const edit of [false, true]) {
       expect(state.applications[0].notes).toBe(failure ? 'C' : 'B')
       await page.reload()
       await nav(page, 'List')
+      await openDetails(page)
       await expect(page.locator('.notes-block p')).toHaveText(failure ? 'C' : 'B')
+      await closeDetails(page)
     })
   }
 }
@@ -275,8 +281,10 @@ test('late full edit response cannot overwrite a newer confirmed status', async 
   await expect(status(page)).toHaveValue('Offer')
   await save.respond()
   await nav(page, 'List')
+  await openDetails(page)
   await expect(page.locator('.notes-block p')).toHaveText('New notes')
   await expect(page.locator('.detail-salary dd')).toHaveText('120000')
+  await closeDetails(page)
   await expect(status(page)).toHaveValue('Offer')
   expect(state.applications[0]).toMatchObject({ status: 'Offer', notes: 'New notes', salary: '120000' })
   await page.reload()
@@ -298,8 +306,10 @@ test('full edit version conflict retries without losing concurrent status, round
   await expect(page).toHaveURL(/dashboard$/)
   await expect(status(page)).toHaveValue('Interview')
   await nav(page, 'List')
+  await openDetails(page)
   await expect(page.locator('.detail-salary dd')).toHaveText('125000')
   await expect(page.locator('.detail-interviews dd')).toHaveText('4')
+  await closeDetails(page)
   expect(state.applications[0]).toMatchObject({ notes: 'Edited note', salary: '125000', contact: 'New recruiter', interview_count: 4, status: 'Interview' })
 })
 
@@ -336,8 +346,10 @@ test('an older full response preserves a later full edit and its unchanged field
   await expect(page).toHaveURL(/dashboard$/)
   await first.respond()
   await nav(page, 'List')
+  await openDetails(page)
   await expect(page.locator('.notes-block p')).toHaveText('First committed note')
   await expect(page.locator('.detail-salary dd')).toHaveText('140000')
+  await closeDetails(page)
   expect(state.applications[0]).toMatchObject({ notes: 'First committed note', salary: '140000' })
 })
 
