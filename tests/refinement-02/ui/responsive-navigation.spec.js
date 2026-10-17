@@ -5,7 +5,7 @@ const widths = [390, 639, 640, 720, 721, 768, 898, 900, 901, 1039, 1040, 1440]
 const signOut = (page) => page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })
 const pages = [
   ['Dashboard', 'Your application pipeline'], ['Profile', 'auditor'],
-  ['Progress', 'Your application flow.'], ['Job Agent', 'Turn job alerts into an application queue.'],
+  ['Progress', 'Your application flow.'], ['Job Agent', 'Connect your job alerts.'],
   ['Import Excel', 'Bring in your existing tracker.'],
 ]
 

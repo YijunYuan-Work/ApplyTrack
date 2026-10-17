@@ -1,4 +1,4 @@
-import { CheckCircle2, ShieldCheck } from 'lucide-react'
+import { CheckCircle2, Circle, ShieldCheck } from 'lucide-react'
 import { useMemo } from 'react'
 import JobAlertConnection from './JobAlertConnection'
 
@@ -38,14 +38,19 @@ function JobAgentSetup({
         <ul>
           {readiness.map((item) => (
             <li className={item.complete ? 'complete' : ''} key={item.label}>
-              <CheckCircle2 aria-hidden="true" size={18} />
+              {item.complete ? (
+                <CheckCircle2 aria-hidden="true" size={18} />
+              ) : (
+                <Circle aria-hidden="true" size={18} />
+              )}
               <span>{item.label}</span>
             </li>
           ))}
         </ul>
         <p className="agent-privacy-note">
           <ShieldCheck aria-hidden="true" size={18} />
-          ApplyTrack only receives the alert emails you forward. It never connects to or stores your LinkedIn or Indeed credentials.
+          ApplyTrack only receives the alert emails you forward. It never connects to or stores your
+          LinkedIn or Indeed credentials.
         </p>
       </aside>
 

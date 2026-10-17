@@ -16,6 +16,7 @@ import JobMatches from '../components/JobMatches'
 import { getTodayIsoDate } from '../data/applications'
 import { sortJobLeadsNewestFirst } from '../data/jobAgent'
 import { getRoute } from '../utils/routes'
+import '../styles/job-agent.css'
 
 function JobAgentPage({
   demoWorkspace = null,
@@ -85,7 +86,7 @@ function JobAgentPage({
     }).catch((error) => {
       if (!current) return
       setQueue(null)
-      setQueueError(error.message)
+      setQueueError(error.message || 'Could not load the queue. Reload to try again.')
       setQueueLoading(false)
     })
     return () => { current = false }
@@ -146,7 +147,7 @@ function JobAgentPage({
     return () => {
       isMounted = false
     }
-  }, [isDemo, user.id])
+  }, [isDemo, user.id, reload])
 
   async function handleCreateInbox() {
     setIsManagingAlerts(true)
@@ -391,20 +392,21 @@ function JobAgentPage({
       onSignOut={onSignOut}
       user={user}
     >
-      <main className="job-agent-page">
+      <div className="job-agent-page">
         <header className="job-agent-header">
           <div>
-            <p className="eyebrow">Job Agent</p>
-            <h1>Turn job alerts into an application queue.</h1>
-            <p>Bring in LinkedIn and Indeed alerts, apply on the source site, and move finished applications into your pipeline.</p>
+            <p className="eyebrow">Job Agent · {view === 'matches' ? 'Application queue' : 'Connections'}</p>
+            <h1>{view === 'matches' ? 'Jobs waiting for you' : 'Connect your job alerts.'}</h1>
+            <p>{view === 'matches' ? 'Open a job, apply on LinkedIn or Indeed, then confirm it here.' : 'Bring your LinkedIn and Indeed alerts into one private queue.'}</p>
           </div>
+          {view === 'matches' && <div className="agent-queue-count" aria-live="polite">
+            {queueLoading ? 'Loading queue...' : displayedQueue ? <><strong>{displayedQueue.pendingCount}</strong>{' '}<span>waiting</span></> : 'Count unavailable'}
+          </div>}
         </header>
 
-        <div className="job-agent-tabs" role="tablist" aria-label="Job Agent views">
+        <div className="job-agent-tabs" role="group" aria-label="Job Agent views">
           <button
-            aria-selected={view === 'setup'}
-            className={view === 'setup' ? 'active' : ''}
-            role="tab"
+            aria-pressed={view === 'setup'}
             type="button"
             onClick={onJobAgent}
           >
@@ -412,9 +414,7 @@ function JobAgentPage({
             Setup
           </button>
           <button
-            aria-selected={view === 'matches'}
-            className={view === 'matches' ? 'active' : ''}
-            role="tab"
+            aria-pressed={view === 'matches'}
             type="button"
             onClick={onViewMatches}
           >
@@ -464,8 +464,13 @@ function JobAgentPage({
             onRotateInbox={handleRotateInbox}
             onToggleInbox={handleToggleInbox}
           />
-        ) : null}
-      </main>
+        ) : (
+          <section className="agent-results-empty">
+            <h2>Could not load Job Agent</h2>
+            <button className="ui-button ui-button-ghost" type="button" onClick={() => setReload((current) => current + 1)}>Reload setup</button>
+          </section>
+        )}
+      </div>
     </AppLayout>
   )
 }
