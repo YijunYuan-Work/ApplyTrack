@@ -261,7 +261,7 @@ for (const width of [1440, 768, 390]) {
       ['Job Agent', 'Turn job alerts into an application queue.'],
     ]) {
       // The compact bottom bar uses shortened names.
-      await nav(page, width <= 900 && name === 'Import Excel' ? 'Import' : width <= 900 && name === 'Job Agent' ? 'Agent' : name)
+      await nav(page, width < 640 && name === 'Import Excel' ? 'Import' : width < 640 && name === 'Job Agent' ? 'Agent' : name)
       await expect(page.getByRole('heading', { name: heading, exact: true, level: 1 })).toBeVisible()
       await noOverflow(page)
       await page.screenshot({ path: info.outputPath(`${name.replaceAll(' ', '-')}-${width}.png`), fullPage: true })
@@ -274,7 +274,7 @@ for (const width of [1440, 768, 390]) {
     await expect(progressNav).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page.getByRole('heading', { name: 'Your application flow.', exact: true })).toBeVisible()
-    await nav(page, width <= 900 ? 'Agent' : 'Job Agent')
+    await nav(page, width < 640 ? 'Agent' : 'Job Agent')
     await nav(page, 'Matches')
     await expect(page.getByRole('heading', { name: 'Jobs waiting for you' })).toBeVisible()
     await noOverflow(page)
@@ -293,16 +293,16 @@ test('RF-13 F11: exactly one Sign out control is reachable across responsive bou
   await backend(context)
   await signIn(page)
   await nav(page, 'Profile')
-  for (const width of [390, 720, 721, 768, 898, 900, 901, 1440]) {
+  for (const width of [390, 639, 640, 720, 721, 768, 898, 900, 901, 1039, 1040, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     await expect.poll(() => page.evaluate(() => innerWidth)).toBe(width)
     await expect(page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })).toHaveCount(1)
   }
   const boundaries = []
-  for (const width of [720, 721, 900, 901]) {
+  for (const width of [639, 640, 1039, 1040]) {
     await page.setViewportSize({ width, height: 900 })
     await expect.poll(() => page.evaluate(() => innerWidth)).toBe(width)
-    const media = await page.evaluate(() => ({ width: innerWidth, mobile: matchMedia('(max-width: 720px)').matches, compact: matchMedia('(max-width: 900px)').matches, visualWidth: visualViewport.width, dpr: devicePixelRatio }))
+    const media = await page.evaluate(() => ({ width: innerWidth, mobile: matchMedia('(width < 640px)').matches, compact: matchMedia('(width < 1040px)').matches, visualWidth: visualViewport.width, dpr: devicePixelRatio }))
     const expected = 1
     await expect(page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })).toHaveCount(expected)
     boundaries.push({ ...media, visibleSignOut: expected })
@@ -412,6 +412,8 @@ test('accessibility evidence and measured 1000-row board/list rendering', async 
   const findings = []
   for (const name of ['Dashboard', 'Profile', 'Progress', 'Import Excel', 'Job Agent']) {
     await nav(page, name)
+    await expect(page.locator('.sidebar-nav [aria-current="page"]')).toHaveAttribute('aria-label', name)
+    await expect(page.locator('.app-content')).toHaveCSS('opacity', '1')
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
     findings.push({ page: name, violations: results.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.map((n) => ({ target: n.target, summary: n.failureSummary })) })) })
   }
