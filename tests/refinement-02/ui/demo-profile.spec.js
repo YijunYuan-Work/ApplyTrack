@@ -15,6 +15,7 @@ for (const width of [1440, 768, 390]) {
     await expect(page.locator('form, input')).toHaveCount(0)
     await expect(page.getByRole('button', { name: /password/i })).toHaveCount(0)
     await expect(page.getByText('Password updated successfully.', { exact: true })).toHaveCount(0)
+    await expect(page.locator('.app-content')).toHaveCSS('opacity', '1')
     const accessibility = await new AxeBuilder({ page }).include('.profile-section').withTags(['wcag2a', 'wcag2aa']).analyze()
     expect(accessibility.violations).toEqual([])
     await noOverflow(page)
@@ -24,8 +25,8 @@ for (const width of [1440, 768, 390]) {
     for (const [name, heading] of [
       ['Dashboard', 'Your application pipeline'],
       ['Progress', 'Your application flow.'],
-      [width <= 900 ? 'Agent' : 'Job Agent', 'Turn job alerts into an application queue.'],
-      [width <= 900 ? 'Import' : 'Import Excel', 'Bring in your existing tracker.'],
+      [width < 640 ? 'Agent' : 'Job Agent', 'Turn job alerts into an application queue.'],
+      [width < 640 ? 'Import' : 'Import Excel', 'Bring in your existing tracker.'],
       ['Profile', 'Demo'],
     ]) {
       const control = page.getByRole('button', { name, exact: true }).filter({ visible: true }).first()

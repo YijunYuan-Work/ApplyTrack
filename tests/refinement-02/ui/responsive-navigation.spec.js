@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { application, backend, nav, noOverflow, signIn } from './fixtures.js'
 
-const widths = [390, 720, 721, 768, 898, 900, 901, 1440]
+const widths = [390, 639, 640, 720, 721, 768, 898, 900, 901, 1039, 1040, 1440]
 const signOut = (page) => page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })
 const pages = [
   ['Dashboard', 'Your application pipeline'], ['Profile', 'auditor'],
@@ -11,9 +11,10 @@ const pages = [
 
 async function shell(page) {
   const media = await page.evaluate(() => ({ innerWidth, visualWidth: visualViewport.width,
-    compact: matchMedia('(max-width: 900px)').matches, desktop:matchMedia('(width > 900px)').matches,
-    phone: matchMedia('(max-width: 720px)').matches }))
-  expect(media.desktop).toBe(!media.compact)
+    compact: matchMedia('(width < 640px)').matches, desktop:matchMedia('(width >= 1040px)').matches,
+    rail: matchMedia('(640px <= width < 1040px)').matches,
+    phone: matchMedia('(width < 640px)').matches }))
+  expect(media.desktop).toBe(!media.compact && !media.rail)
   const menu = page.getByRole('navigation', { name: media.compact ? 'Mobile navigation' : 'Primary navigation', exact: true })
   await expect(menu).toBeVisible()
   await expect(page.locator('.sidebar')).toBeVisible({ visible: !media.compact })
@@ -74,7 +75,7 @@ async function keyboardMenu(page) {
 async function keyboardSignOut(page) {
   const { media } = await shell(page)
   if (media.compact) await page.getByRole('button', { name: 'Show confirmed password' }).focus()
-  else await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('button', { name: 'Import Excel' }).focus()
+  else await page.locator('.sidebar-primary-action').focus()
   await page.keyboard.press('Tab')
   await expect(signOut(page)).toBeFocused()
   await expect(signOut(page)).toBeInViewport()
@@ -128,7 +129,7 @@ test('RF-13: live resizing preserves one exit and the authenticated session', as
   await nav(page, 'Profile')
   await expect(page.locator('.profile-section')).toBeVisible()
   const evidence = []
-  for (const width of [1440, 900, 721, 720, 901, 390, 768]) {
+  for (const width of [1440, 1040, 1039, 900, 721, 720, 640, 639, 901, 390, 768]) {
     await page.setViewportSize({ width, height:900 })
     await expect(signOut(page)).toHaveCount(1)
     const { media } = await shell(page)
@@ -149,7 +150,7 @@ test('RF-13: fractional CSS viewports have no navigation or Sign Out gap', async
   await nav(frame, 'Profile')
   await expect(frame.locator('.profile-section')).toBeVisible()
   const evidence = []
-  for (const width of [719.5,720.5,899.5,900.5]) {
+  for (const width of [639.5,640.5,719.5,720.5,899.5,900.5,1039.5,1040.5]) {
     await page.locator('iframe').evaluate((e,w) => { e.style.width = `${w}px` },width)
     const { media } = await shell(frame)
     await expect(signOut(frame)).toHaveCount(1)
