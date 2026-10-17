@@ -137,6 +137,41 @@ base. See [cleanup summary](assets/ui03-css-preservation.json). A protected diff
 and source comparison also verify unchanged calculations/Calendar helpers,
 counter behavior, foundation tokens, shell, Dashboard styles and persistence code.
 
+## Pipeline Label Follow-Up
+
+Review found overlapping two-line labels when the three right-hand outcomes are
+small relative to the application total. Recharts reserves 30px between node
+rectangles, not the measured height of the count/description pair. The new
+regression reproduced Offers/Rejected after and Rejected after/Still in progress
+collisions before the correction (100 applications; three one-application outcomes).
+
+Each pair now shares an SVG group. A small measured layout pass packs labels in
+each column with an 8px gap and keeps the groups inside the SVG vertically. It
+responds to Recharts coordinate/text updates and completed font loading; it does
+not observe its own transform writes. Only label groups move. Recharts node
+coordinates, heights, padding, margins, ribbon paths/widths, colors, typography and
+animation timings are unchanged. There are no count-specific offsets or new
+analytics rules. The redundant inner `main` is now a layout-identical `div`, leaving
+the shell as the sole main landmark.
+
+The focused regression covers 1440/1040/1039/768px with balanced small counts,
+three tiny outcomes beside a dominant no-interview branch, and a dominant Offer
+branch. It measures the union of each rendered count/description pair, checks all
+label pairs, checks labels against node rectangles and chart bounds, and saves
+screenshots plus JSON. A separate normal-motion case exercises live resizing,
+keyboard focus, real pointer hover and mobile/reduced-motion remounting. WebKit
+reports incorrect automation quads for transformed SVG text; that test uses DOM
+client bounds, verifies the actual hit target and moves the real pointer there,
+rather than forcing hover or synthesizing events.
+
+Focused corrected captures (100 synthetic applications, three tiny outcomes):
+[1440px](assets/ui03-labels-1440.png), [1040px](assets/ui03-labels-1040.png),
+[1039px](assets/ui03-labels-1039.png), [768px](assets/ui03-labels-768.png).
+The [rendered bounds](assets/ui03-label-bounds.json) record all 36 static
+browser/width/distribution combinations: zero label collisions, clipped labels or
+label/node intersections. These captures supplement the original Version B
+comparisons above; the approved remainder of the interface is not redesigned.
+
 ## Verification
 
 All browser/auth/backend fixtures are synthetic local data; Demo sends no backend
@@ -146,8 +181,8 @@ requests. No production endpoint, database or configuration was accessed.
 | --- | --- |
 | `npm test` | 207 passed, including 3 new presentation cases and existing G03/F08 matrix/timezone tests |
 | `npm run test:audit` | 30 passed |
-| Progress analytics + UI-03, Chromium/Firefox/WebKit | 63 passed (21 per browser), including final accessibility/canonical-inspection corrections |
-| Additional historical mutation / shell / Dashboard / Calendar regressions (Chromium) | 70 passed |
+| Progress analytics + UI-03 + label follow-up, Chromium/Firefox/WebKit | 102 passed (34 per browser), including 36 static label-geometry cases and 3 live-resize/motion/interaction cases |
+| Additional historical mutation / shell / Dashboard / Calendar regressions (Chromium, initial UI-03 baseline) | 70 previously passed; unrelated modules remain unchanged in this label-only follow-up |
 | Lint and production build | Passed |
 | `git diff --check` | Passed |
 | Non-Progress CSS and protected-source checks | Passed |
@@ -166,7 +201,7 @@ remain; only mobile presentation labels/order changed to match Version B.
 ```powershell
 npm test
 npm run test:audit
-npm run test:audit-ui -- progress-analytics.spec.js progress-ui2.spec.js --workers=1
+npm run test:audit-ui -- progress-analytics.spec.js progress-ui2.spec.js progress-labels.spec.js --workers=1
 npm run test:audit-ui -- rejection-dates.spec.js responsive-navigation.spec.js dashboard-ui2.spec.js navigation-shell.spec.js palette-version-b.spec.js --project=chromium --workers=1
 npm run lint
 npm run build

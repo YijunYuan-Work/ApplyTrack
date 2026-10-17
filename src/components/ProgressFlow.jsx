@@ -1,5 +1,33 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { ResponsiveContainer, Sankey } from 'recharts'
+
+function positionFlowLabels(chart) {
+  const svg = chart.querySelector('svg')
+  if (!svg) return
+  const columns = new Map()
+  for (const element of svg.querySelectorAll('.progress-node-label')) {
+    const box = element.getBBox()
+    const column = element.dataset.column
+    if (!columns.has(column)) columns.set(column, [])
+    columns.get(column).push({ element, box, top: box.y })
+  }
+  // Pack measured two-line labels, not proportional nodes, leaving the flow untouched.
+  const gap = 8
+  for (const labels of columns.values()) {
+    labels.sort((a, b) => a.box.y - b.box.y)
+    let bottom = 4
+    for (const label of labels) {
+      label.top = Math.max(label.box.y, bottom)
+      bottom = label.top + label.box.height + gap
+    }
+    bottom = svg.viewBox.baseVal.height - 4
+    for (const label of labels.toReversed()) {
+      label.top = Math.min(label.top, bottom - label.box.height)
+      bottom = label.top - gap
+      label.element.setAttribute('transform', `translate(0 ${label.top - label.box.y})`)
+    }
+  }
+}
 
 function FlowNode({ height, width, x, y, payload, index, onInspect }) {
   const above = payload.name === 'Reached interview'
@@ -21,26 +49,28 @@ function FlowNode({ height, width, x, y, payload, index, onInspect }) {
     >
       <title>{label}</title>
       <rect fill={payload.color} x={x} y={y} width={width} height={height} rx={3} />
-      <text
-        className="progress-node-count"
-        x={labelX}
-        y={labelY}
-        textAnchor={above ? 'middle' : left ? 'end' : 'start'}
-      >
-        {payload.count}
-      </text>
-      <text
-        className="progress-node-name"
-        x={labelX}
-        y={labelY + 19}
-        textAnchor={above ? 'middle' : left ? 'end' : 'start'}
-      >
-        {payload.name === 'Rejected before interview'
-          ? 'Rejected before'
-          : payload.name === 'Rejected after interview'
-            ? 'Rejected after'
-            : payload.name}
-      </text>
+      <g className="progress-node-label" data-column={labelX}>
+        <text
+          className="progress-node-count"
+          x={labelX}
+          y={labelY}
+          textAnchor={above ? 'middle' : left ? 'end' : 'start'}
+        >
+          {payload.count}
+        </text>
+        <text
+          className="progress-node-name"
+          x={labelX}
+          y={labelY + 19}
+          textAnchor={above ? 'middle' : left ? 'end' : 'start'}
+        >
+          {payload.name === 'Rejected before interview'
+            ? 'Rejected before'
+            : payload.name === 'Rejected after interview'
+              ? 'Rejected after'
+              : payload.name}
+        </text>
+      </g>
     </g>
   )
 }
@@ -80,7 +110,26 @@ function FlowLink({
 }
 
 export default function ProgressFlow({ data, summary, tablet }) {
+  const chart = useRef(null)
   const [inspection, setInspection] = useState(null)
+  useLayoutEffect(() => {
+    const element = chart.current
+    const layout = () => positionFlowLabels(element)
+    const observer = new MutationObserver(layout)
+    observer.observe(element, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['x', 'y'],
+    })
+    document.fonts.addEventListener('loadingdone', layout)
+    layout()
+    return () => {
+      observer.disconnect()
+      document.fonts.removeEventListener('loadingdone', layout)
+    }
+  }, [])
   const node = data.nodes.find((item) => item.name === inspection?.node)
   const link = data.links.find(
     (item) =>
@@ -98,7 +147,7 @@ export default function ProgressFlow({ data, summary, tablet }) {
       role="group"
       aria-label={`Application flow: ${summary.applications} applications, ${summary.interviewedApplications} reached an interview, and ${summary.offers} received an offer.`}
     >
-      <div className="progress-chart">
+      <div className="progress-chart" ref={chart}>
         <ResponsiveContainer
           width="100%"
           height="100%"

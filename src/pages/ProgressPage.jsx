@@ -113,7 +113,7 @@ function ProgressPage({ applications, isDemo = false, ...layoutProps }) {
   )
   return (
     <AppLayout {...layoutProps} currentPage="progress" isDemo={isDemo}>
-      <main className="progress-workspace">
+      <div className="progress-workspace">
         <header className="progress-header">
           <p className="progress-eyebrow">Progress</p>
           <h1>Your application flow.</h1>
@@ -358,7 +358,7 @@ function ProgressPage({ applications, isDemo = false, ...layoutProps }) {
             ))}
           </article>
         </section>
-      </main>
+      </div>
     </AppLayout>
   )
 }
