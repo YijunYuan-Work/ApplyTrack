@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Award, BriefcaseBusiness, CircleX, UsersRound } from 'lucide-react'
 
-function MetricValue({ value }) {
+export function MetricValue({ value }) {
   const [display, setDisplay] = useState(() =>
     window.matchMedia('(prefers-reduced-motion: reduce)').matches ? value : 0,
   )

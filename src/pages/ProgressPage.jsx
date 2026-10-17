@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { ResponsiveContainer, Sankey, Tooltip } from 'recharts'
 import AppLayout from '../components/AppLayout'
+import { MetricValue } from '../components/MetricGrid'
+import ProgressFlow from '../components/ProgressFlow'
 import {
   buildCalendarDays,
   buildCalendarEvents,
@@ -10,399 +11,354 @@ import {
   getLatestEventWeek,
   shiftWeek,
 } from '../data/progress'
+import { buildProgressPresentation, percentage, progressStages } from '../data/progressPresentation'
+import '../styles/progress.css'
 
-const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const weekDateFormatter = new Intl.DateTimeFormat('en-US', {
+const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const fullDate = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
 })
+const shortDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
 
-function getWeekRangeLabel(weekKey) {
-  const weekStart = getDateFromKey(weekKey)
-  const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekStart.getDate() + 6)
-
-  return `${weekDateFormatter.format(weekStart)} - ${weekDateFormatter.format(weekEnd)}`
-}
-
-const compactNodeLabels = {
-  Applications: 'Applications',
-  'Reached interview': 'Interview',
-  Offers: 'Offers',
-  'Rejected after interview': 'Rejected after',
-  'No interview yet': 'No interview',
-  'Rejected before interview': 'Rejected before',
-  'Still in progress': 'In progress',
-}
-
-function ProgressNode({ compact = false, height, payload, width, x, y }) {
-  const nodeName = compact ? compactNodeLabels[payload.name] || payload.name : payload.name
-  const labelAbove = payload.name === 'Reached interview'
-  const labelOnLeft = !labelAbove && x < (compact ? 96 : 150)
-  const labelX = labelAbove
-    ? x + width / 2
-    : labelOnLeft
-      ? x - (compact ? 8 : 14)
-      : x + width + (compact ? 8 : 14)
-  const textAnchor = labelAbove ? 'middle' : labelOnLeft ? 'end' : 'start'
-  const labelY = y + height / 2
-
-  return (
-    <g>
-      <rect
-        fill={payload.color}
-        height={Math.max(height, 8)}
-        rx="3"
-        width={width}
-        x={x}
-        y={y}
-      />
-      <text
-        className="progress-node-count"
-        textAnchor={textAnchor}
-        x={labelX}
-        y={labelAbove ? y - 26 : labelY - 4}
-      >
-        {payload.count}
-      </text>
-      <text
-        className="progress-node-name"
-        textAnchor={textAnchor}
-        x={labelX}
-        y={labelAbove ? y - 7 : labelY + 18}
-      >
-        {nodeName}
-      </text>
-    </g>
-  )
-}
-
-function useCompactViewport() {
-  const [isCompactViewport, setIsCompactViewport] = useState(() =>
-    typeof window === 'undefined'
-      ? false
-      : window.matchMedia('(max-width: 640px)').matches,
-  )
-
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches)
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 640px)')
-
-    function handleViewportChange(event) {
-      setIsCompactViewport(event.matches)
-    }
-
-    mediaQuery.addEventListener('change', handleViewportChange)
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleViewportChange)
-    }
-  }, [])
-
-  return isCompactViewport
+    const media = window.matchMedia(query)
+    const change = (event) => setMatches(event.matches)
+    media.addEventListener('change', change)
+    return () => media.removeEventListener('change', change)
+  }, [query])
+  return matches
 }
 
-function ProgressPage({
-  applications,
-  isDemo = false,
-  onAddApplication,
-  onDashboard,
-  onImportExcel,
-  onJobAgent,
-  onProfile,
-  onProgress,
-  onSignOut,
-  user,
-}) {
+function ProgressBar({ value, color, label }) {
+  return (
+    <span className="progress-bar" role="img" aria-label={label}>
+      <span style={{ width: `${value}%`, background: color }} />
+    </span>
+  )
+}
+
+function ProgressPage({ applications, isDemo = false, ...layoutProps }) {
   const [activeView, setActiveView] = useState('map')
   const [visibleWeekOverride, setVisibleWeekOverride] = useState('')
   const [expandedDays, setExpandedDays] = useState(new Set())
-  const isCompactViewport = useCompactViewport()
+  const mobile = useMediaQuery('(width < 640px)')
+  const tablet = useMediaQuery('(width < 1040px)')
   const eventsByDate = useMemo(() => buildCalendarEvents(applications), [applications])
-  const latestEventWeek = useMemo(() => getLatestEventWeek(eventsByDate), [eventsByDate])
-  const visibleWeek = visibleWeekOverride || latestEventWeek
-
-  const { data, summary } = useMemo(
-    () => buildProgressData(applications),
-    [applications],
+  const visibleWeek = visibleWeekOverride || getLatestEventWeek(eventsByDate)
+  const progress = useMemo(() => buildProgressData(applications), [applications])
+  const { data, summary } = progress
+  const { outcomes, conversions, weeks } = useMemo(
+    () => buildProgressPresentation(applications, progress),
+    [applications, progress],
   )
-  const calendarDays = useMemo(
+  const days = useMemo(
     () => buildCalendarDays(visibleWeek, eventsByDate),
-    [eventsByDate, visibleWeek],
+    [visibleWeek, eventsByDate],
   )
-  const visibleWeekTotal = calendarDays.reduce(
-    (total, day) => total + day.events.length,
-    0,
-  )
-  const outcomes = data.nodes.slice(1)
-
-  function toggleExpandedDay(dateKey) {
-    setExpandedDays((currentDays) => {
-      const nextDays = new Set(currentDays)
-
-      if (nextDays.has(dateKey)) {
-        nextDays.delete(dateKey)
-      } else {
-        nextDays.add(dateKey)
-      }
-
-      return nextDays
-    })
-  }
-
+  const weekTotal = days.reduce((total, day) => total + day.events.length, 0)
+  const weekEnd = getDateFromKey(visibleWeek)
+  weekEnd.setDate(weekEnd.getDate() + 6)
+  const maxWeekly = Math.max(1, ...weeks.map((week) => week.count))
+  const metrics = [
+    [
+      'Applications',
+      summary.applications,
+      'Every application in your tracker',
+      100,
+      'var(--color-sea-glass)',
+    ],
+    [
+      'Interviews held',
+      summary.interviewEvents,
+      'Rounds completed, all applications',
+      Math.min(100, percentage(summary.interviewEvents, summary.applications)),
+      'var(--color-terracotta)',
+    ],
+    [
+      'Reached interview',
+      summary.interviewedApplications,
+      `${percentage(summary.interviewedApplications, summary.applications)}% of applications`,
+      percentage(summary.interviewedApplications, summary.applications),
+      'var(--color-sea-glass)',
+    ],
+    [
+      'Offers',
+      summary.offers,
+      `${percentage(summary.offers, summary.applications)}% of applications`,
+      percentage(summary.offers, summary.applications),
+      'var(--color-peach)',
+    ],
+  ]
   function shiftVisibleWeek(offset) {
     setExpandedDays(new Set())
-    setVisibleWeekOverride((currentWeek) =>
-      shiftWeek(currentWeek || visibleWeek, offset),
-    )
+    setVisibleWeekOverride(shiftWeek(visibleWeek, offset))
   }
-
+  function toggleDay(date) {
+    setExpandedDays((current) => {
+      const next = new Set(current)
+      if (next.has(date)) next.delete(date)
+      else next.add(date)
+      return next
+    })
+  }
+  const empty = (
+    <div className="progress-empty">
+      <h3>No applications to show yet.</h3>
+      <p>Add an application and your progress views will appear here.</p>
+    </div>
+  )
   return (
-    <AppLayout
-      currentPage="progress"
-      isDemo={isDemo}
-      onAddApplication={onAddApplication}
-      onDashboard={onDashboard}
-      onImportExcel={onImportExcel}
-      onJobAgent={onJobAgent}
-      onProfile={onProfile}
-      onProgress={onProgress}
-      onSignOut={onSignOut}
-      user={user}
-    >
-      <header className="app-header compact">
-        <div>
-          <p className="eyebrow">Progress</p>
+    <AppLayout {...layoutProps} currentPage="progress" isDemo={isDemo}>
+      <div className="progress-workspace">
+        <header className="progress-header">
+          <p className="progress-eyebrow">Progress</p>
           <h1>Your application flow.</h1>
           <p>See how your job search is moving from application to outcome.</p>
-        </div>
-      </header>
-
-      <section className="progress-section" aria-label="Application progress">
-        <div className="progress-summary">
-          <article>
-            <span title="Every application in your tracker">Applications</span>
-            <strong>{summary.applications}</strong>
-          </article>
-          <article>
-            <span title="Total interview rounds completed across all applications">
-              Interviews held
-            </span>
-            <strong>{summary.interviewEvents}</strong>
-          </article>
-          <article>
-            <span title="Applications that reached at least one interview">
-              Reached interview
-            </span>
-            <strong>{summary.interviewedApplications}</strong>
-          </article>
-          <article>
-            <span>Offers</span>
-            <strong>{summary.offers}</strong>
-          </article>
-        </div>
-
-        <div className="progress-chart-panel">
+        </header>
+        <section className="progress-summary" aria-label="Progress summary">
+          {metrics.map(([label, value, sub, width, color], index) => (
+            <article key={label} style={{ '--reveal-delay': `${40 + index * 60}ms` }}>
+              <span>{label}</span>
+              <MetricValue value={value} />
+              <ProgressBar
+                value={summary.applications ? width : 0}
+                color={color}
+                label={
+                  label === 'Interviews held'
+                    ? `${value} completed interview rounds`
+                    : `${value} ${label.toLowerCase()}`
+                }
+              />
+              <small>{sub}</small>
+            </article>
+          ))}
+        </section>
+        <section className="progress-chart-panel" aria-label="Application progress">
           <div className="progress-view-header">
             <div className="progress-chart-heading">
-              <p className="eyebrow">
+              <p className="progress-eyebrow">
                 {activeView === 'map' ? 'Pipeline map' : 'Calendar'}
               </p>
-              <h2>
-                {activeView === 'map'
-                  ? 'Applications by outcome'
-                  : 'Applications by day'}
-              </h2>
+              <h2>{activeView === 'map' ? 'Applications by outcome' : 'Applications by day'}</h2>
             </div>
-
             <div
               className="progress-tabs"
+              role="group"
               aria-label="Progress views"
+              data-view={activeView}
             >
-              <button
-                aria-controls="progress-map-panel"
-                aria-pressed={activeView === 'map'}
-                className={activeView === 'map' ? 'progress-tab-active' : ''}
-                type="button"
-                onClick={() => setActiveView('map')}
-              >
-                Pipeline map
-              </button>
-              <button
-                aria-controls="progress-calendar-panel"
-                aria-pressed={activeView === 'calendar'}
-                className={activeView === 'calendar' ? 'progress-tab-active' : ''}
-                type="button"
-                onClick={() => setActiveView('calendar')}
-              >
-                Calendar
-              </button>
+              <span className="progress-tab-indicator" aria-hidden="true" />
+              {['map', 'calendar'].map((view) => (
+                <button
+                  key={view}
+                  type="button"
+                  aria-controls={`progress-${view}-panel`}
+                  aria-pressed={view === activeView}
+                  onClick={() => setActiveView(view)}
+                >
+                  {view === 'map' ? 'Pipeline map' : 'Calendar'}
+                </button>
+              ))}
             </div>
           </div>
-
-          {applications.length === 0 ? (
-            <div className="empty-state">
-              <h3>No applications to show yet.</h3>
-              <p>Add an application and your progress views will appear here.</p>
-            </div>
-          ) : activeView === 'map' ? (
-            <div id="progress-map-panel">
-              {isCompactViewport ? (
-                <div
-                  className="compact-progress-list"
-                  aria-label="Application outcomes"
-                >
-                  {outcomes.map((outcome) => {
-                    const percentage = summary.applications
-                      ? Math.round((outcome.count / summary.applications) * 100)
-                      : 0
-
-                    return (
-                      <div className="compact-progress-row" key={outcome.name}>
-                        <div>
-                          <span>{compactNodeLabels[outcome.name] || outcome.name}</span>
-                          <strong>{outcome.count}</strong>
-                        </div>
-                        <span
-                          aria-label={`${percentage}% of applications`}
-                          className="compact-progress-bar"
-                          role="img"
-                        >
-                          <span
-                            style={{
-                              backgroundColor: outcome.color,
-                              width: `${percentage}%`,
-                            }}
-                          />
-                        </span>
-                        <small>{percentage}% of applications</small>
-                      </div>
-                    )
-                  })}
-                </div>
+          <div id="progress-map-panel" hidden={activeView !== 'map'}>
+            {activeView === 'map' &&
+              (applications.length === 0 ? (
+                empty
               ) : (
-                <div
-                  aria-label={`Application flow: ${summary.applications} applications, ${summary.interviewedApplications} reached an interview, and ${summary.offers} received an offer.`}
-                  className="progress-chart-scroll"
-                  role="img"
-                >
-                  <div className="progress-chart">
-                    <ResponsiveContainer
-                      height="100%"
-                      initialDimension={{ height: 500, width: 760 }}
-                      minHeight={360}
-                      minWidth={0}
-                      width="100%"
-                    >
-                      <Sankey
-                        data={data}
-                        link={{ stroke: '#94a3b8', strokeOpacity: 0.42 }}
-                        linkCurvature={0.55}
-                        margin={{ bottom: 48, left: 188, right: 188, top: 48 }}
-                        node={<ProgressNode />}
-                        nodePadding={42}
-                        nodeWidth={14}
-                        verticalAlign="top"
-                      >
-                        <Tooltip
-                          formatter={(value) => [`${value} applications`, 'Flow']}
-                        />
-                      </Sankey>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div
-              className="progress-calendar"
-              id="progress-calendar-panel"
-            >
-              <div className="calendar-toolbar">
-                <div className="calendar-range">
-                  <h3>{getWeekRangeLabel(visibleWeek)}</h3>
-                  <p>{visibleWeekTotal} events this week</p>
-                </div>
-                <div className="calendar-actions">
-                  <button
-                    aria-label="Previous week"
-                    className="ghost-button"
-                    type="button"
-                    onClick={() => shiftVisibleWeek(-1)}
-                  >
-                    <ChevronLeft aria-hidden="true" size={18} />
-                    <span>Previous</span>
-                  </button>
-                  <button
-                    aria-label="Next week"
-                    className="ghost-button"
-                    type="button"
-                    onClick={() => shiftVisibleWeek(1)}
-                  >
-                    <span>Next</span>
-                    <ChevronRight aria-hidden="true" size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="calendar-grid" aria-label="Application calendar">
-                {weekdayLabels.map((dayLabel) => (
-                  <div className="calendar-weekday" key={dayLabel}>
-                    {dayLabel}
-                  </div>
-                ))}
-
-                {calendarDays.map((day) => (
-                  <article
-                    className="calendar-day"
-                    key={day.dateKey}
-                  >
-                    <div className="calendar-day-header">
-                      <time dateTime={day.dateKey}>{day.date.getDate()}</time>
-                      {day.events.length > 0 && (
-                        <strong>{day.events.length}</strong>
-                      )}
+                <>
+                  {mobile ? (
+                    <div className="compact-progress-list" aria-label="Application outcomes">
+                      {outcomes.map((outcome) => (
+                        <div className="compact-progress-row" key={outcome.name}>
+                          <div>
+                            <span>{outcome.name}</span>
+                            <strong>{outcome.count}</strong>
+                          </div>
+                          <ProgressBar
+                            value={outcome.percentage}
+                            color={outcome.color}
+                            label={`${outcome.percentage}% of applications`}
+                          />
+                          <small>{outcome.percentage}% of applications</small>
+                        </div>
+                      ))}
                     </div>
-
-                    {day.events.length > 0 ? (
-                      <ul>
-                        {(isCompactViewport && !expandedDays.has(day.dateKey)
-                          ? day.events.slice(0, 3)
-                          : day.events
-                        ).map((event) => (
-                          <li
-                            className={event.type === 'Rejected' ? 'calendar-event-rejected' : ''}
-                            key={event.key}
-                          >
-                            <em>{event.type}</em>
-                            <span>{event.application.company}</span>
-                            <strong>{event.application.role}</strong>
-                          </li>
-                        ))}
-                        {isCompactViewport && day.events.length > 3 && (
-                          <li className="calendar-show-more-row">
-                            <button
-                              className="ghost-button"
-                              type="button"
-                              onClick={() => toggleExpandedDay(day.dateKey)}
+                  ) : (
+                    <ProgressFlow data={data} summary={summary} tablet={tablet} />
+                  )}
+                  <div className="progress-legend" aria-label="Flow legend">
+                    {[
+                      ['Applications', 'var(--color-deep-teal)'],
+                      ...progressStages.filter(
+                        ([name]) => name !== 'Offers' && name !== 'Rejected after interview',
+                      ),
+                    ].map(([name, color]) => (
+                      <span key={name}>
+                        <i aria-hidden="true" style={{ background: color }} />
+                        {name === 'Rejected before interview' ? 'Rejected' : name}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              ))}
+          </div>
+          <div
+            className="progress-calendar"
+            id="progress-calendar-panel"
+            hidden={activeView !== 'calendar'}
+          >
+            {activeView === 'calendar' &&
+              (applications.length === 0 ? (
+                empty
+              ) : (
+                <>
+                  <div className="calendar-toolbar">
+                    <div className="calendar-range" aria-live="polite">
+                      <h3>
+                        {fullDate.format(getDateFromKey(visibleWeek))} - {fullDate.format(weekEnd)}
+                      </h3>
+                      <p>{weekTotal} events this week</p>
+                    </div>
+                    <div className="calendar-actions">
+                      <button
+                        aria-label="Previous week"
+                        title="Previous week"
+                        className="ui-button ui-button-secondary"
+                        type="button"
+                        onClick={() => shiftVisibleWeek(-1)}
+                      >
+                        <ChevronLeft aria-hidden="true" size={18} />
+                      </button>
+                      <button
+                        aria-label="Next week"
+                        title="Next week"
+                        className="ui-button ui-button-secondary"
+                        type="button"
+                        onClick={() => shiftVisibleWeek(1)}
+                      >
+                        <ChevronRight aria-hidden="true" size={18} />
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    className="calendar-grid"
+                    aria-label="Application calendar"
+                    key={visibleWeek}
+                  >
+                    {days.map((day, index) => (
+                      <article
+                        className={`calendar-day${day.events.length ? ' has-events' : ''}`}
+                        key={day.dateKey}
+                        aria-label={fullDate.format(day.date)}
+                        style={{ '--reveal-delay': `${index * 40}ms` }}
+                      >
+                        <div className="calendar-day-header">
+                          <span className="calendar-day-label">{weekdays[index]}</span>
+                          {day.events.length > 0 && (
+                            <span
+                              className="calendar-event-count"
+                              aria-label={`${day.events.length} events`}
                             >
-                              {expandedDays.has(day.dateKey)
-                                ? 'Show fewer'
-                                : `Show ${day.events.length - 3} more`}
-                            </button>
-                          </li>
+                              {day.events.length}
+                            </span>
+                          )}
+                          <time dateTime={day.dateKey}>{day.date.getDate()}</time>
+                        </div>
+                        {day.events.length ? (
+                          <ul>
+                            {(mobile && !expandedDays.has(day.dateKey)
+                              ? day.events.slice(0, 3)
+                              : day.events
+                            ).map((event) => (
+                              <li
+                                className={
+                                  event.type === 'Rejected' ? 'calendar-event-rejected' : ''
+                                }
+                                key={event.key}
+                              >
+                                <em>{event.type}</em>
+                                <span>{event.application.company}</span>
+                                <strong>{event.application.role}</strong>
+                              </li>
+                            ))}
+                            {mobile && day.events.length > 3 && (
+                              <li className="calendar-show-more-row">
+                                <button
+                                  type="button"
+                                  className="ui-button ui-button-secondary"
+                                  aria-expanded={expandedDays.has(day.dateKey)}
+                                  onClick={() => toggleDay(day.dateKey)}
+                                >
+                                  {expandedDays.has(day.dateKey)
+                                    ? 'Show fewer'
+                                    : `Show ${day.events.length - 3} more`}
+                                </button>
+                              </li>
+                            )}
+                          </ul>
+                        ) : (
+                          <p>No events</p>
                         )}
-                      </ul>
-                    ) : (
-                      <p>No events</p>
-                    )}
-                  </article>
-                ))}
-              </div>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              ))}
+          </div>
+        </section>
+        <section className="progress-statistics" aria-label="Activity and conversion">
+          <article className="progress-weekly">
+            <header>
+              <h3>Applications per week</h3>
+              <span>6 weeks to {shortDate.format(getDateFromKey(weeks.at(-1).date))}</span>
+            </header>
+            <div className="progress-week-bars" aria-label="Weekly applications">
+              {weeks.map((week, index) => (
+                <div
+                  className="progress-week"
+                  key={week.date}
+                  style={{ '--reveal-delay': `${index * 70}ms` }}
+                >
+                  <span
+                    className="progress-week-track"
+                    role="img"
+                    style={{ '--bar-height': `${(week.count / maxWeekly) * 82}%` }}
+                    aria-label={`Week of ${fullDate.format(getDateFromKey(week.date))}: ${week.count} applications`}
+                  >
+                    <strong>{week.count}</strong>
+                    <span />
+                  </span>
+                  <time dateTime={week.date}>{shortDate.format(getDateFromKey(week.date))}</time>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
-      </section>
+          </article>
+          <article className="progress-conversion">
+            <h3>Conversion</h3>
+            {conversions.map((item) => (
+              <div className="progress-conversion-row" key={item.label}>
+                <div>
+                  <span>{item.label}</span>
+                  <strong>{percentage(item.count, item.total)}%</strong>
+                </div>
+                <ProgressBar
+                  value={percentage(item.count, item.total)}
+                  color={item.color}
+                  label={`${item.count} of ${item.total} applications`}
+                />
+                <small>
+                  {item.count} of {item.total} applications
+                </small>
+              </div>
+            ))}
+          </article>
+        </section>
+      </div>
     </AppLayout>
   )
 }

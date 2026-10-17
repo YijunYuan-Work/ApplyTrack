@@ -135,242 +135,13 @@
   margin: 0 auto 18px;
 }
 
-.progress-section {
-  width: min(1080px, calc(100% - 40px));
-  margin: 0 auto 18px;
-}
-
 .empty-state,
 .import-panel,
-.profile-card,
-.progress-chart-panel,
-.progress-summary article {
+.profile-card {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: var(--shadow);
-}
-
-.progress-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.progress-summary article {
-  display: grid;
-  gap: 8px;
-  min-height: 102px;
-  padding: 18px;
-}
-
-.progress-summary span {
-  color: var(--text);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.progress-summary strong {
-  align-self: end;
-  color: var(--text-h);
-  font-size: 2rem;
-  line-height: 1;
-}
-
-.progress-chart-panel {
-  margin-top: 14px;
-  padding: 20px;
-}
-
-.progress-view-header,
-.calendar-toolbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-.progress-chart-heading h2 {
-  margin: 0;
-  color: var(--text-h);
-  font-size: 1.3rem;
-}
-
-.progress-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  min-width: 250px;
-  padding: 5px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #f6f8fa;
-}
-
-.progress-tabs button {
-  min-height: 38px;
-  background: transparent;
-  color: var(--text-h);
-}
-
-.progress-tabs button:hover,
-.progress-tabs .progress-tab-active {
-  background: #fff;
-}
-
-.progress-chart-scroll {
-  overflow-x: auto;
-}
-
-.progress-chart {
-  min-width: 760px;
-  height: 500px;
-}
-
-.progress-node-count {
-  fill: var(--text-h);
-  font-size: 1rem;
-  font-weight: 900;
-}
-
-.progress-node-name {
-  fill: var(--text);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.progress-calendar {
-  display: grid;
-  gap: 16px;
-  margin-top: 18px;
-  overflow-x: auto;
-}
-
-.calendar-toolbar {
-  align-items: center;
-}
-
-.calendar-toolbar div {
-  text-align: center;
-}
-
-.calendar-toolbar h3 {
-  margin: 0;
-  color: var(--text-h);
-  font-size: 1.3rem;
-}
-
-.calendar-toolbar p {
-  margin: 5px 0 0;
-  color: var(--text);
-  font-weight: 700;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
-  min-width: 760px;
-}
-
-.calendar-weekday {
-  color: var(--text);
-  font-size: 0.76rem;
-  font-weight: 900;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.calendar-day {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  min-height: 180px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-}
-
-.calendar-day-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: center;
-}
-
-.calendar-day-header span {
-  color: var(--text-h);
-  font-weight: 900;
-}
-
-.calendar-day-header strong {
-  display: inline-grid;
-  place-items: center;
-  min-width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.78rem;
-}
-
-.calendar-day ul {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.calendar-day li {
-  display: grid;
-  gap: 2px;
-  padding: 7px;
-  border-radius: 7px;
-  background: rgba(47, 117, 104, 0.08);
-}
-
-.calendar-day li em {
-  color: var(--text);
-  font-size: 0.66rem;
-  font-style: normal;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.calendar-day li span {
-  color: var(--accent);
-  font-size: 0.78rem;
-  font-weight: 850;
-  overflow-wrap: anywhere;
-}
-
-.calendar-day li strong {
-  color: var(--text-h);
-  font-size: 0.82rem;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
-.calendar-day .calendar-event-rejected {
-  background: #fff0f0;
-}
-
-.calendar-day .calendar-event-rejected em,
-.calendar-day .calendar-event-rejected span {
-  color: #8b2d2d;
-}
-
-.calendar-day .calendar-event-rejected strong {
-  color: #5f1f1f;
-}
-
-.calendar-day p {
-  margin: 0;
-  color: var(--text);
-  font-size: 0.78rem;
 }
 
 .profile-card {
@@ -701,8 +472,7 @@ button:disabled {
 
   .app-header,
   .form-page,
-  .profile-section,
-  .progress-section {
+  .profile-section {
     width: min(100% - 32px, 1080px);
   }
 
@@ -734,19 +504,6 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .progress-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .progress-view-header {
-    flex-direction: column;
-  }
-
-  .progress-tabs {
-    width: 100%;
-    min-width: 0;
-  }
-
   .import-panel,
   .import-controls {
     grid-template-columns: 1fr;
@@ -757,8 +514,7 @@ button:disabled {
 
   .app-header,
   .form-page,
-  .profile-section,
-  .progress-section {
+  .profile-section {
     width: min(100% - 28px, 1080px);
   }
 
