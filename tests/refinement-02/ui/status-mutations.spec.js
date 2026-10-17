@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { application, backend, nav, noOverflow, signIn } from './fixtures.js'
+import { application, backend, nav, noOverflow, signIn, openDetails, closeDetails } from './fixtures.js'
 
 const control = (page, company = 'Synthetic 1') => page.getByRole('combobox', { name: `Status for ${company}`, exact: true }).filter({ visible: true })
 const settled = (page) => expect(page.getByText('Saving status...', { exact: true })).toHaveCount(0)
@@ -66,7 +66,9 @@ test('conditional conflict re-reads current rounds and preserves concurrent unre
   await settled(page)
   expect(state.applications[0]).toMatchObject({ notes: 'New server note', salary: '100000', interview_count: 4, status: 'Interview' })
   await nav(page, 'List')
+  await openDetails(page)
   await expect(page.locator('.detail-interviews dd')).toHaveText('4')
+  await closeDetails(page)
 })
 
 test('abandoned write committing before the later write causes a guarded retry, not a lost intent', async ({ page, context }) => {
@@ -98,8 +100,10 @@ test('status response merges only status fields and cannot clobber a completed f
   await first.respond()
   await settled(page)
   await nav(page, 'List')
+  await openDetails(page)
   await expect(page.locator('.notes-block')).toContainText('Edited while status response was delayed')
   await expect(page.locator('.detail-salary dd')).toHaveText('Updated salary')
+  await closeDetails(page)
   await expect(control(page)).toHaveValue(state.applications[0].status)
   expect(state.applications[0].notes).toBe('Edited while status response was delayed')
 })
@@ -370,6 +374,8 @@ test('public Demo retains synchronous status/round behavior in Board and List wi
   await page.getByLabel('Search', { exact: true }).fill(company)
   await control(page, company).selectOption('Rejected')
   await expect(control(page, company)).toHaveValue('Rejected')
+  await openDetails(page)
   await expect(page.locator('.detail-interviews dd')).toHaveText('1')
+  await closeDetails(page)
   expect(state.requests.filter((req) => req.method === 'PATCH')).toEqual([])
 })

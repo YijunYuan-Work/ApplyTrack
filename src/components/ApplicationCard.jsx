@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
-import { statuses } from '../data/applications'
-import StatusBadge from './StatusBadge'
+import { ExternalLink, Pencil, Trash2 } from 'lucide-react'
+import ApplicationStatusControl from './ApplicationStatusControl'
+import ApplicationSelection from './ApplicationSelection'
+import { formatApplicationDate } from '../utils/applicationPresentation'
 
 function ApplicationCard({
   application,
@@ -12,165 +12,97 @@ function ApplicationCard({
   onDeleteApplication,
   onEditApplication,
   onStatusChange,
+  onViewApplication,
   selectionMode = false,
   statusMutation,
 }) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const statusClass = application.status.toLowerCase().replace(/\s+/g, '-')
-
   return (
     <article
-      className={`application-card application-card-${statusClass} ${
-        selectionMode ? 'selection-card' : ''
-      } ${isSelected ? 'selected-card' : ''} ${
-        isExpanded ? 'card-expanded' : ''
-      }`}
+      className={`application-card ${selectionMode ? 'selection-card' : ''} ${isSelected ? 'selected-card' : ''}`}
+      onClick={(event) => {
+        if (!event.target.closest('button, a, input, select, label'))
+          onViewApplication(application.id)
+      }}
     >
       {selectionMode && (
-        <label
-          className="card-select"
-          title={isSelected ? 'Unselect application' : 'Select application'}
-        >
-          <input
-            checked={isSelected}
-            type="checkbox"
-            onChange={() => onSelectApplication(application.id)}
-          />
-          <span aria-hidden="true"></span>
-          <span className="sr-only">
-            {isSelected ? 'Unselect application' : 'Select application'}
-          </span>
-        </label>
+        <ApplicationSelection
+          selected={isSelected}
+          onChange={() => onSelectApplication(application.id)}
+        />
       )}
-
-      <div className="application-main">
-        <div className="card-heading application-record-heading">
-          <div className="record-title-block">
-            <p className="company">{application.company}</p>
-            <h3>{application.role}</h3>
-          </div>
-          <div className="record-status-block">
-            {isReadOnly ? (
-              <StatusBadge status={application.status} />
-            ) : (
-              <label className="card-status-control">
-                <span className="sr-only">Status for {application.company}</span>
-                <select
-                  className={`status-select status-select-${statusClass}`}
-                  aria-busy={statusMutation?.pending || false}
-                  value={statusMutation?.pending ? statusMutation.status : application.status}
-                  onChange={(event) =>
-                    onStatusChange(application.id, event.target.value)
-                  }
-                >
-                  {statuses.map((status) => (
-                    <option key={status}>{status}</option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {statusMutation?.pending && (
-              <p className="status-save-feedback" role="status">Saving status...</p>
-            )}
-            {statusMutation?.error && (
-              <p className="status-save-feedback form-error" role="alert">{statusMutation.error}</p>
-            )}
-          </div>
-        </div>
-
-        <dl className="application-details application-record-details">
-          <div className="detail-location">
-            <dt>Location</dt>
-            <dd>{application.location}</dd>
-          </div>
-          <div className="detail-applied">
-            <dt>Applied</dt>
-            <dd>{application.date || 'Not set'}</dd>
-          </div>
-          <div className="detail-follow-up">
-            <dt>Follow-up</dt>
-            <dd>{application.followUp || 'Not set'}</dd>
-          </div>
-          <div className="detail-interviews">
-            <dt>Interviews</dt>
-            <dd>{application.interviewCount}</dd>
-          </div>
-          <div className="detail-contact">
-            <dt>Contact</dt>
-            <dd>{application.contact || 'Not set'}</dd>
-          </div>
-          <div className="detail-salary">
-            <dt>Salary</dt>
-            <dd>{application.salary || 'Not set'}</dd>
-          </div>
-          <div className="detail-cover-letter">
-            <dt>Cover letter</dt>
-            <dd>{application.coverLetter || 'No'}</dd>
-          </div>
-          <div className="detail-referral">
-            <dt>Referral</dt>
-            <dd>{application.referral || 'No'}</dd>
-          </div>
-          <div className="detail-updated">
-            <dt>Last updated</dt>
-            <dd>{application.lastUpdated || 'Not set'}</dd>
-          </div>
-        </dl>
-
-        {application.notes && (
-          <div className="notes-block">
-            <span>Notes</span>
-            <p>{application.notes}</p>
-          </div>
-        )}
-
-        <button
-          aria-expanded={isExpanded}
-          className="card-details-toggle ghost-button"
-          type="button"
-          onClick={() => setIsExpanded((current) => !current)}
-        >
-          {isExpanded ? (
-            <ChevronUp aria-hidden="true" size={18} />
-          ) : (
-            <ChevronDown aria-hidden="true" size={18} />
-          )}
-          {isExpanded ? 'Hide details' : 'View details'}
-        </button>
+      <div className="record-title-block">
+        <h3>
+          <button
+            className="application-title-button"
+            type="button"
+            aria-haspopup="dialog"
+            aria-label={`View details for ${application.company}`}
+            onClick={() => onViewApplication(application.id)}
+          >
+            {application.role}
+          </button>
+        </h3>
+        <p className="company">{application.company}</p>
       </div>
-
-      {!isReadOnly && (
-        <div className="card-actions">
-          <div className="record-action-group">
-            {application.jobUrl && (
-              <a
-                className="secondary-action"
-                href={application.jobUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open job
-              </a>
-            )}
+      <ApplicationStatusControl
+        application={application}
+        mutation={statusMutation}
+        onStatusChange={onStatusChange}
+        readOnly={isReadOnly}
+      />
+      <span className="list-location">{application.location || 'Not set'}</span>
+      <time
+        className="list-applied"
+        dateTime={application.date || undefined}
+        title={application.date}
+      >
+        {formatApplicationDate(application.date)}
+      </time>
+      <span className="list-salary">{application.salary || 'Not set'}</span>
+      <span
+        className="list-interviews"
+        aria-label={`${application.interviewCount} interview rounds`}
+      >
+        {application.interviewCount}
+      </span>
+      <div className="card-actions">
+        {application.jobUrl && (
+          <a
+            className="ui-button ui-button-ghost ui-icon-button"
+            title="Open job"
+            aria-label="Open job"
+            href={application.jobUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ExternalLink size={15} />
+          </a>
+        )}
+        {!isReadOnly && (
+          <>
             <button
-              className="secondary-action"
+              className="ui-button ui-button-ghost ui-icon-button"
               type="button"
+              title="Edit"
+              aria-label="Edit"
               onClick={() => onEditApplication(application.id)}
             >
-              Edit
+              <Pencil size={15} />
             </button>
-          </div>
-          <button
-            className="danger-action"
-            disabled={isDeleting}
-            aria-busy={isDeleting}
-            type="button"
-            onClick={() => onDeleteApplication(application.id)}
-          >
-            Delete
-          </button>
-        </div>
-      )}
+            <button
+              className="ui-button ui-button-remove ui-icon-button"
+              type="button"
+              title="Delete"
+              aria-label="Delete"
+              disabled={isDeleting}
+              aria-busy={isDeleting}
+              onClick={() => onDeleteApplication(application.id)}
+            >
+              <Trash2 size={15} />
+            </button>
+          </>
+        )}
+      </div>
     </article>
   )
 }

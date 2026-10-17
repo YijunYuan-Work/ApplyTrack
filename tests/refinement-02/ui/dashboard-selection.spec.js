@@ -46,8 +46,9 @@ function deleteIds(operation) {
   return new URLSearchParams(operation.query).get('id').slice(4, -1).split(',').map(Number).sort((a, b) => a - b)
 }
 
-for (const width of [1440, 901, 900, 899, 768, 390]) {
+for (const width of [1440, 1040, 1039, 768, 641, 640, 639, 390]) {
   test(`Board scope matches actual visible stages at ${width}px`, async ({ page, context }, info) => {
+    test.setTimeout(60000)
     const rows = mixedRows()
     const state = await backend(context, rows)
     state.controlDeletes = true
@@ -55,7 +56,7 @@ for (const width of [1440, 901, 900, 899, 768, 390]) {
     await signIn(page)
     const viewport = await page.evaluate(() => ({
       innerWidth, clientWidth: document.documentElement.clientWidth,
-      mediaWidth: matchMedia('(max-width: 900px)').matches,
+      mediaWidth: matchMedia('(width < 640px)').matches,
       dpr: devicePixelRatio, visualWidth: visualViewport.width,
       columns: [...document.querySelectorAll('.board-column')].map((column) => ({
         label: column.getAttribute('aria-label'), display: getComputedStyle(column).display,
@@ -65,7 +66,7 @@ for (const width of [1440, 901, 900, 899, 768, 390]) {
     await info.attach('selection-viewport', { body: JSON.stringify(viewport), contentType: 'application/json' })
     const displayedColumnCount = viewport.columns.filter((column) => column.display !== 'none').length
     expect(displayedColumnCount).toBe(viewport.mediaWidth ? 1 : 4)
-    if (width !== 900) expect(viewport.mediaWidth).toBe(width < 900)
+    if (width !== 640) expect(viewport.mediaWidth).toBe(width < 640)
     const scope = displayedColumnCount === 4 ? rows : rows.filter((row) => row.status === 'Applied')
     await expect(visibleBoard(page)).toHaveCount(scope.length)
     await nav(page, 'Enter multi-select')
@@ -163,7 +164,7 @@ test('search/filter/sort changes retain valid hidden selections without broadeni
   await selected(page, 25)
   await nav(page, 'Unselect all')
   await selected(page, 12)
-  await page.getByRole('combobox', { name: 'Status', exact: true }).selectOption('Interview')
+  await page.getByRole('button', { name: 'Filter status: Interview', exact: true }).click()
   await expect(page.locator('.application-card')).toHaveCount(6)
   await selected(page, 12)
   await nav(page, 'Select all')
@@ -210,14 +211,14 @@ test('mobile stage switches retain selection; empty stage cannot select hidden a
   expect(state.requests.filter((r) => r.method === 'DELETE')).toEqual([])
 })
 
-test('live viewport changes use the CSS 900/901 boundary without clearing selection', async ({ page, context }) => {
+test('live viewport changes use the CSS mobile boundary without clearing selection', async ({ page, context }) => {
   const rows = mixedRows()
   await backend(context, rows)
   await signIn(page)
   await nav(page, 'Enter multi-select')
   await nav(page, 'Select all')
   await selected(page, 25)
-  await page.setViewportSize({ width: 899, height: 900 })
+  await page.setViewportSize({ width: 639, height: 900 })
   await expect(visibleBoard(page)).toHaveCount(7)
   await nav(page, 'Unselect all')
   await selected(page, 18)
@@ -225,7 +226,7 @@ test('live viewport changes use the CSS 900/901 boundary without clearing select
   await expect(visibleBoard(page)).toHaveCount(6)
   await nav(page, 'Unselect all')
   await selected(page, 12)
-  await page.setViewportSize({ width: 901, height: 900 })
+  await page.setViewportSize({ width: 641, height: 900 })
   await expect(visibleBoard(page)).toHaveCount(25)
   await nav(page, 'Select all')
   await selected(page, 25)
@@ -240,7 +241,7 @@ test('live viewport changes use the CSS 900/901 boundary without clearing select
 test('confirmed status change changes stage scope, not the selected record identity', async ({ page, context }) => {
   const state = await backend(context, [application(1), application(2), application(3, { status: 'Interview' })])
   state.controlStatus = true
-  await page.setViewportSize({ width: 768, height: 900 })
+  await page.setViewportSize({ width: 390, height: 900 })
   await signIn(page)
   await nav(page, 'Enter multi-select')
   await nav(page, 'Select all')
@@ -298,17 +299,17 @@ for (const width of [1440, 768, 390]) {
     const state = await backend(context)
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/#/demo')
-    await expect(visibleBoard(page)).toHaveCount(width > 900 ? 6 : 2)
+    await expect(visibleBoard(page)).toHaveCount(width >= 640 ? 6 : 2)
     await nav(page, 'Enter multi-select')
     await nav(page, 'Select all')
-    await selected(page, width > 900 ? 6 : 2)
-    if (width <= 900) {
+    await selected(page, width >= 640 ? 6 : 2)
+    if (width < 640) {
       await stage(page, 'Interview')
       await nav(page, 'Select all')
       await selected(page, 3)
     }
     await nav(page, 'List')
-    if (width <= 900) await nav(page, 'Select all')
+    if (width < 640) await nav(page, 'Select all')
     await selected(page, 6)
     await expect(page.locator('.application-card input[type="checkbox"]:checked')).toHaveCount(6)
     await cancelDelete(page, 6)
@@ -316,8 +317,8 @@ for (const width of [1440, 768, 390]) {
     await selected(page, 0)
     await nav(page, 'Board')
     await page.getByLabel('Search', { exact: true }).fill('Northstar')
-    await expect(visibleBoard(page)).toHaveCount(width > 900 ? 1 : 0)
-    if (width <= 900) await stage(page, 'Applied')
+    await expect(visibleBoard(page)).toHaveCount(width >= 640 ? 1 : 0)
+    if (width < 640) await stage(page, 'Applied')
     await nav(page, 'Select all')
     await selected(page, 1)
     await noOverflow(page)

@@ -2,7 +2,7 @@
 .app-layout {
   --sidebar-width: 248px;
   min-height: 100svh;
-  background: var(--color-frost);
+  background: var(--color-cream-sand);
   color: var(--text);
 }
 .app-content {
@@ -26,9 +26,9 @@
   width: var(--sidebar-width);
   height: 100svh;
   padding: 22px 14px;
-  border-right: 1px solid var(--color-midnight);
-  background: var(--color-midnight);
-  color: #b9c8d8;
+  border-right: 1px solid var(--color-deep-teal);
+  background: var(--color-deep-teal);
+  color: var(--sidebar-text);
   transition: width var(--motion-nav) var(--ease-ui);
 }
 .sidebar-identity {
@@ -45,8 +45,8 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--color-powder);
-  color: var(--color-midnight);
+  background: var(--color-sea-glass);
+  color: var(--color-deep-teal);
   font-size: 16px;
   font-weight: 700;
 }
@@ -55,7 +55,7 @@
 }
 .sidebar-brand {
   margin: 0;
-  color: #fff;
+  color: var(--on-solid);
   font-size: 16px;
   font-weight: 700;
   line-height: 20px;
@@ -63,7 +63,7 @@
 .sidebar-user-row {
   overflow: hidden;
   margin: 0;
-  color: #9fb2c7;
+  color: var(--sidebar-subtext);
   font-size: 12px;
   line-height: 15px;
   text-overflow: ellipsis;
@@ -85,7 +85,7 @@
   border: 0;
   border-radius: var(--radius-control);
   background: transparent;
-  color: #b9c8d8;
+  color: var(--sidebar-text);
   box-shadow: none;
   font-size: 14px;
   font-weight: 600;
@@ -97,17 +97,17 @@
 }
 .sidebar-nav button:hover, .sign-out-button:hover {
   background: rgb(255 255 255 / 6%);
-  color: #fff;
+  color: var(--on-solid);
 }
 .sidebar-nav .nav-active {
-  color: #fff;
+  color: var(--on-solid);
 }
 .sidebar-indicator {
   position: absolute;
   inset: 0 0 auto;
   height: 44px;
   border-radius: var(--radius-control);
-  background: rgb(171 198 217 / 16%);
+  background: var(--sidebar-active);
   transform: translateY(calc(var(--active-nav) * 48px));
   transition: transform var(--motion-nav) var(--ease-ui);
   pointer-events: none;
@@ -120,7 +120,7 @@
   width: 3px;
   height: 20px;
   border-radius: 0 3px 3px 0;
-  background: var(--color-powder);
+  background: var(--color-sea-glass);
 }
 .nav-icon {
   flex: none;
@@ -145,30 +145,30 @@
   transform: scale(.97);
 }
 .ui-button-primary {
-  background: var(--color-midnight);
-  color: #fff;
+  background: var(--color-deep-teal);
+  color: var(--on-solid);
 }
 .ui-button-primary:hover {
   background: var(--accent-h);
 }
 .ui-button-secondary {
-  border-color: var(--border-tertiary);
-  background: var(--surface);
-  color: var(--color-midnight);
+  border-color: var(--surface-strong);
+  background: var(--surface-strong);
+  color: var(--color-deep-teal);
 }
 .ui-button-secondary:hover {
-  background: var(--surface-soft);
+  background: var(--surface-lift);
 }
 .ui-button-ghost {
   background: transparent;
 }
 .sidebar-primary-action {
-  background: var(--color-powder);
-  color: var(--color-midnight);
+  background: var(--color-peach);
+  color: var(--sidebar-add-text);
 }
 .sidebar-primary-action:hover {
-  background: #c4d7e5;
-  color: var(--color-midnight);
+  background: var(--sidebar-add-hover);
+  color: var(--sidebar-add-text);
 }
 .sidebar-footer {
   display: flex;
@@ -181,7 +181,7 @@
 .sidebar-footer-label {
   margin: 0;
   padding: 0 6px;
-  color: #93a8be;
+  color: var(--sidebar-label);
   font: 400 10.5px var(--font-mono);
   text-transform: uppercase;
 }
@@ -198,7 +198,7 @@
   height: 8px;
   flex: none;
   border-radius: 50%;
-  background: var(--color-powder);
+  background: var(--color-sea-glass);
 }
 .sign-out-button {
   justify-content: flex-start;
@@ -208,7 +208,7 @@
   display: none;
 }
 .sidebar :focus-visible {
-  outline: 2px solid var(--color-powder);
+  outline: 2px solid var(--color-sea-glass);
   outline-offset: 3px;
 }
 .mobile-nav-item:focus-visible, .mobile-profile-sign-out:focus-visible {
@@ -257,10 +257,10 @@
     width: max-content;
     max-width: 180px;
     padding: 6px 10px;
-    border: 1px solid var(--color-steel);
+    border: 1px solid var(--color-terracotta);
     border-radius: var(--radius-sm);
-    background: var(--color-midnight);
-    color: #fff;
+    background: var(--color-deep-teal);
+    color: var(--on-solid);
     font: 500 12px var(--font-ui);
     transform: translateY(-50%);
     pointer-events: none;
@@ -290,14 +290,14 @@
     justify-content: space-between;
     height: calc(60px + env(safe-area-inset-top));
     padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
-    border-bottom: 1px solid #d5dee6;
+    border-bottom: 1px solid var(--border-shell);
     background: var(--surface);
   }
   .mobile-brand-lockup {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--color-midnight);
+    color: var(--color-deep-teal);
     font-size: 16px;
     font-weight: 700;
   }
@@ -305,14 +305,18 @@
     width: 32px;
     height: 32px;
     border-radius: 9px;
-    background: var(--color-midnight);
-    color: #fff;
+    background: var(--color-deep-teal);
+    color: var(--on-solid);
   }
   .mobile-add-action {
+    background: var(--action-add);
     width: 44px;
     height: 44px;
     padding: 0;
     border-radius: 12px;
+  }
+  .mobile-add-action:hover {
+    background: var(--action-add-hover);
   }
   .mobile-bottom-nav {
     position: fixed;
@@ -322,7 +326,7 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
     min-height: calc(70px + env(safe-area-inset-bottom));
     padding: 6px max(6px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
-    border-top: 1px solid #d5dee6;
+    border-top: 1px solid var(--border-shell);
     background: var(--surface);
   }
   .mobile-nav-item {
@@ -338,7 +342,7 @@
     border: 0;
     border-radius: 4px;
     background: transparent;
-    color: #62758e;
+    color: var(--text-tertiary);
     box-shadow: none;
     font: 600 11px var(--font-ui);
     transition: color var(--motion-hover);
@@ -347,7 +351,7 @@
     background: var(--surface-soft);
   }
   .mobile-nav-item-active {
-    color: var(--color-midnight);
+    color: var(--color-deep-teal);
   }
   .mobile-nav-indicator {
     position: absolute;
@@ -365,7 +369,7 @@
     width: 28px;
     height: 3px;
     border-radius: 0 0 3px 3px;
-    background: var(--color-midnight);
+    background: var(--color-deep-teal);
   }
   .mobile-profile-sign-out.ghost-button {
     display: flex;

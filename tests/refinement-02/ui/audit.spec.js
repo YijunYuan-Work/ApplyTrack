@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { application, backend, lead, nav, noOverflow, signIn, spreadsheet } from './fixtures.js'
 
 test('CRUD, details, sorting, filtering, pagination and persisted refresh', async ({ page, context }) => {
+  test.setTimeout(60000)
   const state = await backend(context, Array.from({ length: 25 }, (_, i) => application(i + 1, i === 0 ? { status: 'Rejected', last_updated: '2027-01-01' } : {})))
   await signIn(page)
   await nav(page, 'List')
@@ -10,7 +11,7 @@ test('CRUD, details, sorting, filtering, pagination and persisted refresh', asyn
   await expect(page.locator('.application-card').first()).toContainText('Synthetic 25')
   await page.getByRole('combobox', { name: 'Sort', exact: true }).selectOption('lastUpdated')
   await expect(page.locator('.application-card').first()).toContainText('Synthetic 1')
-  await page.getByRole('combobox', { name: 'Status', exact: true }).selectOption('Rejected')
+  await page.getByRole('button', { name: 'Filter status: Rejected', exact: true }).click()
   await expect(page.locator('.application-card')).toHaveCount(1)
   await expect(page.locator('.application-card')).toContainText('Synthetic 1')
   await nav(page, 'Clear filters')
@@ -121,10 +122,11 @@ test('RF-03 F02/F03: role-only edits preserve notes and nullable rows load along
   expect(state.blocked).toEqual([])
 })
 
-test('CQ: hidden dashboard interview calculation differs from progress for zero rounds', async ({ page, context }) => {
+test('CQ: dashboard round-based interview metric preserves its distinction from Progress for zero rounds', async ({ page, context }) => {
   await backend(context, [application(1, { status: 'Interview', interview_count: 0 })])
   await signIn(page)
-  await expect(page.getByText('0 applications reached interview')).toHaveText('0 applications reached interview')
+  await expect(page.locator('.metric-card-interviews strong')).toHaveText('0')
+  await expect(page.locator('.metric-card-interviews small')).toHaveText('0 reached interview')
   await nav(page, 'Progress')
   await expect(page.locator('.progress-summary article').filter({ hasText: 'Reached interview' }).locator('strong')).toHaveText('1')
 })

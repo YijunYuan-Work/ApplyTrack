@@ -5,8 +5,8 @@ import {
   ArrowRight,
   CheckSquare,
   Columns3,
-  Filter,
   List,
+  Plus,
   RotateCcw,
   Search,
   SearchCheck,
@@ -15,6 +15,8 @@ import AppLayout from '../components/AppLayout'
 import ApplicationBoard from '../components/ApplicationBoard'
 import ApplicationList from '../components/ApplicationList'
 import MetricGrid from '../components/MetricGrid'
+import ApplicationDetailDrawer from '../components/ApplicationDetailDrawer'
+import ApplicationStatusNotice from '../components/ApplicationStatusNotice'
 import { statuses } from '../data/applications'
 import { formatJobAgentDate } from '../data/jobAgent'
 
@@ -52,9 +54,11 @@ function DashboardPage({
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState('board')
   const [activeBoardStatus, setActiveBoardStatus] = useState('Applied')
-  const [isCompactBoard, setIsCompactBoard] = useState(() =>
-    window.matchMedia('(max-width: 900px)').matches,
+  const [isCompactBoard, setIsCompactBoard] = useState(
+    () => window.matchMedia('(width < 640px)').matches,
   )
+  const [detailId, setDetailId] = useState(null)
+  const detailApplication = applications.find((application) => application.id === detailId)
   const [deleteError, setDeleteError] = useState('')
   const [deletePending, setDeletePending] = useState(false)
   const pendingDelete = useRef(false)
@@ -64,12 +68,14 @@ function DashboardPage({
 
   useEffect(() => {
     active.current = true
-    return () => { active.current = false }
+    return () => {
+      active.current = false
+    }
   }, [])
 
   useEffect(() => {
     // Match the theme's stage-tab breakpoint, including live viewport changes.
-    const mediaQuery = window.matchMedia('(max-width: 900px)')
+    const mediaQuery = window.matchMedia('(width < 640px)')
     const handleViewportChange = (event) => setIsCompactBoard(event.matches)
     mediaQuery.addEventListener('change', handleViewportChange)
     return () => mediaQuery.removeEventListener('change', handleViewportChange)
@@ -79,8 +85,7 @@ function DashboardPage({
     () =>
       statuses.map((status) => ({
         status,
-        count: applications.filter((application) => application.status === status)
-          .length,
+        count: applications.filter((application) => application.status === status).length,
       })),
     [applications],
   )
@@ -90,8 +95,7 @@ function DashboardPage({
 
     return applications
       .filter((application) => {
-        const matchesStatus =
-          statusFilter === 'All' || application.status === statusFilter
+        const matchesStatus = statusFilter === 'All' || application.status === statusFilter
         const searchableText = [
           application.company,
           application.role,
@@ -111,13 +115,9 @@ function DashboardPage({
       })
       .sort((firstApplication, secondApplication) => {
         const firstDate =
-          sortBy === 'lastUpdated'
-            ? firstApplication.lastUpdated
-            : firstApplication.date
+          sortBy === 'lastUpdated' ? firstApplication.lastUpdated : firstApplication.date
         const secondDate =
-          sortBy === 'lastUpdated'
-            ? secondApplication.lastUpdated
-            : secondApplication.date
+          sortBy === 'lastUpdated' ? secondApplication.lastUpdated : secondApplication.date
 
         return String(secondDate || '').localeCompare(String(firstDate || ''))
       })
@@ -126,30 +126,26 @@ function DashboardPage({
   const totalPages = Math.max(1, Math.ceil(filteredApplications.length / pageSize))
   const safeCurrentPage = Math.min(currentPage, totalPages)
   const pageStartIndex = (safeCurrentPage - 1) * pageSize
-  const pagedApplications = filteredApplications.slice(
-    pageStartIndex,
-    pageStartIndex + pageSize,
-  )
+  const pagedApplications = filteredApplications.slice(pageStartIndex, pageStartIndex + pageSize)
   const pageEndIndex =
     filteredApplications.length === 0
       ? 0
       : Math.min(pageStartIndex + pageSize, filteredApplications.length)
 
-  const selectionScope = viewMode === 'list'
-    ? pagedApplications
-    : isCompactBoard
-      ? filteredApplications.filter((application) =>
-          (statuses.includes(application.status) ? application.status : 'Applied') === activeBoardStatus,
-        )
-      : filteredApplications
-  const visibleApplicationIds = selectionScope.map(
-    (application) => application.id,
-  )
+  const selectionScope =
+    viewMode === 'list'
+      ? pagedApplications
+      : isCompactBoard
+        ? filteredApplications.filter(
+            (application) =>
+              (statuses.includes(application.status) ? application.status : 'Applied') ===
+              activeBoardStatus,
+          )
+        : filteredApplications
+  const visibleApplicationIds = selectionScope.map((application) => application.id)
   const allVisibleSelected =
     visibleApplicationIds.length > 0 &&
-    visibleApplicationIds.every((applicationId) =>
-      selectedApplicationIds.includes(applicationId),
-    )
+    visibleApplicationIds.every((applicationId) => selectedApplicationIds.includes(applicationId))
 
   function resetToFirstPage() {
     setCurrentPage(1)
@@ -166,9 +162,7 @@ function DashboardPage({
   function handleSelectAllVisible() {
     setSelectedApplicationIds((currentIds) => {
       if (visibleApplicationIds.every((id) => currentIds.includes(id))) {
-        return currentIds.filter(
-          (applicationId) => !visibleApplicationIds.includes(applicationId),
-        )
+        return currentIds.filter((applicationId) => !visibleApplicationIds.includes(applicationId))
       }
 
       return Array.from(new Set([...currentIds, ...visibleApplicationIds]))
@@ -212,15 +206,22 @@ function DashboardPage({
       const result = await action()
       if (!isCurrent()) return
       if (result?.status === 'deleted' && Array.isArray(result.deletedIds)) {
-        setSelectedApplicationIds((currentIds) => currentIds.filter((id) => !result.deletedIds.includes(id)))
+        setSelectedApplicationIds((currentIds) =>
+          currentIds.filter((id) => !result.deletedIds.includes(id)),
+        )
         setDeleteError('')
       } else if (result?.status === 'error') {
         setDeleteError(result.message)
       } else if (!['canceled', 'stale', 'pending'].includes(result?.status)) {
-        setDeleteError('Deletion could not be confirmed. Reload to check saved records before retrying.')
+        setDeleteError(
+          'Deletion could not be confirmed. Reload to check saved records before retrying.',
+        )
       }
     } catch (error) {
-      if (isCurrent()) setDeleteError(`Deletion could not be confirmed. ${error.message} Reload to check saved records before retrying.`)
+      if (isCurrent())
+        setDeleteError(
+          `Deletion could not be confirmed. ${error.message} Reload to check saved records before retrying.`,
+        )
     } finally {
       pendingDelete.current = false
       if (active.current) setDeletePending(false)
@@ -244,8 +245,7 @@ function DashboardPage({
         aria-label={`${position} pagination controls`}
       >
         <p>
-          Showing {pageStartIndex + 1}-{pageEndIndex} of{' '}
-          {filteredApplications.length}
+          Showing {pageStartIndex + 1}-{pageEndIndex} of {filteredApplications.length}
         </p>
 
         <label>
@@ -279,9 +279,7 @@ function DashboardPage({
             className="ghost-button"
             disabled={safeCurrentPage === totalPages}
             type="button"
-            onClick={() =>
-              setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))
-            }
+            onClick={() => setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))}
           >
             Next
           </button>
@@ -302,45 +300,44 @@ function DashboardPage({
       onProfile={onProfile}
       onProgress={onProgress}
       onSignOut={onSignOut}
+      showAddApplication={!isReadOnly}
       user={user}
     >
       <section className="dashboard-workspace" aria-label="Dashboard workspace">
         <section className="dashboard-command-panel" aria-label="Pipeline overview">
           <header className="app-header dashboard-header">
             <div>
-              <p className="eyebrow desktop-dashboard-copy">Dashboard</p>
-              <h1 className="desktop-dashboard-copy">Your application pipeline</h1>
-              <h1 className="mobile-dashboard-copy mobile-dashboard-title">
-                Your application pipeline
-              </h1>
-              <p className="mobile-dashboard-copy mobile-dashboard-subtitle">
-                Review and update your applications.
-              </p>
+              <p className="ui-eyebrow">Dashboard</p>
+              <h1>Your application pipeline</h1>
+              <p>Review and update your applications.</p>
             </div>
             <div className="header-actions">
               {isDemo && <span className="demo-badge">Public demo</span>}
+              <button className="ui-button ui-button-ghost" type="button" onClick={onProgress}>
+                View progress
+              </button>
               {!isReadOnly && (
-                <>
-                <button className="primary-action" type="button" onClick={onAddApplication}>
-                  <span className="button-plus" aria-hidden="true"></span>
-                  <span>Add application</span>
+                <button
+                  className="ui-button ui-button-primary dashboard-add-action"
+                  type="button"
+                  onClick={onAddApplication}
+                >
+                  <Plus size={18} aria-hidden="true" />
+                  Add application
                 </button>
-                <button className="ghost-button" type="button" onClick={onProgress}>
-                  View progress
-                </button>
-                </>
               )}
             </div>
           </header>
-
           <MetricGrid
             applications={applications}
             statusCounts={statusCounts}
+            isLoading={isLoading}
           />
         </section>
-
         {jobAgentSummary?.error && (
-          <p className="form-error" role="alert">Job queue count unavailable. Reload to try again.</p>
+          <p className="form-error" role="alert">
+            Job queue count unavailable. Reload to try again.
+          </p>
         )}
         {jobAgentSummary?.available && (
           <section className="agent-dashboard-strip" aria-label="Job Agent summary">
@@ -348,7 +345,7 @@ function DashboardPage({
               <SearchCheck size={22} />
             </span>
             <div className="agent-dashboard-copy">
-              <p className="eyebrow">Job Agent</p>
+              <p className="ui-eyebrow">Job Agent</p>
               <h2>
                 {jobAgentSummary.enabled
                   ? `${jobAgentSummary.pendingCount} jobs waiting to be applied`
@@ -360,95 +357,96 @@ function DashboardPage({
                   : 'Create a private forwarding address, then work through every imported job in one queue.'}
               </p>
             </div>
-            <button className="secondary-action" type="button" onClick={onJobAgent}>
+            <button className="ui-button ui-button-primary" type="button" onClick={onJobAgent}>
               {jobAgentSummary.enabled ? 'View application queue' : 'Set up Job Agent'}
-              <ArrowRight aria-hidden="true" size={17} />
+              <ArrowRight size={17} aria-hidden="true" />
             </button>
           </section>
         )}
-
         <section className="tracker-section" aria-label="Application tracker">
           <div className="section-header">
             <div>
-              <p className="eyebrow desktop-dashboard-copy">Pipeline</p>
-              <h2 className="desktop-dashboard-copy">Your applications</h2>
-              <p className="mobile-dashboard-copy mobile-section-eyebrow">Pipeline</p>
-              <h2 className="mobile-dashboard-copy mobile-pipeline-title">
-                Your applications
-              </h2>
+              <p className="ui-eyebrow">Pipeline</p>
+              <h2>Your applications</h2>
             </div>
-            <div className="status-summary">
-              {statusCounts.map((item) => (
-                <span key={item.status}>
-                  {item.status}: {item.count}
-                </span>
-              ))}
+            <div className="pipeline-view-actions">
+              <div className="view-toggle" data-view={viewMode} aria-label="Application view">
+                <span className="view-indicator" aria-hidden="true" />
+                <button
+                  className={viewMode === 'board' ? 'active' : ''}
+                  aria-pressed={viewMode === 'board'}
+                  type="button"
+                  onClick={handleShowBoardView}
+                >
+                  <Columns3 size={15} aria-hidden="true" />
+                  Board
+                </button>
+                <button
+                  className={viewMode === 'list' ? 'active' : ''}
+                  aria-pressed={viewMode === 'list'}
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List size={15} aria-hidden="true" />
+                  List
+                </button>
+              </div>
+              {!isReadOnly && (
+                <button
+                  className={`ui-button ui-button-ghost ${isSelectionMode ? 'icon-action-active' : ''}`}
+                  aria-label={isSelectionMode ? 'Exit multi-select' : 'Enter multi-select'}
+                  aria-pressed={isSelectionMode}
+                  title={isSelectionMode ? 'Exit multi-select' : 'Multi-select'}
+                  disabled={!isSelectionMode && filteredApplications.length === 0}
+                  type="button"
+                  onClick={handleToggleSelectionMode}
+                >
+                  <CheckSquare size={17} aria-hidden="true" />
+                  {isSelectionMode ? 'Done' : 'Select'}
+                </button>
+              )}
             </div>
           </div>
-
           <div className="tracker-control-bar">
-            <div className="view-toggle" aria-label="Application view">
-              <button
-                className={viewMode === 'board' ? 'active' : ''}
-                type="button"
-                onClick={handleShowBoardView}
-              >
-                <Columns3 className="view-icon" aria-hidden="true" size={20} />
-                <span>Board</span>
-              </button>
-              <button
-                className={viewMode === 'list' ? 'active' : ''}
-                type="button"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="view-icon" aria-hidden="true" size={20} />
-                <span>List</span>
-              </button>
-            </div>
-
             <div className="toolbar" aria-label="Filter applications">
               <label className="toolbar-search">
-                <Search className="toolbar-icon" aria-hidden="true" size={21} />
+                <Search size={17} aria-hidden="true" />
                 <span className="sr-only">Search</span>
                 <input
                   value={searchTerm}
+                  placeholder="Company, role, notes..."
                   onChange={(event) => {
                     setSearchTerm(event.target.value)
                     resetToFirstPage()
                   }}
-                  placeholder="Company, role, notes..."
                 />
               </label>
-
-              <label>
-                <span className="toolbar-label">
-                  <Filter className="toolbar-icon" aria-hidden="true" size={20} />
-                  Status
-                </span>
-                <select
-                  value={statusFilter}
-                  onChange={(event) => {
-                    const nextStatusFilter = event.target.value
-                    setStatusFilter(nextStatusFilter)
-                    setViewMode('list')
-                    if (statuses.includes(nextStatusFilter)) {
-                      setActiveBoardStatus(nextStatusFilter)
-                    }
-                    resetToFirstPage()
-                  }}
-                >
-                  <option>All</option>
-                  {statuses.map((status) => (
-                    <option key={status}>{status}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span className="toolbar-label">
-                  <ArrowUpDown className="toolbar-icon" aria-hidden="true" size={20} />
-                  Sort
-                </span>
+              <div className="status-filters" aria-label="Filter by status">
+                {['All', ...statuses].map((status) => (
+                  <button
+                    type="button"
+                    key={status}
+                    aria-label={`Filter status: ${status}`}
+                    aria-pressed={statusFilter === status}
+                    onClick={() => {
+                      setStatusFilter(status)
+                      setViewMode('list')
+                      if (statuses.includes(status)) setActiveBoardStatus(status)
+                      resetToFirstPage()
+                    }}
+                  >
+                    {status}
+                    <span>
+                      {status === 'All'
+                        ? applications.length
+                        : statusCounts.find((item) => item.status === status).count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <label className="sort-control">
+                <ArrowUpDown size={15} aria-hidden="true" />
+                <span className="sr-only">Sort</span>
                 <select
                   value={sortBy}
                   onChange={(event) => {
@@ -457,18 +455,17 @@ function DashboardPage({
                   }}
                 >
                   <option value="applied">Applied date</option>
-                  <option value="lastUpdated">Last updated date</option>
+                  <option value="lastUpdated">Last updated</option>
                 </select>
               </label>
             </div>
-
-            {!isReadOnly && (
+            {!isReadOnly && isSelectionMode && (
               <div className="list-action-bar" aria-label="Application list actions">
                 {isSelectionMode && (
                   <div className="bulk-toolbar" aria-label="Bulk application actions">
                     <span>{selectedApplicationIds.length} selected</span>
                     <button
-                      className="ghost-button"
+                      className="ui-button ui-button-ghost"
                       disabled={visibleApplicationIds.length === 0}
                       type="button"
                       onClick={handleSelectAllVisible}
@@ -476,7 +473,7 @@ function DashboardPage({
                       {allVisibleSelected ? 'Unselect all' : 'Select all'}
                     </button>
                     <button
-                      className="danger-action"
+                      className="ui-button ui-button-remove"
                       aria-busy={deletionBusy}
                       disabled={selectedApplicationIds.length === 0 || deletionBusy}
                       type="button"
@@ -486,7 +483,7 @@ function DashboardPage({
                     </button>
                     {selectedApplicationIds.length > 0 && (
                       <button
-                        className="ghost-button"
+                        className="ui-button ui-button-ghost"
                         type="button"
                         onClick={handleClearSelection}
                       >
@@ -495,24 +492,9 @@ function DashboardPage({
                     )}
                   </div>
                 )}
-
-                <button
-                  aria-label={isSelectionMode ? 'Exit multi-select' : 'Enter multi-select'}
-                  className={`icon-action ${isSelectionMode ? 'icon-action-active' : ''}`}
-                  disabled={!isSelectionMode && filteredApplications.length === 0}
-                  title={isSelectionMode ? 'Exit multi-select' : 'Multi-select'}
-                  type="button"
-                  onClick={handleToggleSelectionMode}
-                >
-                  <CheckSquare className="multi-select-glyph" aria-hidden="true" size={21} />
-                  <span className="icon-action-label">
-                    {isSelectionMode ? 'Done' : 'Select'}
-                  </span>
-                </button>
               </div>
             )}
           </div>
-
           {(searchTerm.trim() || statusFilter !== 'All' || sortBy !== 'applied') && (
             <div className="active-filter-bar" aria-label="Active filters">
               <div className="active-filter-list">
@@ -520,22 +502,39 @@ function DashboardPage({
                 {statusFilter !== 'All' && <span>Status: {statusFilter}</span>}
                 {sortBy !== 'applied' && <span>Sort: Last updated</span>}
               </div>
-              <button className="filter-reset" type="button" onClick={handleClearFilters}>
-                <RotateCcw aria-hidden="true" size={16} />
+              <button
+                className="ui-button ui-button-ghost filter-reset"
+                type="button"
+                onClick={handleClearFilters}
+              >
+                <RotateCcw size={15} aria-hidden="true" />
                 Clear filters
               </button>
             </div>
           )}
-
-          {error && <p className="form-error">{error}</p>}
-          {deleteError && <p className="form-error" role="alert">{deleteError}</p>}
-          {deletionBusy && <p className="loading-message" role="status">Deleting applications...</p>}
-          {isLoading && <p className="loading-message">Loading applications...</p>}
-
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          {deleteError && !detailApplication && (
+            <p className="form-error" role="alert">
+              {deleteError}
+            </p>
+          )}
+          {deletionBusy && (
+            <p className="loading-message" role="status">
+              Deleting applications...
+            </p>
+          )}
+          {isLoading && (
+            <p className="loading-message" role="status">
+              Loading applications...
+            </p>
+          )}
           {viewMode === 'list' ? (
             <>
               {renderPaginationControls('Top')}
-
               <ApplicationList
                 applications={pagedApplications}
                 isReadOnly={isReadOnly}
@@ -544,12 +543,12 @@ function DashboardPage({
                 selectedApplicationIds={selectedApplicationIds}
                 onDeleteApplication={handleDeleteApplication}
                 onEditApplication={onEditApplication}
+                onViewApplication={setDetailId}
                 onSelectApplication={handleSelectApplication}
                 onStatusChange={onStatusChange}
                 statusMutations={statusMutations}
                 selectionMode={isSelectionMode}
               />
-
               {renderPaginationControls('Bottom')}
             </>
           ) : (
@@ -560,11 +559,30 @@ function DashboardPage({
               onChangeActiveStatus={setActiveBoardStatus}
               onClearFilters={handleClearFilters}
               onEditApplication={onEditApplication}
+              onViewApplication={setDetailId}
               onStatusChange={onStatusChange}
               statusMutations={statusMutations}
+              selectionMode={isSelectionMode}
+              selectedApplicationIds={selectedApplicationIds}
+              onSelectApplication={handleSelectApplication}
             />
           )}
         </section>
+        <ApplicationStatusNotice applications={applications} />
+        {detailApplication && (
+          <ApplicationDetailDrawer
+            key={detailApplication.id}
+            application={detailApplication}
+            isReadOnly={isReadOnly}
+            isDeleting={deletionBusy}
+            deleteError={deleteError}
+            mutation={statusMutations[detailApplication.id]}
+            onClose={() => setDetailId(null)}
+            onDelete={handleDeleteApplication}
+            onEdit={onEditApplication}
+            onStatusChange={onStatusChange}
+          />
+        )}
       </section>
     </AppLayout>
   )
