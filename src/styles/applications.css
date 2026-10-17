@@ -74,6 +74,23 @@
   gap: 10px;
   padding: 0;
 }
+.dashboard-header .ui-button-ghost {
+  border-color: var(--border-ghost);
+}
+.dashboard-header .ui-button-ghost:hover {
+  background: var(--surface);
+  border-color: var(--color-sea-glass);
+}
+.application-drawer .ui-button-ghost {
+  background: var(--surface-field);
+}
+.dashboard-add-action {
+  background: var(--action-add);
+  color: var(--on-solid);
+}
+.dashboard-add-action:hover {
+  background: var(--action-add-hover);
+}
 .dashboard-header .demo-badge {
   display: inline-flex;
   align-items: center;
@@ -111,7 +128,7 @@
   gap: 8px;
 }
 .metric-label > span:first-child {
-  color: var(--text);
+  color: var(--text-soft);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.25;
@@ -127,7 +144,7 @@
   color: var(--status-applied-text);
 }
 .metric-card-interviews .metric-icon {
-  background: var(--status-interview-bg);
+  background: var(--color-terracotta);
   color: var(--status-interview-text);
 }
 .metric-card-offers .metric-icon {
@@ -169,8 +186,8 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: var(--color-midnight);
-  color: var(--color-powder);
+  background: var(--color-deep-teal);
+  color: var(--color-sea-glass);
 }
 .agent-dashboard-copy {
   display: flex;
@@ -235,7 +252,7 @@
   padding: 3px;
   gap: 2px;
   border-radius: 11px;
-  background: var(--color-frost);
+  background: var(--color-cream-sand);
 }
 .pipeline-view-actions {
   display: flex;
@@ -270,7 +287,7 @@
   width: 92px;
   border-radius: 8px;
   background: var(--surface);
-  box-shadow: 0 1px 2px rgb(38 60 89 / 12%);
+  box-shadow: 0 1px 2px rgb(40 106 115 / 12%);
   transition: transform var(--motion-nav) var(--ease-ui);
 }
 .view-toggle[data-view='list'] .view-indicator {
@@ -302,7 +319,7 @@
   color: var(--text-soft);
 }
 .toolbar-search:focus-within {
-  border-color: var(--color-steel);
+  border-color: var(--color-terracotta);
   outline: var(--focus-ring);
   outline-offset: 2px;
 }
@@ -344,7 +361,7 @@
 .status-filters button[aria-pressed='true'] {
   border-color: var(--accent);
   background: var(--accent);
-  color: white;
+  color: var(--on-solid);
 }
 .status-filters button span {
   font-size: 12px;
@@ -388,7 +405,8 @@
   gap: 8px;
   padding: 8px 12px;
   border-radius: var(--radius-control);
-  background: var(--status-rejected-bg);
+  background: var(--follow-up-bg);
+  color: var(--follow-up-text);
   font-size: 13px;
 }
 .active-filter-list {
@@ -400,6 +418,11 @@
 .active-filter-bar .filter-reset {
   border: 0;
   background: transparent;
+  color: var(--follow-up-text);
+}
+.active-filter-bar .filter-reset:hover {
+  background: var(--follow-up-hover);
+  color: var(--follow-up-text);
 }
 .application-board {
   display: flex;
@@ -448,7 +471,7 @@
   width: 9px;
   height: 9px;
   border-radius: 3px;
-  background: var(--status-bg);
+  background: var(--status-dot);
 }
 .board-column > header > span {
   display: grid;
@@ -476,7 +499,7 @@
   min-width: 0;
   gap: 10px;
   padding: 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-card);
   border-radius: 12px;
   background: var(--surface);
   animation: application-enter 380ms var(--ease-ui) var(--card-delay) both;
@@ -544,7 +567,7 @@
   justify-content: space-between;
   gap: 6px 8px;
   padding-top: 10px;
-  border-top: 1px solid var(--color-frost);
+  border-top: 1px solid var(--border-rule);
   font-size: 13px;
   color: var(--text-h);
   overflow-wrap: anywhere;
@@ -557,13 +580,13 @@
   align-self: flex-start;
   padding: 3px 9px;
   border-radius: 999px;
-  background: var(--status-rejected-bg);
-  color: var(--status-rejected-text);
+  background: var(--follow-up-bg);
+  color: var(--follow-up-text);
   font-size: 12px;
   font-weight: 600;
 }
 .board-follow-up.overdue {
-  outline: 1px solid var(--color-lilac);
+  outline: 1px solid var(--color-peach);
 }
 .board-card-actions {
   display: flex;
@@ -574,10 +597,10 @@
 .board-empty-state,
 .dashboard-workspace .empty-state {
   padding: 20px 12px;
-  border: 1px dashed var(--color-lilac);
+  border: 1px dashed var(--color-peach);
   border-radius: 12px;
-  background: #f7f7fb;
-  color: var(--status-rejected-text);
+  background: var(--surface-empty);
+  color: var(--empty-text);
   text-align: center;
   font-size: 13px;
 }
@@ -605,7 +628,7 @@
 }
 .application-list-heading {
   padding-top: 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-ghost);
   color: var(--text-soft);
   font: 600 10.5px/1.5 var(--font-mono);
   text-transform: uppercase;
@@ -615,7 +638,7 @@
   cursor: pointer;
   min-width: 0;
   border: 0;
-  border-bottom: 1px solid var(--color-frost);
+  border-bottom: 1px solid var(--border-rule);
   border-radius: var(--radius-control);
   background: var(--surface);
   transition: background var(--motion-hover);
@@ -644,28 +667,32 @@
   border-color: transparent;
 }
 .ui-button-remove {
-  border: 1px solid var(--color-lilac);
-  background: var(--surface);
+  border: 1px solid var(--remove-border);
+  background: var(--surface-field);
   color: var(--status-rejected-text);
   box-shadow: none;
 }
 .ui-button-remove:hover {
-  background: var(--status-rejected-bg);
+  background: var(--follow-up-bg);
   color: var(--status-rejected-text);
 }
 .status-applied {
+  --status-dot: var(--color-sea-glass);
   --status-bg: var(--status-applied-bg);
   --status-fg: var(--status-applied-text);
 }
 .status-interview {
+  --status-dot: var(--color-terracotta);
   --status-bg: var(--status-interview-bg);
   --status-fg: var(--status-interview-text);
 }
 .status-offer {
+  --status-dot: var(--color-deep-teal);
   --status-bg: var(--status-offer-bg);
   --status-fg: var(--status-offer-text);
 }
 .status-rejected {
+  --status-dot: var(--color-peach);
   --status-bg: var(--status-rejected-bg);
   --status-fg: var(--status-rejected-text);
 }
@@ -709,7 +736,7 @@
   grid-template-columns: minmax(0, 2fr) 106px minmax(0, 1.1fr) 80px minmax(0, 1fr) 72px 104px;
 }
 .selected-card {
-  outline: 2px solid var(--color-steel);
+  outline: 2px solid var(--color-terracotta);
   outline-offset: -2px;
   background: var(--surface-soft);
 }
@@ -778,7 +805,7 @@
   border: 0;
   background: var(--surface);
   color: var(--text-h);
-  box-shadow: -8px 0 32px rgb(38 60 89 / 12%);
+  box-shadow: -8px 0 32px rgb(40 106 115 / 12%);
   animation: drawer-enter var(--motion-nav) var(--ease-ui) both;
 }
 .application-drawer[open] {
@@ -786,7 +813,7 @@
   flex-direction: column;
 }
 .application-drawer::backdrop {
-  background: rgb(38 60 89 / 32%);
+  background: rgb(40 106 115 / 32%);
   animation: application-fade var(--motion-nav) both;
 }
 .application-drawer-header {
@@ -795,7 +822,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 20px 22px;
-  border-bottom: 1px solid var(--color-frost);
+  border-bottom: 1px solid var(--border-rule);
 }
 .application-drawer h2 {
   margin: 3px 0 0;
@@ -853,15 +880,15 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
   margin: 0;
-  border: 1px solid var(--color-frost);
+  border: 1px solid var(--border-rule);
   border-radius: 12px;
   overflow: hidden;
-  background: var(--color-frost);
+  background: var(--border-rule);
 }
 .application-record-details > div {
   min-width: 0;
   padding: 11px 13px;
-  background: var(--surface);
+  background: var(--surface-field);
 }
 .application-record-details dt {
   margin: 0 0 3px;
@@ -899,7 +926,7 @@
   align-items: center;
   gap: 8px;
   padding: 14px 22px max(14px, env(safe-area-inset-bottom));
-  border-top: 1px solid var(--color-frost);
+  border-top: 1px solid var(--border-rule);
 }
 .application-drawer-actions > button:first-child:not(.ui-icon-button) {
   flex: 1;
@@ -966,7 +993,7 @@
 }
 .application-form-section + .application-form-section {
   padding-top: 22px;
-  border-top: 1px solid var(--color-frost);
+  border-top: 1px solid var(--border-rule);
 }
 .application-form-section legend {
   width: 100%;
@@ -1003,13 +1030,13 @@
   padding: 10px 12px;
   border: 1px solid var(--border-tertiary);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--surface-field);
   color: var(--text-h);
   font-size: 14px;
   font-weight: 400;
 }
 .application-form :is(input, select, textarea):focus {
-  border-color: var(--color-steel);
+  border-color: var(--color-terracotta);
   outline: var(--focus-ring);
   outline-offset: 2px;
   box-shadow: none;
@@ -1069,28 +1096,29 @@
   gap: 10px;
   padding: 12px 16px;
   border-radius: 12px;
-  background: var(--color-midnight);
-  color: white;
-  box-shadow: 0 10px 24px rgb(38 60 89 / 22%);
+  background: var(--color-deep-teal);
+  color: var(--on-solid);
+  box-shadow: 0 10px 24px rgb(40 106 115 / 22%);
   animation: application-enter 260ms var(--ease-ui) both;
   font-size: 14px;
   overflow-wrap: anywhere;
 }
 .application-notification svg {
   flex: none;
+  color: var(--color-sea-glass);
 }
 @media (hover: hover) {
   .metric-card:hover {
-    border-color: var(--color-powder);
+    border-color: var(--color-sea-glass);
     transform: translateY(-2px);
   }
   .board-card:hover {
-    border-color: var(--color-powder);
-    box-shadow: 0 8px 18px rgb(38 60 89 / 8%);
+    border-color: var(--color-sea-glass);
+    box-shadow: 0 8px 18px rgb(40 106 115 / 8%);
     transform: translateY(-2px);
   }
   .application-card:hover {
-    background: var(--surface-soft);
+    background: var(--surface-hover);
   }
 }
 @media (width < 1280px) {
@@ -1193,7 +1221,7 @@
     gap: 4px;
     padding: 4px;
     border-radius: 12px;
-    background: var(--color-frost);
+    background: var(--color-cream-sand);
   }
   .board-stage-tabs button {
     display: flex;

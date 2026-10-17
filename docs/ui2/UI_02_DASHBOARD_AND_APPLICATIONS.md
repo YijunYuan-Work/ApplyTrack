@@ -10,15 +10,18 @@ by this report.
 - Mandatory merged-main CI [38990287987](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/38990287987)
   completed successfully before implementation began.
 - Canonical source: unchanged `UI_update`, commit
-  `8bc43e40a20ab333a4437f8d60a067a3b7338915`,
-  `new_design/ApplyTrack Redesign.html`. Its complete decoded template, styles,
-  interaction logic and local browser presentation were inspected.
+  `c3a18b349adff6ed54e4608cd11dd2bde3fa3bed`,
+  `new_design/ApplyTrack Version B - Teal Terracotta.html`. Its complete decoded
+  template, styles, interaction logic and local browser presentation were inspected.
+  Actual colors and usage supersede its stale Version A palette labels.
 - Dashboard, Board/List, application details and complete create/edit form only.
-  UI-01 shell, fonts and tokens are reused; other page interiors are not migrated.
+  The UI-01 shell and shared color tokens also adopt Version B; other page interiors
+  are not migrated. The accepted UI-02 layout/functionality baseline is
+  `f5314af51dc991b00c9092aae079f91ea53dc7d8`.
 
 ## Implementation
 
-The Dashboard now uses the approved header, four summary cards, Powder Job Agent
+The Dashboard now uses the approved header, four summary cards, Sea Glass Job Agent
 strip, pipeline hierarchy, status filters, sliding Board/List thumb and compact
 records. Counts use existing application data and interview-round semantics.
 Count-up is presentation-only, exposes the canonical value to assistive technology,
@@ -61,9 +64,51 @@ branches. A PostCSS comparison verified all 160 retained App.css and 449 retaine
 theme.css selector/declaration/media-context sequences against the base.
 
 App.jsx changes only by importing this stylesheet after the legacy theme.
-Supabase, API helpers, application models/mappers, Demo mutation logic, shared
-shell and font/token files remain unchanged. No runtime dependencies were added.
+Supabase, API helpers, application models/mappers and Demo mutation logic remain
+unchanged. The Version B follow-up changes only colors in `index.css`,
+`AppLayout.css` and `applications.css`; fonts and all non-color foundation values
+remain unchanged. No runtime dependencies were added.
 Temporary formatter/browser/inspection artifacts are not committed.
+
+## Version B Color-Only Follow-Up
+
+The complete Version B prototype was inspected before selecting semantic tokens,
+not treated as a five-value HEX replacement. Canvas is Cream Sand `#F1DEBA`;
+surfaces are warm white `#FFFDF8`, fields/details white `#FFFFFF`, and Board/Notes
+use `#F7EDDA`. Text, warm borders, hover fills, backdrop and shadow colors follow
+the source's supporting palette. Navigation is Deep Teal `#286A73` with Sea Glass
+`#8DBFC2` accents. The sidebar Add action uses Peach Sorbet `#F3B59D` and dark text;
+Dashboard/mobile Add uses the source's deeper Terracotta `#A05A43`. General primary
+actions remain Deep Teal; secondary actions use the Sea Glass tint `#D7EAEA`.
+
+| Status | Marker | Label background / foreground |
+| --- | --- | --- |
+| Applied | Sea Glass `#8DBFC2` | `#D7EAEA` / `#286A73` |
+| Interview | Terracotta `#B66D55` | `#A05A43` / `#FFFDF8` |
+| Offer | Deep Teal `#286A73` | `#286A73` / `#FFFDF8` |
+| Rejected | Peach Sorbet `#F3B59D` | `#FBE3D8` / `#8A4A35` |
+
+These distinctions reproduce the actual source: using base Terracotta behind
+small white status text would not preserve its contrast decision. Existing
+danger/warning/success tokens and their backgrounds are unchanged; actual failures
+are not recolored as decorative statuses. Compatibility aliases support page
+interiors awaiting later phases without migrating their layouts.
+
+Two deliberate accessibility differences from Version B remain. The prototype's
+sidebar subtitle `#A9CFD1` and small footer label `#9CC6C9` have only 3.68:1 and
+3.33:1 contrast on Deep Teal. Existing shell Axe tests caught these; both now reuse
+sidebar text `#CDE3E4` (4.62:1). The existing solid 3px focus geometry is retained
+in Terracotta rather than replacing it with the prototype's faint focus glow.
+Neither adjustment changes sizing, typography or interactions.
+
+Color-only preservation was independently checked against `f5314af` with PostCSS
+declaration/context comparison: all **978 non-color declarations** remain identical
+(54 foundation, 218 shell, 706 application). A protected-source diff confirms no
+other `src/` file changed. Matched Board/List/drawer/form captures at 1440/768/390px
+also have identical element geometry, font metrics and motion values across
+**12 rendered states**. See the [machine-readable summary](assets/ui02-version-b-preservation.json).
+The images below were refreshed from real rendered Version B pages after the
+contrast correction; the initial UI-01 baseline image is historical only.
 
 ## Visual Evidence and Deliberate Differences
 
@@ -73,10 +118,16 @@ removed. Source has nine prototype records; the implementation uses the existing
 six-record Public Demo. Neither mock records nor hardcoded metrics entered product
 code. The comparisons are design-state comparisons, not identical-data pixel tests.
 
+Reference captures render the original standalone bundle directly with Chromium
+(`file://`). Serving that export through Vite reports a parse5 warning about a
+`div` inside `head > noscript`; this is a source-export compatibility issue, not
+an application build error. Neither the canonical artifact nor product code was
+changed to accommodate it.
+
 Committed browser evidence (approved source on the left; implementation on the
 right, except the labeled baseline/editor views):
 
-- [Before UI-02: three viewports](assets/ui02-before.png)
+- [Historical UI-01 / Version A baseline: three viewports](assets/ui02-before.png)
 - [Desktop Board](assets/ui02-board-desktop.png)
 - [Tablet Board](assets/ui02-board-tablet.png)
 - [Mobile Board](assets/ui02-board-mobile.png)
@@ -108,12 +159,47 @@ Meaningful, intentional differences:
 - Complete forms are pages, not the four-field prototype modal. Existing native
   confirmation and explicit failure states replace prototype mock success behavior.
 
-Visual iteration corrected stylesheet ordering/transparent button contrast,
+Initial UI-02 visual iteration corrected stylesheet ordering/transparent button contrast,
 mobile heading alignment, unnecessary tablet toolbar rows, banner-label contrast,
 and the mobile form footer overlap. Focused card/drawer comparisons supplement
 the full-view evidence; no unresolved material redesign is proposed.
 
-## Verification
+## Version B Verification
+
+All requests use synthetic local services or Public Demo, not production. The new
+palette regression covers 1440/768/390px in Chromium, Firefox and WebKit, verifies
+status/button/sidebar text contrast, focus and hover colors, drawer/field surfaces,
+unchanged error/warning/success semantics, overflow and zero Demo network writes.
+It also rejects known legacy-blue computed colors on visible migrated elements.
+The existing navigation test changes only its two expected palette values.
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 204 passed |
+| `npm run test:audit` | 30 passed |
+| Version B + navigation, Chromium/Firefox/WebKit | 24 passed |
+| Existing Dashboard + selection, Chromium/Firefox/WebKit | 96 passed |
+| Authentication UI | 12 passed |
+| `npm run lint`, `npm run build`, `git diff --check` | Passed |
+| Color-only source preservation | 978 non-color declarations unchanged; all other `src/` files unchanged |
+| Rendered preservation | 12 matched states; geometry, typography and motion unchanged |
+
+```powershell
+npm run test:audit-ui -- palette-version-b.spec.js navigation-shell.spec.js --workers=1
+npm run test:audit-ui -- dashboard-ui2.spec.js dashboard-selection.spec.js --workers=1
+npm run test:auth-ui
+```
+
+An initial source-faithful run stopped at the two sidebar contrast failures above.
+Those were corrected, not suppressed. Only completed passing final runs are counted.
+
+## Initial Implementation Verification
+
+The following evidence belongs to the accepted `f5314af` implementation before the
+color-only follow-up, including successful CI
+[39008897447](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/39008897447).
+The 99-case CRUD run below was not rerun for this palette change; its application
+code is byte-unchanged. Current follow-up results are above.
 
 Tests use only synthetic local backends or Public Demo. Existing Notes/data
 assertions now open the real detail

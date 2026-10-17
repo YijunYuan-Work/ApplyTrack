@@ -32,7 +32,7 @@ test('UI-01: canonical shell geometry, fonts, tooltips, Add and browser history'
         sidebarColor:getComputedStyle(sidebar).backgroundColor, bg:getComputedStyle(root).backgroundColor,
         font:getComputedStyle(root).fontFamily, loaded:document.fonts.check('600 14px Figtree') }
     })
-    expect(geometry.bg).toBe('rgb(232, 237, 240)')
+    expect(geometry.bg).toBe('rgb(241, 222, 186)')
     expect(geometry.font).toContain('Figtree')
     expect(geometry.loaded).toBe(true)
     expect(geometry.content.left).toBe(mobile ? 0 : sidebarWidth)
@@ -42,7 +42,7 @@ test('UI-01: canonical shell geometry, fonts, tooltips, Add and browser history'
       expect(geometry.content.top + await page.locator('.app-content').evaluate(e => parseFloat(getComputedStyle(e).paddingTop))).toBeGreaterThanOrEqual(geometry.header.bottom)
     } else {
       expect(geometry.sidebar.width).toBe(sidebarWidth)
-      expect(geometry.sidebarColor).toBe('rgb(38, 60, 89)')
+      expect(geometry.sidebarColor).toBe('rgb(40, 106, 115)')
       if (media.rail) {
         await menu.getByRole('button', { name: 'Progress', exact: true }).focus()
         await page.keyboard.press('Tab')
