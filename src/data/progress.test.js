@@ -5,9 +5,42 @@ import process from 'node:process'
 import { buildCalendarDays, buildCalendarEvents, buildProgressData, getDateFromKey, getDateKey, getLatestEventWeek, getLocalDateKey, getWeekKey, shiftWeek } from './progress.js'
 import { demoApplications, normalizeApplication } from './applications.js'
 import { fromApplicationRow, toApplicationRow } from './applicationRows.js'
+import { buildProgressPresentation, percentage } from './progressPresentation.js'
 
 const record = (id, status = 'Applied', interviewCount = 0, date = '') => ({ id, company: `Company ${id}`, role: 'Engineer', status, interviewCount, date })
 const counts = (data) => Object.fromEntries(data.nodes.map(({ name, count }) => [name, count]))
+
+test('UI-03: outcome and conversion presentation derives from conserved branches, not interview rounds', () => {
+  const rows = [record(1, 'Interview', 0), record(2, 'Offer', 4), record(3, 'Rejected', 2), record(4, 'Rejected'), record(5)]
+  const progress = buildProgressData(rows)
+  const result = buildProgressPresentation(rows, progress)
+  assert.deepEqual(result.outcomes.map(({ count, percentage }) => [count, percentage]), [[3, 60], [1, 20], [1, 20], [1, 20], [1, 20], [1, 20]])
+  assert.deepEqual(result.conversions.map(({ count, total }) => [count, total]), [[3, 5], [1, 3], [4, 5]])
+  assert.equal(progress.summary.interviewEvents, 6)
+  assert.equal(percentage(0, 0), 0)
+})
+
+test('UI-03: six weekly buckets use only valid applied dates and preserve month/year boundaries', () => {
+  const rows = [record(1, 'Applied', 0, '2025-12-31'), record(2, 'Rejected', 0, '2026-01-01'), record(3, 'Applied', 0, '2026-01-04'),
+    { ...record(4, 'Rejected', 0, '2026-02-30'), rejectedDate: '2099-01-01', lastUpdated: '2099-12-31' }]
+  const before = structuredClone(rows)
+  const result = buildProgressPresentation(rows, buildProgressData(rows))
+  assert.deepEqual(result.weeks, [
+    { date: '2025-11-30', count: 0 }, { date: '2025-12-07', count: 0 }, { date: '2025-12-14', count: 0 },
+    { date: '2025-12-21', count: 0 }, { date: '2025-12-28', count: 2 }, { date: '2026-01-04', count: 1 },
+  ])
+  assert.deepEqual(rows, before)
+})
+
+test('UI-03: sparse, empty, undated and leap-day datasets have finite truthful presentation', () => {
+  for (const rows of [[], [record(1)], [record(1, 'Applied', 0, '2024-02-29')], [record(1, 'Offer')]]) {
+    const result = buildProgressPresentation(rows, buildProgressData(rows), new Date(2026, 0, 4))
+    assert.equal(result.weeks.length, 6)
+    assert.equal(result.weeks.reduce((n, week) => n + week.count, 0), rows[0]?.date ? 1 : 0)
+    result.outcomes.forEach(outcome => assert.ok(Number.isFinite(outcome.percentage)))
+    result.conversions.forEach(item => assert.ok(Number.isFinite(percentage(item.count, item.total))))
+  }
+})
 
 function assertConservation({ nodes, links }) {
   nodes.forEach((node, index) => {

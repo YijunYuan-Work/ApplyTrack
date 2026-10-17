@@ -14,16 +14,16 @@ for (const width of [1440, 768, 390]) {
     await nav(page, 'Progress')
     await expect(page.locator('.progress-summary')).toBeVisible({ timeout: 15000 })
     await expect(totals(page)).toHaveText(['6', '5', '3', '1'])
-    if (width <= 640) {
+    if (width < 640) {
       await expect(page.locator('.compact-progress-row > div')).toHaveText([
-        'Interview3', 'Offers1', 'Rejected after1', 'In progress1', 'No interview2', 'Rejected before1',
+        'Reached interview3', 'No interview yet2', 'Rejected before interview1', 'Offers1', 'Still in progress1', 'Rejected after interview1',
       ])
       await expect(page.locator('.compact-progress-row small')).toHaveText([
-        '50% of applications', '17% of applications', '17% of applications',
-        '17% of applications', '33% of applications', '17% of applications',
+        '50% of applications', '33% of applications', '17% of applications',
+        '17% of applications', '17% of applications', '17% of applications',
       ])
     } else {
-      await expect(page.getByRole('img', { name: 'Application flow: 6 applications, 3 reached an interview, and 1 received an offer.' })).toBeVisible()
+      await expect(page.getByRole('group', { name: 'Application flow: 6 applications, 3 reached an interview, and 1 received an offer.' })).toBeVisible()
       await expect(page.locator('.progress-node-count')).toHaveText(['6', '3', '1', '1', '1', '2', '1'])
       await expect(page.locator('.recharts-sankey-link')).toHaveCount(6)
     }
