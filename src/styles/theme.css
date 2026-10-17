@@ -31,8 +31,6 @@ body {
 .import-panel,
 .profile-card,
 .profile-form,
-.progress-section,
-.progress-chart-panel,
 .empty-state {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -52,8 +50,7 @@ body {
 .auth-panel p,
 .empty-state p,
 .profile-form p,
-.import-panel p,
-.calendar-toolbar p {
+.import-panel p {
   margin: 10px 0 0;
   color: var(--text);
   line-height: 1.55;
@@ -114,43 +111,6 @@ button:disabled {
   border-color: var(--danger);
   background: #ffecec;
   color: #922626;
-}
-
-.progress-summary article {
-  position: relative;
-  display: grid;
-  gap: 7px;
-  min-width: 0;
-  min-height: 110px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 10px 22px rgba(37, 75, 105, 0.05);
-}
-
-.progress-summary article::after {
-  content: "";
-  position: absolute;
-  right: 16px;
-  bottom: 14px;
-  width: 44px;
-  height: 4px;
-  border-radius: 999px;
-  background: #0b76d1;
-}
-
-.progress-summary span {
-  color: var(--text-soft);
-  font-size: 0.68rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.progress-summary strong {
-  color: var(--text-h);
-  font-size: 2.35rem;
-  line-height: 1;
 }
 
 label {
@@ -218,8 +178,7 @@ dd {
 }
 
 .form-page,
-.profile-section,
-.progress-section {
+.profile-section {
   width: min(1040px, 100%);
   margin: 0 auto;
 }
@@ -306,76 +265,6 @@ dd {
   box-shadow: 0 6px 16px rgba(37, 75, 105, 0.08);
 }
 
-.progress-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.progress-tabs {
-  display: inline-grid;
-  grid-template-columns: repeat(2, minmax(120px, 1fr));
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-soft);
-}
-
-.progress-tabs button {
-  border: 0;
-  background: transparent;
-  color: var(--text);
-  box-shadow: none;
-}
-
-.progress-tabs .progress-tab-active,
-.progress-tabs button:hover {
-  background: var(--surface);
-  color: var(--text-h);
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
-}
-
-/* A scrolling desktop grid must not expand the toolbar's track. */
-.progress-calendar {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.calendar-day {
-  min-height: 150px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-}
-
-.calendar-day li {
-  display: grid;
-  gap: 2px;
-  margin-top: 8px;
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-soft);
-}
-
-.calendar-day .calendar-event-rejected {
-  border-color: #efbaba;
-  background: #fff1f1;
-  color: #8f2424;
-}
-
-.calendar-day .calendar-event-rejected em,
-.calendar-day .calendar-event-rejected span,
-.calendar-day .calendar-event-rejected strong {
-  color: #8f2424;
-}
 
 @media (max-width: 900px) {
 
@@ -395,31 +284,11 @@ dd {
     width: 100%;
   }
 
-  .progress-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .profile-settings-grid,
-  .calendar-grid {
+  .profile-settings-grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .calendar-grid {
-    min-width: 0;
-  }
-
-  .calendar-weekday {
-    display: none;
   }
 
   .auth-panel {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 430px) {
-
-  .progress-summary {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -537,7 +406,6 @@ dd {
   }
 
   .profile-section,
-  .progress-section,
   .form-page {
     width: 100%;
     gap: 18px;
@@ -546,7 +414,6 @@ dd {
 
   .profile-card,
   .profile-form,
-  .progress-chart-panel,
   .import-panel {
     width: 100%;
     min-width: 0;
@@ -591,103 +458,6 @@ dd {
   .auth-form input,
   .auth-form button {
     min-height: 44px;
-  }
-
-  .progress-summary {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .progress-summary article {
-    min-height: 116px;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(37, 75, 105, 0.05);
-  }
-
-  .progress-summary article::after {
-    display: none;
-  }
-
-  .progress-summary span {
-    font-size: 0.7rem;
-    line-height: 1.3;
-  }
-
-  .progress-summary strong {
-    font-size: 1.9rem;
-  }
-
-  .progress-chart-panel {
-    gap: 18px;
-  }
-
-  .progress-view-header {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .progress-chart-heading h2 {
-    font-size: 1.2rem;
-  }
-
-  .progress-tabs {
-    display: grid;
-    width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 4px;
-    border-radius: 10px;
-  }
-
-  .progress-tabs button {
-    min-height: 44px;
-    padding: 0 8px;
-    border-radius: 8px;
-  }
-
-  .progress-chart-scroll,
-  .progress-chart {
-    width: 100%;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .progress-chart {
-    height: 360px;
-  }
-
-  .calendar-toolbar {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    text-align: center;
-  }
-
-  .calendar-toolbar > div {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-
-  .calendar-toolbar button {
-    min-height: 44px;
-  }
-
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
-
-  .calendar-day {
-    min-height: 0;
-    padding: 14px;
-    border-radius: 10px;
-  }
-
-  .calendar-day li {
-    overflow-wrap: anywhere;
   }
 
   .import-panel {
@@ -869,113 +639,6 @@ dd {
   font-weight: 800;
 }
 
-.compact-progress-list {
-  display: grid;
-  gap: 16px;
-}
-
-.compact-progress-row {
-  display: grid;
-  gap: 8px;
-  padding: 2px 0 14px;
-  border-bottom: 1px solid #dbe5f0;
-}
-
-.compact-progress-row:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.compact-progress-row > div {
-  display: flex;
-  min-width: 0;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.compact-progress-row > div span {
-  color: #33445b;
-  font-weight: 750;
-}
-
-.compact-progress-row > div strong {
-  color: #071a39;
-  font-size: 1.2rem;
-}
-
-.compact-progress-row small {
-  color: #647084;
-  font-size: 0.74rem;
-}
-
-.compact-progress-bar {
-  display: block;
-  width: 100%;
-  height: 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #e5edf5;
-}
-
-.compact-progress-bar > span {
-  display: block;
-  min-width: 4px;
-  height: 100%;
-  border-radius: inherit;
-}
-
-.progress-chart,
-.progress-chart .recharts-responsive-container {
-  min-width: 0;
-  min-height: 360px;
-}
-
-.calendar-toolbar {
-  display: flex;
-  width: 100%;
-  min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.calendar-toolbar .calendar-range {
-  min-width: 0;
-  flex: 1 1 auto;
-  text-align: center;
-}
-
-.calendar-toolbar .calendar-actions {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 8px;
-}
-
-.calendar-actions button {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.calendar-day-header time {
-  color: #071a39;
-  font-weight: 850;
-}
-
-.calendar-show-more-row {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.calendar-show-more-row button {
-  width: 100%;
-  min-height: 40px;
-}
-
 @media (max-width: 900px) {
 
   .import-copy {
@@ -989,46 +652,6 @@ dd {
 }
 
 @media (max-width: 640px) {
-  .progress-calendar {
-    overflow: visible;
-  }
-
-  .calendar-grid {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .calendar-toolbar,
-  .calendar-toolbar .calendar-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .calendar-toolbar {
-    gap: 12px;
-  }
-
-  .calendar-toolbar .calendar-range {
-    width: 100%;
-    grid-row: 1;
-    text-align: center;
-  }
-
-  .calendar-toolbar .calendar-range h3,
-  .calendar-toolbar .calendar-range p {
-    width: 100%;
-    overflow-wrap: anywhere;
-  }
-
-  .calendar-toolbar .calendar-actions {
-    grid-row: 2;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .calendar-actions button {
-    width: 100%;
-  }
 
   .import-template-button {
     width: 100%;

@@ -1,10 +1,11 @@
 const flowColors = {
-  applications: '#64748b',
-  interviewed: '#31766b',
-  offer: '#5f965e',
-  pending: '#7b8fa1',
-  rejected: '#bd5d67',
-  rejectedBeforeInterview: '#d97745',
+  applications: 'var(--color-deep-teal)',
+  interviewed: 'var(--color-terracotta)',
+  offer: 'var(--color-deep-teal)',
+  pending: 'var(--flow-pending)',
+  noInterview: 'var(--color-sea-glass)',
+  rejected: 'var(--color-peach)',
+  rejectedBeforeInterview: 'var(--color-peach)',
 }
 
 export function getLocalDateKey(date) {
@@ -114,7 +115,7 @@ export function buildProgressData(applications) {
     addBranch(interviewedNode, 'Rejected after interview', rejectedAfterInterview, flowColors.rejected)
     addBranch(interviewedNode, 'Still in progress', activeAfterInterview, flowColors.pending)
   }
-  addBranch(0, 'No interview yet', awaitingInterview, flowColors.pending)
+  addBranch(0, 'No interview yet', awaitingInterview, flowColors.noInterview)
   addBranch(0, 'Rejected before interview', rejectedBeforeInterview, flowColors.rejectedBeforeInterview)
   return {
     data: { nodes, links },
