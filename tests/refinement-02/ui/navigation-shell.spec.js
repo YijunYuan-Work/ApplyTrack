@@ -81,7 +81,7 @@ for (const width of [1440,768,390]) {
     for (const [name, heading] of [
       ['Profile', 'Demo'],
       ['Progress', 'Your application flow.'],
-      [width < 640 ? 'Agent' : 'Job Agent', 'Turn job alerts into an application queue.'],
+      [width < 640 ? 'Agent' : 'Job Agent', 'Connect your job alerts.'],
       [width < 640 ? 'Import' : 'Import Excel', 'Bring in your existing tracker.'],
       ['Dashboard', 'Your application pipeline'],
     ]) {

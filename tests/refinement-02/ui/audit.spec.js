@@ -260,7 +260,7 @@ for (const width of [1440, 768, 390]) {
     for (const [name, heading] of [
       ['Dashboard', 'Your application pipeline'], ['Profile', 'Demo'],
       ['Progress', 'Your application flow.'], ['Import Excel', 'Bring in your existing tracker.'],
-      ['Job Agent', 'Turn job alerts into an application queue.'],
+      ['Job Agent', 'Connect your job alerts.'],
     ]) {
       // The compact bottom bar uses shortened names.
       await nav(page, width < 640 && name === 'Import Excel' ? 'Import' : width < 640 && name === 'Job Agent' ? 'Agent' : name)

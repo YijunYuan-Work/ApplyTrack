@@ -1,0 +1,15 @@
+{
+  "syntheticOnly": true,
+  "checks": [
+    {
+      "state": "paused / import attention",
+      "violations": []
+    },
+    {
+      "state": "conversion error",
+      "violations": []
+    }
+  ],
+  "blockedRequests": [],
+  "noFalseSuccessBeforeConfirmation": true
+}

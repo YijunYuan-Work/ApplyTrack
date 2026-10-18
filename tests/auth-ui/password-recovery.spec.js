@@ -123,8 +123,8 @@ for (const width of [1440, 768, 390]) {
       ['/demo/progress', 'Your application flow.'],
       ['/demo/import', 'Bring in your existing tracker.'],
       ['/demo/applications/new', 'Add a new application'],
-      ['/demo/job-agent', 'Turn job alerts into an application queue.'],
-      ['/demo/job-agent/matches', 'Turn job alerts into an application queue.'],
+      ['/demo/job-agent', 'Connect your job alerts.'],
+      ['/demo/job-agent/matches', 'Jobs waiting for you'],
     ]) {
       await page.goto(`/#${path}`)
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible({ timeout: 20000 })

@@ -58,16 +58,28 @@ export async function backend(context, rows = [], leads = []) {
     if (table === 'logout') return route.fulfill({ status: 204 })
     if (table === 'complete_job_lead_application') {
       const item = state.leads.find((item) => item.id === body.p_job_lead_id)
-      if (!item.application_id) {
-        const created = application(10000 + item.id, {
-          company: item.company, role: item.title, applied_date: body.p_applied_date,
-          notes: `Added from ${item.source === 'linkedin' ? 'LinkedIn' : 'Indeed'} after the application was confirmed as submitted.`,
-        })
-        state.applications.push(created)
-        item.application_id = created.id
+      const commit = () => {
+        if (!item.application_id) {
+          const created = application(10000 + item.id, {
+            user_id: item.user_id, company: item.company, role: item.title, applied_date: body.p_applied_date,
+            notes: `Added from ${item.source === 'linkedin' ? 'LinkedIn' : 'Indeed'} after the application was confirmed as submitted.`,
+          })
+          state.applications.push(created)
+          item.application_id = created.id
+        }
+        item.state = 'applied'
+        return state.applications.find((row) => row.id === item.application_id)
       }
-      item.state = 'applied'
-      return route.fulfill({ json: state.applications.find((row) => row.id === item.application_id) })
+      if (state.controlConversions) {
+        state.conversions ??= []
+        state.conversions.push({ body, commit,
+          respond: () => route.fulfill({ json: commit() }),
+          fail: () => route.fulfill({ status: 500, json: { message: 'Synthetic conversion failure' } }),
+          abort: () => route.abort(),
+        })
+        return
+      }
+      return route.fulfill({ json: commit() })
     }
     const source = table === 'applications' ? state.applications : table === 'job_leads' ? state.leads : table === 'job_alert_inboxes' ? [state.inbox] : table === 'job_alert_messages' ? state.messages : []
     const matches = (row) => [...url.searchParams].every(([key, value]) => {
@@ -229,7 +241,7 @@ export async function signIn(page) {
 }
 
 export async function nav(page, name) {
-  if (name === 'Matches') return page.getByRole('tab', { name: /^Matches/ }).click()
+  if (name === 'Matches') return page.getByRole('button', { name: /^Matches/ }).click()
   await page.getByRole('button', { name, exact: true }).filter({ visible: true }).first().click()
 }
 
