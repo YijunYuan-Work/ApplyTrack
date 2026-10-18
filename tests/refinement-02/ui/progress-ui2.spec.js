@@ -9,6 +9,28 @@ import {
   openDetails,
   signIn,
 } from './fixtures.js'
+import { expectAccessiblePage } from './accessibility.js'
+
+async function calendarBounds(page) {
+  const geometry = await page.locator('.progress-calendar').evaluate((panel) => {
+    const bounds = panel.getBoundingClientRect()
+    const controls = [...panel.querySelectorAll('[aria-label="Next week"], [aria-label="Previous week"], .calendar-day')]
+    return {
+      scroll: panel.scrollWidth, client: panel.clientWidth,
+      columns: getComputedStyle(panel.querySelector('.calendar-grid')).gridTemplateColumns.split(' ').length,
+      expectedColumns: matchMedia('(width < 640px)').matches ? 1 : matchMedia('(width >= 1040px)').matches ? 7 : 4,
+      gridMin: getComputedStyle(panel.querySelector('.calendar-grid')).minWidth,
+      outside: controls.filter((el) => {
+        const r = el.getBoundingClientRect()
+        return r.left < bounds.left - 1 || r.right > bounds.right + 1
+      }).map((el) => el.className || el.getAttribute('aria-label')),
+    }
+  })
+  expect(geometry.scroll).toBeLessThanOrEqual(geometry.client + 1)
+  expect(geometry.outside).toEqual([])
+  expect(geometry.columns).toBe(geometry.expectedColumns)
+  expect(geometry.gridMin).toBe('0px')
+}
 
 const rows = () => [
   application(1, { status: 'Interview', interview_count: 0, applied_date: '2026-01-01' }),
@@ -26,7 +48,7 @@ const rows = () => [
   }),
 ]
 
-for (const width of [390, 640, 768, 900, 1039, 1040, 1440]) {
+for (const width of [390, 768, 1440]) {
   test(`UI-03: metrics, accessible Map/Calendar and responsive geometry at ${width}px`, async ({
     page,
     context,
@@ -85,6 +107,7 @@ for (const width of [390, 640, 768, 900, 1039, 1040, 1440]) {
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
     expect(mapAxe.violations).toEqual([])
+    await expectAccessiblePage(page)
     await nav(page, 'Calendar')
     await expect(page.locator('.calendar-range p')).toHaveText('6 events this week')
     if (mobile) await page.getByRole('button', { name: 'Show 3 more', exact: true }).click()
@@ -96,6 +119,8 @@ for (const width of [390, 640, 768, 900, 1039, 1040, 1440]) {
     }))
     expect(geometry.columns).toBe(mobile ? 1 : geometry.desktop ? 7 : 4)
     expect(geometry.min).toBe('0px')
+    await calendarBounds(page)
+    const range = await page.locator('.calendar-range h3').textContent()
     const next = page.getByRole('button', { name: 'Next week', exact: true })
     await next.scrollIntoViewIfNeeded()
     await page.getByRole('button', { name: 'Previous week', exact: true }).focus()
@@ -104,8 +129,10 @@ for (const width of [390, 640, 768, 900, 1039, 1040, 1440]) {
     await expect(next).toHaveCSS('outline-style', 'solid')
     await page.keyboard.press('Enter')
     await expect(page.locator('.calendar-range p')).toHaveText('0 events this week')
+    await expect(page.locator('.calendar-range h3')).not.toHaveText(range)
     await nav(page, 'Previous week')
     await expect(page.locator('.calendar-range p')).toHaveText('6 events this week')
+    await expect(page.locator('.calendar-range h3')).toHaveText(range)
     if (mobile) await page.getByRole('button', { name: 'Show 3 more', exact: true }).click()
     await expect(page.locator('.calendar-day li em')).toHaveText([
       'Applied',
@@ -121,6 +148,7 @@ for (const width of [390, 640, 768, 900, 1039, 1040, 1440]) {
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
     expect(calendarAxe.violations).toEqual([])
+    await expectAccessiblePage(page)
     expect(errors).toEqual([])
     expect(state.blocked).toEqual([])
     expect(
@@ -130,6 +158,21 @@ for (const width of [390, 640, 768, 900, 1039, 1040, 1440]) {
     ).toEqual([])
   })
 }
+
+test('Calendar bounds stay inside the panel across integer responsive boundaries', async ({ page, context }) => {
+  const state = await backend(context, rows())
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await signIn(page)
+  await nav(page, 'Progress')
+  await nav(page, 'Calendar')
+  for (const width of [390, 639, 640, 720, 721, 768, 898, 900, 901, 1039, 1040, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await calendarBounds(page)
+    await noOverflow(page)
+  }
+  expect(state.requests.filter((r) => ['POST', 'PATCH', 'DELETE'].includes(r.method) && r.table !== 'token')).toEqual([])
+  expect(state.blocked).toEqual([])
+})
 
 test('UI-03: chart focus/hover reveals the real node and branch values; widths conserve flow', async ({
   page,
@@ -271,6 +314,12 @@ test('UI-03: fractional responsive boundaries follow CSS, including live viewpor
     const mobile = await frame.evaluate(() => matchMedia('(width < 640px)').matches)
     await expect(frame.locator('.compact-progress-list')).toHaveCount(mobile ? 1 : 0)
     await nav(frame, 'Calendar')
+    await calendarBounds(frame)
+    const range = await frame.locator('.calendar-range h3').textContent()
+    await nav(frame, 'Next week')
+    await expect(frame.locator('.calendar-range h3')).not.toHaveText(range)
+    await nav(frame, 'Previous week')
+    await expect(frame.locator('.calendar-range h3')).toHaveText(range)
     await noOverflow(frame)
     await nav(frame, 'Pipeline map')
   }

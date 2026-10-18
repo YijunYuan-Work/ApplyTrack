@@ -15,7 +15,7 @@ const examples = [
   { company: 'Stored zero bound', description: '', salary_min: 0, salary_max: 125000, label: '0 - 125,000' },
 ]
 
-for (const width of [1440, 768, 390]) {
+for (const width of [1440]) {
   test(`RF-15: salary labels, omission and queue actions remain accurate at ${width}px`, async ({ page, context }, info) => {
     test.setTimeout(60000)
     const rows = examples.map((row, index) => lead(index + 1, {

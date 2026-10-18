@@ -21,6 +21,7 @@ test('rapid FIFO changes preserve dates/rounds, partial payloads and reload pers
   await control(page).selectOption('Interview')
   const first = await operation(state, 0)
   await control(page).selectOption('Rejected')
+  await expect(control(page)).toHaveValue('Rejected')
   await control(page).selectOption('Offer')
   expect(state.statusUpdates).toHaveLength(1)
   expect(first.body).toEqual({ status: 'Interview', last_updated: expect.any(String), interview_count: 1 })

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { expectAccessiblePage } from './accessibility.js'
 import { backend, lead, nav, noOverflow, signIn, userId } from './fixtures.js'
 
 const sampleMessages = [
@@ -213,7 +214,7 @@ test('UI-04: fractional CSS breakpoints and live resizing keep all card actions 
   }
 })
 
-for (const width of [390, 640, 768, 900, 1039, 1040, 1440]) {
+for (const width of [390, 768, 1440]) {
   test(`UI-04: readable Setup/Matches, real salaries, focus and accessible geometry at ${width}px`, async ({
     page,
     context,
@@ -261,6 +262,7 @@ for (const width of [390, 640, 768, 900, 1039, 1040, 1440]) {
       ).violations,
     ).toEqual([])
     await page.screenshot({ path: info.outputPath(`setup-${width}.png`), fullPage: true })
+    await expectAccessiblePage(page)
     await nav(page, 'Matches')
     await expect(page.getByText('3 waiting', { exact: true })).toBeVisible()
     await expect(page.locator('.agent-lead')).toHaveCount(3)

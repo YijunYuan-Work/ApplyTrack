@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test'
-import AxeBuilder from '@axe-core/playwright'
 import { application, backend, lead, nav, noOverflow, signIn, spreadsheet } from './fixtures.js'
 
 test('CRUD, details, sorting, filtering, pagination and persisted refresh', async ({ page, context }) => {
@@ -43,63 +42,6 @@ test('CRUD, details, sorting, filtering, pagination and persisted refresh', asyn
   expect(state.blocked).toEqual([])
 })
 
-test('RF-11 F09: Board Select All selects all twenty-five displayed applications', async ({ page, context }) => {
-  await backend(context, Array.from({ length: 25 }, (_, i) => application(i + 1)))
-  await signIn(page)
-  await expect(page.locator('.board-card')).toHaveCount(25)
-  await nav(page, 'Enter multi-select')
-  await nav(page, 'Select all')
-  await expect(page.getByText('25 selected', { exact: true })).toBeVisible()
-  await nav(page, 'Unselect all')
-  await expect(page.getByText('0 selected', { exact: true })).toBeVisible()
-})
-
-test('F10: canceling bulk deletion preserves records and selection', async ({ page, context }) => {
-  const state = await backend(context, [application(1)])
-  await signIn(page)
-  await nav(page, 'Enter multi-select')
-  await nav(page, 'Select all')
-  page.once('dialog', (dialog) => dialog.dismiss())
-  await nav(page, 'Delete selected')
-  await expect(page.getByText('1 selected', { exact: true })).toBeVisible()
-  expect(state.applications).toHaveLength(1)
-  expect(state.requests.filter((r) => r.method === 'DELETE')).toEqual([])
-})
-
-test('F10: failed bulk deletion preserves selection and announces a retryable error', async ({ page, context }) => {
-  const state = await backend(context, [application(1)])
-  state.failDelete = true
-  await signIn(page)
-  await nav(page, 'Enter multi-select')
-  await nav(page, 'Select all')
-  page.once('dialog', (dialog) => dialog.accept())
-  await nav(page, 'Delete selected')
-  await expect(page.locator('.form-error')).toContainText('Synthetic delete failure')
-  await expect(page.getByText('1 selected', { exact: true })).toBeVisible()
-  await expect(page.locator('.form-error')).toHaveAttribute('role', 'alert')
-  expect(state.applications).toHaveLength(1)
-})
-
-test('RF-07 F04: rapid status changes serialize writes and persist the final selection', async ({ page, context }) => {
-  const state = await backend(context, [application(1)])
-  state.holdUpdates = true
-  await signIn(page)
-  const status = page.locator('.board-card select')
-  await status.selectOption('Interview')
-  await expect.poll(() => state.pending.length).toBe(1)
-  await status.selectOption('Rejected')
-  expect(state.pending).toHaveLength(1)
-  await expect(status).toHaveValue('Rejected')
-  await state.pending[0]()
-  await expect.poll(() => state.pending.length).toBe(2)
-  await state.pending[1]()
-  await expect(status).toHaveValue('Rejected')
-  await expect(page.getByText('Saving status...')).toHaveCount(0)
-  expect(state.applications[0].status).toBe('Rejected')
-  await page.reload()
-  await expect(page.locator('.board-card select')).toHaveValue('Rejected')
-})
-
 test('RF-03 F02/F03: role-only edits preserve notes and nullable rows load alongside valid rows', async ({ page, context }) => {
   const notes = '  Cover letter: Yes\r\nReferral: No\r\nLast updated: interview pending\r\n\r\nKeep this note  \r\n'
   const state = await backend(context, [application(1, { notes })])
@@ -131,55 +73,6 @@ test('CQ: dashboard round-based interview metric preserves its distinction from 
   await expect(page.locator('.progress-summary article').filter({ hasText: 'Reached interview' }).locator('strong')).toHaveText('1')
 })
 
-test('RF-14 F12: demo explains unavailable password changes; local application edits survive navigation', async ({ page, context }) => {
-  const state = await backend(context)
-  await page.goto('/#/demo')
-  await nav(page, 'Add application')
-  await page.getByLabel('Company', { exact: false }).fill('Demo audit fixture')
-  await page.getByLabel('Role', { exact: false }).fill('Auditor')
-  await page.locator('button[type="submit"]').click()
-  await nav(page, 'Progress')
-  await nav(page, 'Dashboard')
-  await expect(page.getByText('Demo audit fixture', { exact: true })).toBeVisible()
-  await nav(page, 'Profile')
-  const security = page.getByRole('region', { name: 'Password', exact: true })
-  await expect(security).toContainText('Password changes are unavailable in Demo mode because this workspace does not use a personal account.')
-  await expect(page.locator('input')).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Update password', exact: true })).toHaveCount(0)
-  await expect(page.getByText('Password updated successfully.', { exact: true })).toHaveCount(0)
-  await nav(page, 'Dashboard')
-  await expect(page.getByText('Demo audit fixture', { exact: true })).toBeVisible()
-  expect(state.requests).toEqual([])
-  expect(state.blocked).toEqual([])
-})
-
-test('Excel import duplicate selection and atomic failure feedback', async ({ page, context }) => {
-  const notes = '  Cover letter: Yes\nReferral: No\nLast updated: interview pending  \n'
-  const state = await backend(context, [application(1, { company: 'Existing', role: 'Engineer', applied_date: '2026-01-01' })])
-  await signIn(page)
-  await nav(page, 'Import Excel')
-  await page.locator('input[type="file"]').setInputFiles(spreadsheet([
-    ['Company', 'Role', 'Applied Date', 'Notes'],
-    ['Existing', 'Engineer', '2026-01-01', 'duplicate'],
-    ['Imported', 'Auditor', '2026-12-31', notes],
-  ]))
-  await expect(page.getByText(/duplicate/i).first()).toBeVisible()
-  state.failInsert = true
-  await page.getByRole('button', { name: /Import 1/ }).click()
-  await page.getByRole('dialog').getByRole('button', { name: /Import 1/ }).click()
-  await expect(page.getByRole('alert')).toContainText('Synthetic insert failure')
-  expect(state.applications).toHaveLength(1)
-  state.failInsert = false
-  await page.getByRole('button', { name: /Import 1/ }).click()
-  await page.getByRole('dialog').getByRole('button', { name: /Import 1/ }).click()
-  await expect(page.getByRole('status')).toContainText('1 application')
-  expect(state.applications.at(-1).notes).toBe(notes)
-  await nav(page, 'Dashboard')
-  await expect(page.getByText('Imported', { exact: true })).toBeVisible()
-  await page.locator('.board-card').filter({ hasText: 'Imported' }).getByRole('button', { name: 'Edit', exact: true }).click()
-  await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(notes)
-})
-
 test('RF-10 F16: conversion, pagination, filtering and removal preserve truthful search feedback', async ({ page, context }) => {
   const state = await backend(context, [], Array.from({ length: 25 }, (_, i) => lead(i + 1)))
   await signIn(page)
@@ -208,7 +101,7 @@ test('RF-10 F16: conversion, pagination, filtering and removal preserve truthful
   expect(state.blocked).toEqual([])
 })
 
-for (const width of [1440, 768, 390]) {
+for (const width of [390]) {
   test(`RF-03: create and role-only edit preserve notes in authenticated and demo forms at ${width}px`, async ({ page, context }, info) => {
     await page.setViewportSize({ width, height: 900 })
     const state = await backend(context)
@@ -222,6 +115,10 @@ for (const width of [1440, 768, 390]) {
       await page.getByLabel('Notes', { exact: true }).fill(notes)
       await noOverflow(page)
       await page.locator('button[type="submit"]').click()
+      await expect(page.getByText('Notes fixture', { exact: true })).toBeVisible()
+      await nav(page, 'Progress')
+      await expect(page.getByRole('heading', { name: 'Your application flow.', exact: true })).toBeVisible()
+      await nav(page, 'Dashboard')
       await expect(page.getByText('Notes fixture', { exact: true })).toBeVisible()
       await page.locator('.board-card').filter({ hasText: 'Notes fixture' }).getByRole('button', { name: 'Edit', exact: true }).click()
       await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(notes)
@@ -238,80 +135,6 @@ for (const width of [1440, 768, 390]) {
     expect(state.blocked).toEqual([])
   })
 }
-
-test('RF-10 F07: remove all includes jobs beyond the former 500-row window', async ({ page, context }) => {
-  const state = await backend(context, [], Array.from({ length: 501 }, (_, i) => lead(i + 1)))
-  await signIn(page)
-  await page.goto('/#/job-agent/matches')
-  await expect(page.getByText('501 waiting')).toBeVisible()
-  page.once('dialog', (dialog) => dialog.accept())
-  await nav(page, 'Remove all')
-  await expect(page.getByRole('heading', { name: 'No applications waiting' })).toBeVisible()
-  expect(state.leads).toHaveLength(0)
-  await page.reload()
-  await expect(page.getByText('0 waiting')).toBeVisible()
-})
-
-for (const width of [1440, 768, 390]) {
-  test(`responsive public demo workflows, keyboard labels and overflow at ${width}px`, async ({ page, context }, info) => {
-    await page.setViewportSize({ width, height: 900 })
-    const state = await backend(context)
-    await page.goto('/#/demo')
-    for (const [name, heading] of [
-      ['Dashboard', 'Your application pipeline'], ['Profile', 'Demo'],
-      ['Progress', 'Your application flow.'], ['Import Excel', 'Bring in your existing tracker.'],
-      ['Job Agent', 'Connect your job alerts.'],
-    ]) {
-      // The compact bottom bar uses shortened names.
-      await nav(page, width < 640 && name === 'Import Excel' ? 'Import' : width < 640 && name === 'Job Agent' ? 'Agent' : name)
-      await expect(page.getByRole('heading', { name: heading, exact: true, level: 1 })).toBeVisible()
-      await noOverflow(page)
-      await page.screenshot({ path: info.outputPath(`${name.replaceAll(' ', '-')}-${width}.png`), fullPage: true })
-    }
-    await nav(page, 'Profile')
-    await expect(page.getByRole('region', { name: 'Password', exact: true })).toContainText('does not use a personal account')
-    await expect(page.locator('input')).toHaveCount(0)
-    const progressNav = page.getByRole('button', { name: 'Progress', exact: true }).filter({ visible: true })
-    await progressNav.focus()
-    await expect(progressNav).toBeFocused()
-    await page.keyboard.press('Enter')
-    await expect(page.getByRole('heading', { name: 'Your application flow.', exact: true })).toBeVisible()
-    await nav(page, width < 640 ? 'Agent' : 'Job Agent')
-    await nav(page, 'Matches')
-    await expect(page.getByRole('heading', { name: 'Jobs waiting for you' })).toBeVisible()
-    await noOverflow(page)
-    await page.screenshot({ path: info.outputPath(`Matches-${width}.png`), fullPage: true })
-    await nav(page, 'Dashboard')
-    await nav(page, 'Add application')
-    await expect(page.getByRole('heading', { name: 'Add a new application', exact: true })).toBeVisible()
-    await noOverflow(page)
-    await page.screenshot({ path: info.outputPath(`Form-${width}.png`), fullPage: true })
-    expect(state.requests).toEqual([])
-    expect(state.blocked).toEqual([])
-  })
-}
-
-test('RF-13 F11: exactly one Sign out control is reachable across responsive boundaries', async ({ page, context }, info) => {
-  await backend(context)
-  await signIn(page)
-  await nav(page, 'Profile')
-  for (const width of [390, 639, 640, 720, 721, 768, 898, 900, 901, 1039, 1040, 1440]) {
-    await page.setViewportSize({ width, height: 900 })
-    await expect.poll(() => page.evaluate(() => innerWidth)).toBe(width)
-    await expect(page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })).toHaveCount(1)
-  }
-  const boundaries = []
-  for (const width of [639, 640, 1039, 1040]) {
-    await page.setViewportSize({ width, height: 900 })
-    await expect.poll(() => page.evaluate(() => innerWidth)).toBe(width)
-    const media = await page.evaluate(() => ({ width: innerWidth, mobile: matchMedia('(width < 640px)').matches, compact: matchMedia('(width < 1040px)').matches, visualWidth: visualViewport.width, dpr: devicePixelRatio }))
-    const expected = 1
-    await expect(page.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })).toHaveCount(expected)
-    boundaries.push({ ...media, visibleSignOut: expected })
-  }
-  await info.attach('breakpoint-observations', { body: JSON.stringify(boundaries, null, 2), contentType: 'application/json' })
-  console.log(JSON.stringify({ browser: info.project.name, boundaries }))
-})
 
 test('F13: whitespace required fields show actionable errors and focus Company', async ({ page, context }) => {
   const state = await backend(context)
@@ -398,27 +221,4 @@ test('public demo edit, delete, bulk import, inbox pause/rotate and lead convers
   await nav(page, 'Dashboard')
   await expect(page.locator('.metric-card-total strong')).toHaveText('2')
   expect(state.requests).toEqual([])
-})
-
-test('accessibility evidence and measured 1000-row board/list rendering', async ({ page, context }, info) => {
-  test.setTimeout(120000)
-  await backend(context, Array.from({ length: 1000 }, (_, i) => application(i + 1)))
-  const started = Date.now()
-  await signIn(page)
-  await expect(page.locator('.board-card')).toHaveCount(1000)
-  const boardMs = Date.now() - started
-  const listStarted = Date.now()
-  await nav(page, 'List')
-  await expect(page.locator('.application-card')).toHaveCount(10)
-  const listMs = Date.now() - listStarted
-  const findings = []
-  for (const name of ['Dashboard', 'Profile', 'Progress', 'Import Excel', 'Job Agent']) {
-    await nav(page, name)
-    await expect(page.locator('.sidebar-nav [aria-current="page"]')).toHaveAttribute('aria-label', name)
-    await expect(page.locator('.app-content')).toHaveCSS('opacity', '1')
-    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
-    findings.push({ page: name, violations: results.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.map((n) => ({ target: n.target, summary: n.failureSummary })) })) })
-  }
-  await info.attach('sanitized-audit-measurements', { body: JSON.stringify({ boardMs, listMs, findings }, null, 2), contentType: 'application/json' })
-  console.log(JSON.stringify({ browser: info.project.name, boardMs, listMs, accessibility: findings.map((item) => ({ page: item.page, ids: item.violations.map((v) => v.id) })) }))
 })

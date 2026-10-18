@@ -4,6 +4,8 @@ import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import * as XLSX from 'xlsx'
 import { application, backend, nav, noOverflow, signIn, spreadsheet } from './fixtures'
+import { expectAccessiblePage } from './accessibility.js'
+import { expectNavigationShell } from './navigation.js'
 
 export async function openRecovery(page, user) {
   const exp = Math.floor(Date.now() / 1000) + 3600
@@ -37,15 +39,16 @@ export async function confirmImport(page, count) {
 }
 
 const longName = 'LongCompanyAndRoleWithoutBreaks'.repeat(3)
+const importedNotes = '  Cover letter: Yes\nReferral: No\nLast updated: interview pending  \n'
 export const importRows = [
   ['Company', 'Role', 'Status', 'Applied Date', 'Location', 'Rejected Date', 'Notes'],
   ['Existing', 'Engineer', 'Applied', '2026-01-01', 'Toronto', '', 'duplicate'],
-  [longName, longName, 'Interview', '2026-01-02', longName, '', '  literal\nnotes  '],
+  [longName, longName, 'Interview', '2026-01-02', longName, '', importedNotes],
   ['Rejected history', 'Engineer', 'Rejected', '2024-02-29', 'Remote', '2026-01-08', 'historical'],
   ['Missing role', '', '', '', '', '', 'skip'],
 ]
 
-for (const width of [390, 640, 768, 1039, 1040, 1440]) {
+for (const width of [390, 768, 1440]) {
   test(`UI-05: account, real preview, modal, focus and responsive geometry at ${width}px`, async ({
     page,
     context,
@@ -78,11 +81,13 @@ for (const width of [390, 640, 768, 1039, 1040, 1440]) {
     await page.getByRole('button', { name: 'Show new password', exact: true }).click()
     await expect(page.getByLabel('New password', { exact: true })).toHaveAttribute('type', 'text')
     await accessible(page, '.profile-page')
+    await expectAccessiblePage(page)
     await page.screenshot({ path: info.outputPath(`profile-${width}.png`), fullPage: true })
     await nav(page, compact ? 'Import' : 'Import Excel')
     await page.locator('input[type="file"]').focus()
     await expect(page.locator('.import-file-picker')).toHaveCSS('outline-style', 'solid')
     await accessible(page, '.import-page')
+    await expectAccessiblePage(page)
     await page.screenshot({ path: info.outputPath(`import-empty-${width}.png`), fullPage: true })
     await page.locator('input[type="file"]').setInputFiles(spreadsheet(importRows))
     await expect(page.getByRole('region', { name: 'Preview', exact: true })).toBeVisible({
@@ -238,7 +243,7 @@ test('UI-05: drag/drop reads actual rows; duplicate selection, cancellation, pen
   await expect.poll(() => operations.length).toBe(2)
   await operations[1].respond()
   await expect(page.getByRole('status')).toContainText('3 applications imported successfully.')
-  expect(operations[1].body.find((r) => r.company === longName).notes).toBe('  literal\nnotes  ')
+  expect(operations[1].body.find((r) => r.company === longName).notes).toBe(importedNotes)
   expect(operations[1].body.find((r) => r.company === 'Rejected history').rejected_date).toBe(
     '2026-01-08',
   )
@@ -246,6 +251,44 @@ test('UI-05: drag/drop reads actual rows; duplicate selection, cancellation, pen
   await page.getByRole('button', { name: 'View dashboard' }).click()
   await expect(page.getByRole('heading', { name: 'Your application pipeline' })).toBeVisible()
   expect(state.applications).toHaveLength(4)
+  await page.locator('.board-card').filter({ has: page.getByText(longName, { exact: true }).first() })
+    .getByRole('button', { name: 'Edit', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue(importedNotes)
+  expect(state.blocked).toEqual([])
+})
+
+test('UI-05: fractional Profile and Import layouts follow their structural breakpoints', async ({ page, context }) => {
+  const state = await backend(context)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await context.route('http://127.0.0.1:5195/account-frame', (route) => route.fulfill({
+    contentType: 'text/html',
+    body: '<iframe title="Account fractional viewport" style="width:639.5px;height:900px;border:0" src="/#/sign-in"></iframe>',
+  }))
+  await page.goto('/account-frame')
+  const frame = page.frames().find((f) => f !== page.mainFrame())
+  await signIn(frame)
+  await nav(frame, 'Profile')
+  for (const width of [639.5, 640.5, 1039.5, 1040.5]) {
+    await page.locator('iframe').evaluate((el, w) => (el.style.width = w + 'px'), width)
+    const desktop = await frame.evaluate(() => matchMedia('(width >= 1040px)').matches)
+    await expect.poll(() => frame.locator('.profile-settings-grid').evaluate((el) =>
+      getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(desktop ? 2 : 1)
+    await expect(frame.getByRole('button', { name: 'Sign out', exact: true }).filter({ visible: true })).toHaveCount(1)
+    await noOverflow(frame)
+  }
+  await frame.goto('http://127.0.0.1:5195/#/import')
+  await expect(frame.getByRole('heading', { name: 'Bring in your existing tracker.' })).toBeVisible()
+  await frame.locator('input[type="file"]').setInputFiles(spreadsheet(importRows))
+  await expect(frame.locator('.import-preview-row')).toHaveCount(3)
+  for (const width of [639.5, 640.5, 1039.5, 1040.5]) {
+    await page.locator('iframe').evaluate((el, w) => (el.style.width = w + 'px'), width)
+    const desktop = await frame.evaluate(() => matchMedia('(width >= 1040px)').matches)
+    await expect.poll(() => frame.locator('.import-layout').evaluate((el) =>
+      getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(desktop ? 2 : 1)
+    await noOverflow(frame)
+    await frame.locator('input[type="file"]').focus()
+    await expect(frame.locator('.import-file-picker')).toHaveCSS('outline-style', 'solid')
+  }
   expect(state.blocked).toEqual([])
 })
 
@@ -290,13 +333,45 @@ for (const width of [390, 768, 1440]) {
       ['import', 'Bring in your existing tracker.'],
       ['applications/new', 'Add a new application'],
     ]) {
-      await page.goto(`/#/demo/${route}`)
+      const names = {
+        dashboard: 'Dashboard', progress: 'Progress', profile: 'Profile',
+        'job-agent': width < 640 ? 'Agent' : 'Job Agent',
+        import: width < 640 ? 'Import' : 'Import Excel',
+      }
+      if (route === 'dashboard') await page.goto('/#/demo')
+      else if (names[route]) {
+        const control = page.getByRole('navigation', {
+          name: width < 640 ? 'Mobile navigation' : 'Primary navigation', exact: true,
+        }).getByRole('button', { name: names[route], exact: true })
+        await control.focus()
+        // Stay inside navigation when the target is the final mobile button.
+        await page.keyboard.press('Shift+Tab')
+        await page.keyboard.press('Tab')
+        await expect(control).toBeFocused()
+        await expect(control).toHaveCSS('outline-style', 'solid')
+        await page.keyboard.press('Enter')
+      } else if (route === 'job-agent/matches') await nav(page, 'Matches')
+      else await nav(page, 'Add application')
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible({
         timeout: 20000,
       })
       await expect(page.locator('.page-loading-state')).toHaveCount(0, { timeout: 20000 })
+      if (names[route]) {
+        const { menu } = await expectNavigationShell(page)
+        await expect(menu.locator('[aria-current="page"]')).toHaveAttribute('aria-label', names[route])
+      }
       await expect(page.getByRole('main')).toHaveCount(1)
       await expect(page.locator('main h1').filter({ visible: true })).toHaveCount(1)
+      await expect(page.locator('.app-layout')).toHaveCount(1)
+      await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toHaveCount(0)
+      if (route === 'profile') {
+        await expect(page.getByRole('region', { name: 'Password', exact: true })).toContainText(
+          'Password changes are unavailable in Demo mode because this workspace does not use a personal account.',
+        )
+        await expect(page.locator('form, input')).toHaveCount(0)
+        await expect(page.getByRole('button', { name: /password/i })).toHaveCount(0)
+        await expect(page.getByText('Password updated successfully.', { exact: true })).toHaveCount(0)
+      }
       await noOverflow(page)
       const typography = await page
         .locator('main h1')
@@ -313,6 +388,11 @@ for (const width of [390, 768, 1440]) {
           el.getAnimations({ subtree: true }).map((a) => a.effect.getComputedTiming().duration),
         )
       expect(animations.every((duration) => duration <= 1)).toBe(true)
+      const shellAnimations = await page.locator('.app-layout').evaluate((root) =>
+        root.getAnimations({ subtree: true }).map((a) => a.effect.getComputedTiming().duration))
+      expect(shellAnimations.every((duration) => duration <= 1)).toBe(true)
+      await expectAccessiblePage(page)
+      await expect(page.locator('.app-content')).toHaveCSS('opacity', '1')
       await page.screenshot({
         path: info.outputPath(`whole-app-${route.replaceAll('/', '-')}-${width}.png`),
         fullPage: true,
