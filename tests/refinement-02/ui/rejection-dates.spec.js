@@ -296,8 +296,8 @@ test('F08: creation/import keep unknown dates NULL while explicit Excel history 
     ['Import unknown', 'Engineer', 'Rejected', '2024-02-20', ''],
     ['Import explicit', 'Engineer', 'Rejected', '2024-02-20', '2026-01-08'],
   ]))
-  page.once('dialog', (dialog) => dialog.accept())
   await page.getByRole('button', { name: 'Import 2 applications', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Import 2 applications', exact: true }).click()
   await expect.poll(() => state.applications.some((row) => row.company === 'Import explicit')).toBe(true)
   expect(state.applications.find((row) => row.company === 'Import unknown').rejected_date).toBeNull()
   expect(state.applications.find((row) => row.company === 'Import explicit').rejected_date).toBe('2026-01-08')

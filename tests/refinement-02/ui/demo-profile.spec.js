@@ -16,7 +16,7 @@ for (const width of [1440, 768, 390]) {
     await expect(page.getByRole('button', { name: /password/i })).toHaveCount(0)
     await expect(page.getByText('Password updated successfully.', { exact: true })).toHaveCount(0)
     await expect(page.locator('.app-content')).toHaveCSS('opacity', '1')
-    const accessibility = await new AxeBuilder({ page }).include('.profile-section').withTags(['wcag2a', 'wcag2aa']).analyze()
+    const accessibility = await new AxeBuilder({ page }).include('.profile-page').withTags(['wcag2a', 'wcag2aa']).analyze()
     expect(accessibility.violations).toEqual([])
     await noOverflow(page)
     await page.screenshot({ path: info.outputPath(`demo-profile-${width}.png`), fullPage: true })

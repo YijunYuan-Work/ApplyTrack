@@ -74,7 +74,7 @@ async function keyboardMenu(page) {
 
 async function keyboardSignOut(page) {
   const { media } = await shell(page)
-  if (media.compact) await page.getByRole('button', { name: 'Show confirmed password' }).focus()
+  if (media.compact) await page.locator('.mobile-add-action').focus()
   else await page.locator('.sidebar-primary-action').focus()
   await page.keyboard.press('Tab')
   await expect(signOut(page)).toBeFocused()
@@ -108,7 +108,7 @@ for (const width of widths) {
       await noOverflow(page)
     }
     await nav(page, 'Profile')
-    await expect(page.locator('.profile-section')).toBeVisible()
+    await expect(page.locator('.profile-page')).toBeVisible()
     await expect(signOut(page)).toHaveCount(1)
     const { media } = await shell(page)
     await info.attach('viewport', { body:JSON.stringify({ requestedWidth:width, ...media }), contentType:'application/json' })
@@ -127,7 +127,7 @@ test('RF-13: live resizing preserves one exit and the authenticated session', as
   const state = await backend(context)
   await signIn(page)
   await nav(page, 'Profile')
-  await expect(page.locator('.profile-section')).toBeVisible()
+  await expect(page.locator('.profile-page')).toBeVisible()
   const evidence = []
   for (const width of [1440, 1040, 1039, 900, 721, 720, 640, 639, 901, 390, 768]) {
     await page.setViewportSize({ width, height:900 })
@@ -148,7 +148,7 @@ test('RF-13: fractional CSS viewports have no navigation or Sign Out gap', async
   const frame = page.frames().find(f => f !== page.mainFrame())
   await signIn(frame)
   await nav(frame, 'Profile')
-  await expect(frame.locator('.profile-section')).toBeVisible()
+  await expect(frame.locator('.profile-page')).toBeVisible()
   const evidence = []
   for (const width of [639.5,640.5,719.5,720.5,899.5,900.5,1039.5,1040.5]) {
     await page.locator('iframe').evaluate((e,w) => { e.style.width = `${w}px` },width)

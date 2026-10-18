@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { ArrowRight, LoaderCircle, ShieldCheck } from 'lucide-react'
+import AuthLayout from '../components/AuthLayout'
+import PasswordField from '../components/PasswordField'
+import { PasswordRequirements, PasswordStrength } from '../components/PasswordGuidance'
 
 function ResetPasswordPage({ onContinue, onUpdatePassword }) {
   const [newPassword, setNewPassword] = useState('')
@@ -6,6 +10,8 @@ function ResetPasswordPage({ onContinue, onUpdatePassword }) {
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [success, setSuccess] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -37,56 +43,70 @@ function ResetPasswordPage({ onContinue, onUpdatePassword }) {
   }
 
   return (
-    <main className="auth-shell">
-      <section className="auth-panel">
+    <AuthLayout>
+      <div className="account-security-heading">
+        <span className="account-shield">
+          <ShieldCheck aria-hidden="true" size={20} />
+        </span>
         <div>
           <p className="eyebrow">ApplyTrack</p>
           <h1>Choose a new password.</h1>
           <p>Set a fresh password for your workspace.</p>
         </div>
+      </div>
 
-        {success ? (
-          <div className="auth-form">
-            <p className="form-success">{success}</p>
-            <button type="button" onClick={onContinue}>
-              Continue to dashboard
-            </button>
-          </div>
-        ) : (
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <label>
-              New password
-              <input
-                minLength="6"
-                type="password"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                placeholder="At least 6 characters"
-                required
-              />
-            </label>
+      {success ? (
+        <div className="auth-form">
+          <p className="form-success" role="status">
+            {success}
+          </p>
+          <button className="ui-button ui-button-add" type="button" onClick={onContinue}>
+            Continue to dashboard
+            <ArrowRight aria-hidden="true" size={18} />
+          </button>
+        </div>
+      ) : (
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <PasswordField
+            label="New password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            disabled={isSaving}
+            visible={showPassword}
+            onToggle={() => setShowPassword((v) => !v)}
+            visibilityLabel="new password"
+          />
+          <PasswordStrength password={newPassword} />
+          <PasswordField
+            label="Confirm password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            disabled={isSaving}
+            visible={showConfirmation}
+            onToggle={() => setShowConfirmation((v) => !v)}
+            visibilityLabel="confirmed password"
+            placeholder="Repeat your new password"
+          />
+          <PasswordRequirements password={newPassword} confirmation={confirmPassword} />
 
-            <label>
-              Confirm password
-              <input
-                minLength="6"
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Repeat your new password"
-                required
-              />
-            </label>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
 
-            {error && <p className="form-error">{error}</p>}
-
-            <button type="submit" disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Update password'}
-            </button>
-          </form>
-        )}
-      </section>
-    </main>
+          <button
+            className="ui-button ui-button-add"
+            type="submit"
+            disabled={isSaving}
+            aria-busy={isSaving}
+          >
+            {isSaving && <LoaderCircle className="account-spinner" aria-hidden="true" size={18} />}
+            {isSaving ? 'Saving...' : 'Update password'}
+          </button>
+        </form>
+      )}
+    </AuthLayout>
   )
 }
 

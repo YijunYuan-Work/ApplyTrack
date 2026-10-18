@@ -1,52 +1,13 @@
-.auth-shell {
-  min-height: 100svh;
-  background:
-    linear-gradient(120deg, rgba(47, 117, 104, 0.08), transparent 34%),
-    linear-gradient(240deg, rgba(82, 104, 132, 0.1), transparent 32%),
-    var(--bg);
-  color: var(--text);
-}
-
-.auth-shell {
-  display: grid;
-  place-items: center;
-  padding: 28px;
-}
-
-.auth-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 40px;
-  align-items: center;
-  width: min(900px, 100%);
-  padding: 34px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--shadow);
-}
-
-.auth-panel h1,
 .app-header h1 {
   margin: 0;
   color: var(--text-h);
   line-height: 1.02;
 }
 
-.auth-panel h1 {
-  font-size: 3.4rem;
-}
-
-.auth-panel p,
 .app-header p,
 .empty-state p {
   margin: 10px 0 0;
   line-height: 1.55;
-}
-
-.auth-form {
-  display: grid;
-  gap: 18px;
 }
 
 .required-label {
@@ -111,8 +72,7 @@
   font-size: 3.2rem;
 }
 
-.form-actions,
-.hero-actions {
+.form-actions {
   display: flex;
   gap: 12px;
 }
@@ -130,71 +90,11 @@
   text-transform: uppercase;
 }
 
-.profile-section {
-  width: min(1080px, calc(100% - 40px));
-  margin: 0 auto 18px;
-}
-
-.empty-state,
-.import-panel,
-.profile-card {
+.empty-state {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: var(--shadow);
-}
-
-.profile-card {
-  display: grid;
-  gap: 14px;
-  padding: 20px;
-}
-
-.profile-card div {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-
-.profile-card span {
-  color: var(--text);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.profile-card strong {
-  color: var(--text-h);
-  overflow-wrap: anywhere;
-}
-
-.profile-settings-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 14px;
-}
-
-.profile-form {
-  display: grid;
-  align-content: start;
-  gap: 18px;
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--shadow);
-}
-
-.profile-form h2 {
-  margin: 0;
-  color: var(--text-h);
-  font-size: 1.3rem;
-}
-
-.profile-form p {
-  margin: 8px 0 0;
-  line-height: 1.55;
 }
 
 .form-page {
@@ -239,9 +139,7 @@ textarea:focus {
   outline: 3px solid var(--accent-bg);
 }
 
-button,
-.secondary-action,
-.danger-action {
+button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -271,30 +169,7 @@ button:disabled {
   opacity: 0.64;
 }
 
-.auth-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  padding: 5px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #f6f8fa;
-}
-
-.auth-toggle button {
-  min-height: 38px;
-  background: transparent;
-  color: var(--text-h);
-}
-
-.auth-toggle button:hover,
-.auth-toggle .toggle-active {
-  background: #fff;
-}
-
-.ghost-button,
-.secondary-action,
-.danger-action {
+.ghost-button {
   min-height: 38px;
   padding: 0 12px;
   border: 1px solid var(--border);
@@ -303,122 +178,8 @@ button:disabled {
   font-size: 0.86rem;
 }
 
-.ghost-button:hover,
-.secondary-action:hover {
+.ghost-button:hover {
   background: #eef4f2;
-}
-
-.danger-action {
-  color: #8b2d2d;
-}
-
-.danger-action:hover {
-  background: #f8e9e9;
-}
-
-.import-panel {
-  display: grid;
-  gap: 16px;
-  padding: 20px;
-}
-
-.import-copy {
-  max-width: 680px;
-}
-
-.import-panel h2 {
-  margin: 0;
-  color: var(--text-h);
-  font-size: 1.3rem;
-}
-
-.import-panel p {
-  margin: 8px 0 0;
-  line-height: 1.55;
-}
-
-.import-controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: end;
-}
-
-.file-picker {
-  position: relative;
-}
-
-.file-picker input {
-  padding: 8px;
-}
-
-.import-summary,
-.import-preview {
-  display: grid;
-  gap: 5px;
-  min-height: 46px;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: #fff;
-}
-
-.import-summary span,
-.import-preview-header span {
-  color: var(--text);
-  font-size: 0.76rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.import-summary strong,
-.import-preview-header strong {
-  margin: 0;
-  color: var(--text-h);
-  font-size: 0.92rem;
-  overflow-wrap: anywhere;
-}
-
-.import-preview-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-}
-
-.import-preview-list {
-  display: grid;
-  gap: 8px;
-  max-height: 420px;
-  overflow: auto;
-  padding-right: 4px;
-}
-
-.import-preview-row {
-  display: grid;
-  grid-template-columns: auto minmax(130px, 0.5fr) minmax(0, 1fr);
-  gap: 12px;
-  align-items: center;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: #f8fafb;
-}
-
-.import-preview-row input {
-  width: 18px;
-  min-height: 18px;
-}
-
-.import-preview-row span {
-  color: var(--accent);
-  font-weight: 850;
-  overflow-wrap: anywhere;
-}
-
-.import-preview-row strong {
-  color: var(--text-h);
-  overflow-wrap: anywhere;
 }
 
 .form-error,
@@ -471,8 +232,7 @@ button:disabled {
 @media (min-width: 721px) and (max-width: 1040px) {
 
   .app-header,
-  .form-page,
-  .profile-section {
+  .form-page {
     width: min(100% - 32px, 1080px);
   }
 
@@ -487,53 +247,26 @@ button:disabled {
 
 @media (max-width: 720px) {
 
-  .auth-panel {
-    grid-template-columns: 1fr;
-  }
-
   .app-header {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .profile-card {
-    grid-template-columns: 1fr;
-  }
-
-  .profile-settings-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .import-panel,
-  .import-controls {
-    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 720px) {
 
   .app-header,
-  .form-page,
-  .profile-section {
+  .form-page {
     width: min(100% - 28px, 1080px);
   }
 
-  .auth-panel {
-    padding: 24px;
-  }
-
-  .auth-panel h1,
   .app-header h1 {
     font-size: 2.55rem;
   }
 }
 
 @media (max-width: 440px) {
-  .auth-shell {
-    padding: 14px;
-  }
 
-  .auth-panel h1,
   .app-header h1 {
     font-size: 2.2rem;
   }
@@ -542,5 +275,3 @@ button:disabled {
     flex-direction: column;
   }
 }
-
-/* Laptop/tablet page content sizing. */
