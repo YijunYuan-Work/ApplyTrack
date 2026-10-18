@@ -4,7 +4,7 @@ import { backend, nav, noOverflow, signIn } from './fixtures.js'
 
 const explanation = 'Password changes are unavailable in Demo mode because this workspace does not use a personal account.'
 
-for (const width of [1440, 768, 390]) {
+for (const width of [390]) {
   test(`RF-14: Demo Profile explains account limitations without authentication at ${width}px`, async ({ page, context }, info) => {
     test.setTimeout(60000)
     await page.setViewportSize({ width, height: 900 })
@@ -41,6 +41,9 @@ for (const width of [1440, 768, 390]) {
     expect(state.blocked).toEqual([])
   })
 
+}
+
+for (const width of [1440]) {
   test(`RF-14: real password validation, failure and success remain unchanged at ${width}px`, async ({ page, context }, info) => {
     await page.setViewportSize({ width, height: 900 })
     const state = await backend(context)

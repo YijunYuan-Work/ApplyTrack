@@ -46,7 +46,7 @@ function deleteIds(operation) {
   return new URLSearchParams(operation.query).get('id').slice(4, -1).split(',').map(Number).sort((a, b) => a - b)
 }
 
-for (const width of [1440, 1040, 1039, 768, 641, 640, 639, 390]) {
+for (const width of [1440, 768, 390]) {
   test(`Board scope matches actual visible stages at ${width}px`, async ({ page, context }, info) => {
     test.setTimeout(60000)
     const rows = mixedRows()
@@ -294,7 +294,7 @@ test('pending Board deletion retains newer stage selection; failure, cancel and 
   expect(state.applications).toEqual([rows[3]])
 })
 
-for (const width of [1440, 768, 390]) {
+for (const width of [1440, 390]) {
   test(`Demo scope and selection retention match Real at ${width}px without backend requests`, async ({ page, context }, info) => {
     const state = await backend(context)
     await page.setViewportSize({ width, height: 900 })

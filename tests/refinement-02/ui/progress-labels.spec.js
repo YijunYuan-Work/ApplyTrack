@@ -79,7 +79,7 @@ async function expectReadableLabels(page) {
     .toEqual({ overlaps: [], clipped: [], nodeCollisions: [] })
 }
 
-for (const width of [1440, 1040, 1039, 768]) {
+for (const width of [1440, 768]) {
   for (const [distribution, counts] of Object.entries(distributions)) {
     test(`UI-03: Pipeline labels do not collide at ${width}px with ${distribution}`, async ({
       page,

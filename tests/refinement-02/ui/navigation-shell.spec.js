@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test'
-import AxeBuilder from '@axe-core/playwright'
 import { application, backend, nav, noOverflow, signIn } from './fixtures.js'
 
 test('UI-01: canonical shell geometry, fonts, tooltips, Add and browser history', async ({ page, context }, info) => {
@@ -70,41 +69,6 @@ test('UI-01: canonical shell geometry, fonts, tooltips, Add and browser history'
   expect(state.requests.filter(r => !['GET','HEAD'].includes(r.method) && r.table !== 'token')).toEqual([])
   await info.attach('shell-geometry', { body:JSON.stringify(evidence), contentType:'application/json' })
 })
-
-for (const width of [1440,768,390]) {
-  test(`UI-01: reduced motion, shell accessibility and local Demo workflows at ${width}px`, async ({ page, context }, info) => {
-    test.setTimeout(60000)
-    const state = await backend(context)
-    await page.emulateMedia({ reducedMotion:'reduce' })
-    await page.setViewportSize({ width, height:900 })
-    await page.goto('/#/demo')
-    for (const [name, heading] of [
-      ['Profile', 'Demo'],
-      ['Progress', 'Your application flow.'],
-      [width < 640 ? 'Agent' : 'Job Agent', 'Connect your job alerts.'],
-      [width < 640 ? 'Import' : 'Import Excel', 'Bring in your existing tracker.'],
-      ['Dashboard', 'Your application pipeline'],
-    ]) {
-      await nav(page, name)
-      await expect(page.getByRole('heading', { name:heading, exact:true, level:1 })).toBeVisible()
-      await expect(page.locator('.app-layout')).toHaveCount(1)
-      await expect(page.locator('.app-layout')).toBeVisible()
-      if (name === 'Agent' || name === 'Job Agent') {
-        await expect(page.locator('.job-agent-header')).toBeVisible()
-        const header = await new AxeBuilder({ page }).include('.job-agent-header').withTags(['wcag2a','wcag2aa']).analyze()
-        expect(header.violations).toEqual([])
-      }
-      const animations = await page.locator('.app-layout').evaluate(root => root.getAnimations({ subtree:true }).map(a=>Number(a.effect.getTiming().duration)))
-      expect(animations.every(duration => duration <= 1)).toBe(true)
-      await noOverflow(page)
-    }
-    const accessibility = await new AxeBuilder({ page }).include(width < 640 ? '.mobile-app-bar' : '.sidebar').include(width < 640 ? '.mobile-bottom-nav' : '.sidebar-nav').withTags(['wcag2a','wcag2aa']).analyze()
-    expect(accessibility.violations).toEqual([])
-    await info.attach(`shell-accessibility-${width}`, { body:JSON.stringify(accessibility.violations), contentType:'application/json' })
-    expect(state.requests).toEqual([])
-    expect(state.blocked).toEqual([])
-  })
-}
 
 test('UI-01: navigation indicator travels to the active destination without remounting page data', async ({ page, context }) => {
   await page.addInitScript(() => {

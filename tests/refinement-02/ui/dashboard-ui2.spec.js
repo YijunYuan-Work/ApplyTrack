@@ -9,8 +9,9 @@ import {
   openDetails,
   signIn,
 } from './fixtures.js'
+import { expectAccessiblePage } from './accessibility.js'
 
-for (const width of [1440, 1040, 1039, 900, 768, 640, 390]) {
+for (const width of [1440, 768, 390]) {
   test(`UI-02: Dashboard geometry, details, focus and full editor at ${width}px`, async ({
     page,
     context,
@@ -49,6 +50,7 @@ for (const width of [1440, 1040, 1039, 900, 768, 640, 390]) {
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
     expect(dashboardAccessibility.violations).toEqual([])
+    await expectAccessiblePage(page)
     const opener = page.getByRole('button', { name: 'View details for Synthetic 1', exact: true })
     await opener.focus()
     await page.keyboard.press('Enter')
@@ -112,6 +114,7 @@ for (const width of [1440, 1040, 1039, 900, 768, 640, 390]) {
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
     expect(formAccessibility.violations).toEqual([])
+    await expectAccessiblePage(page)
     await page.screenshot({ path: info.outputPath(`editor-${width}.png`), fullPage: true })
     expect(state.blocked).toEqual([])
     expect(state.requests.filter((r) => r.table === 'applications' && r.method !== 'GET')).toEqual(
@@ -160,6 +163,29 @@ test('UI-02: fractional viewports retain the visible Board selection scope witho
     body: JSON.stringify(evidence),
     contentType: 'application/json',
   })
+  await nav(frame, 'Exit multi-select')
+  await nav(frame, 'List')
+  for (const width of [1279.5, 1280.5]) {
+    await page.locator('iframe').evaluate((el, w) => (el.style.width = w + 'px'), width)
+    const wide = await frame.evaluate(() => matchMedia('(width >= 1280px)').matches)
+    await expect(frame.locator('.application-card .list-location').first()).toBeVisible({ visible: wide })
+    await expect(frame.locator('.application-card .list-interviews').first()).toBeVisible({ visible: wide })
+    await expect(frame.locator('.application-card')).toHaveCount(8)
+    await noOverflow(frame)
+  }
+  await openDetails(frame)
+  for (const width of [639.5, 640.5, 1039.5, 1040.5]) {
+    await page.locator('iframe').evaluate((el, w) => (el.style.width = w + 'px'), width)
+    const mode = await frame.evaluate(() => ({
+      mobile: matchMedia('(width < 640px)').matches,
+      desktop: matchMedia('(width >= 1040px)').matches,
+      // clientWidth is integer-rounded; fixed drawers fill the fractional CSS viewport.
+      width: getComputedStyle(document.documentElement).width,
+    }))
+    await expect(frame.getByRole('dialog')).toHaveCSS('width', mode.mobile ? mode.width : (mode.desktop ? 440 : 400) + 'px')
+    await noOverflow(frame)
+  }
+  await closeDetails(frame)
   expect(state.blocked).toEqual([])
 })
 
