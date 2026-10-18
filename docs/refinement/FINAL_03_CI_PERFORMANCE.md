@@ -30,9 +30,10 @@ serial, including normal multi-browser debugging. CI still selects Chromium.
   database, account, persistent storage state, server port or output file was
   found that needs an isolation refactor for the proposed scheduling.
 
-All 137 tracked test/application/backend/dependency/workflow/Auth-config files
-are SHA256 protected during local benchmarking. No test body or assertion is
-changed, including all nine Final-01 Sign Out and twelve Auth cases.
+The baseline records SHA256 hashes of 137 tracked files. All 136 test/application/
+backend/dependency/Auth-config files remain identical; the workflow only gains
+the failure-evidence step described below. No test body or assertion changes,
+including all nine Final-01 Sign Out and twelve Auth cases.
 
 ## Measurements
 
@@ -52,7 +53,7 @@ No benchmark overlaps another local browser/check run.
 | Run | Workers | Playwright elapsed | Passed | Failed/skipped/flaky/retries/timeouts |
 | --- | ---: | ---: | ---: | --- |
 | Two-worker A | 2 | 367.715s | 237 | 0/0/0/0/0 |
-| One-worker comparison | 1 | Pending | Pending | Pending |
+| One-worker comparison | 1 | 680.517s | 237 | 0/0/0/0/0 |
 | Two-worker B | 2 | Pending | Pending | Pending |
 
 Run A observed two active tests, exactly two worker indices and no runner errors.
@@ -68,6 +69,22 @@ failures. Complete baseline/repeat log analysis is pending.
 
 Local times are not GitHub CI speedup measurements. Candidate CI timing is
 pending; no claim of a measured CI improvement is made yet.
+
+## CI Screenshot Failure Investigation
+
+Candidate [39173589065](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/39173589065)
+failed before functional execution: unchanged one-worker Auth had 11 passed,
+one failed at `page.screenshot` for 390px Sign In, with CDP
+`Page.captureScreenshot: Unable to capture screenshot`. The functional and build
+steps were not run; this is **not** a two-worker measurement. The original job
+uploaded no trace artifacts, so the screenshot failure's root cause is unconfirmed.
+It is not dismissed as flaky or attributed to the worker change.
+
+To retain diagnostic evidence, the existing quality job now uses the official
+[upload-artifact action](https://github.com/actions/upload-artifact#usage) only
+on failure, uploading `test-results/` for three days. No permission escalation,
+new job, browser flag, animation override, test retry, screenshot removal or
+assertion change is introduced. A subsequent complete CI run must still pass.
 
 ## Checks And Reproduction
 
