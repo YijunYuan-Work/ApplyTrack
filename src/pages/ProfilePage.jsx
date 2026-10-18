@@ -1,6 +1,9 @@
 import { useState } from 'react'
-import { Eye, EyeOff, LogOut } from 'lucide-react'
+import { LoaderCircle, LogOut, ShieldCheck } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
+import PasswordField from '../components/PasswordField'
+import { PasswordRequirements, PasswordStrength } from '../components/PasswordGuidance'
+import '../styles/account.css'
 
 function ProfilePage({
   isDemo = false,
@@ -52,6 +55,24 @@ function ProfilePage({
     }
   }
 
+  const created = user.created_at ? new Date(user.created_at) : null
+  const identity = [
+    ['Username', username],
+    ['Workspace', isDemo ? 'Public demo workspace' : `${user.name || username}'s workspace`],
+    ...(!isDemo && created && Number.isFinite(created.getTime())
+      ? [
+          [
+            'Member since',
+            new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(created),
+          ],
+        ]
+      : []),
+  ]
+  const clearFeedback = () => {
+    setPasswordError('')
+    setPasswordSuccess('')
+  }
+
   return (
     <AppLayout
       currentPage="profile"
@@ -65,118 +86,127 @@ function ProfilePage({
       onSignOut={onSignOut}
       user={user}
     >
-      <header className="app-header compact">
-        <div>
-          <p className="eyebrow">Profile</p>
-          <h1>{username}</h1>
-          <p>
-            {isDemo
-              ? 'Public demo workspace. No personal account.'
-              : 'Manage your workspace identity and account security.'}
-          </p>
-        </div>
-      </header>
-
-      <section className="profile-section">
+      <div className="profile-page">
+        <header className="profile-header">
+          <span className="profile-avatar" aria-hidden="true">
+            {String(username || '')
+              .split(/[\s._-]+/)
+              .map((part) => part[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase()}
+          </span>
+          <div>
+            <p className="eyebrow">Profile</p>
+            <h1>{username}</h1>
+            <p>
+              {isDemo
+                ? 'Public demo workspace. No personal account.'
+                : 'Manage your workspace identity and account security.'}
+            </p>
+          </div>
+        </header>
         <div className="profile-settings-grid">
-          {isDemo ? (
-            <section className="profile-form" aria-labelledby="demo-password-heading">
+          <div className="profile-identity">
+            <section className="profile-card" aria-labelledby="identity-heading">
               <div>
-                <p className="eyebrow">Security</p>
-                <h2 id="demo-password-heading">Password</h2>
+                <p className="eyebrow">Account</p>
+                <h2 id="identity-heading">Workspace identity</h2>
+              </div>
+              <dl>
+                {identity.map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+            <section className="profile-session">
+              <div>
+                <h2>Session</h2>
                 <p>
-                  Password changes are unavailable in Demo mode because this
-                  workspace does not use a personal account.
+                  {isDemo ? 'Sample data only. No personal account.' : 'Signed in on this browser.'}
                 </p>
               </div>
+              {!isDemo && (
+                <button
+                  className="mobile-profile-sign-out ghost-button ui-button ui-button-ghost"
+                  type="button"
+                  onClick={onSignOut}
+                >
+                  <LogOut aria-hidden="true" size={18} />
+                  Sign out
+                </button>
+              )}
+            </section>
+          </div>
+          {isDemo ? (
+            <section className="profile-form" aria-labelledby="demo-password-heading">
+              <div className="account-security-heading">
+                <span className="account-shield">
+                  <ShieldCheck aria-hidden="true" size={20} />
+                </span>
+                <div>
+                  <p className="eyebrow">Security</p>
+                  <h2 id="demo-password-heading">Password</h2>
+                </div>
+              </div>
+              <p>
+                Password changes are unavailable in Demo mode because this workspace does not use a
+                personal account.
+              </p>
             </section>
           ) : (
             <form className="profile-form" onSubmit={handlePasswordSubmit}>
-              <div>
-                <p className="eyebrow">Security</p>
-                <h2>Password</h2>
-                <p>Choose a new password for your account.</p>
-              </div>
-
-              <div className="profile-field">
-                <label htmlFor="new-password">New password</label>
-                <span className="password-input-wrap">
-                  <input
-                    autoComplete="new-password"
-                    id="new-password"
-                    minLength="6"
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(event) => {
-                      setNewPassword(event.target.value)
-                      setPasswordError('')
-                      setPasswordSuccess('')
-                    }}
-                    placeholder="At least 6 characters"
-                    required
-                  />
-                  <button
-                    aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
-                    className="password-visibility-button"
-                    type="button"
-                    onClick={() => setShowNewPassword((isVisible) => !isVisible)}
-                  >
-                    {showNewPassword ? (
-                      <EyeOff aria-hidden="true" size={19} />
-                    ) : (
-                      <Eye aria-hidden="true" size={19} />
-                    )}
-                  </button>
+              <div className="account-security-heading">
+                <span className="account-shield">
+                  <ShieldCheck aria-hidden="true" size={20} />
                 </span>
+                <div>
+                  <p className="eyebrow">Security</p>
+                  <h2>Password</h2>
+                  <p>Choose a new password for your account.</p>
+                </div>
               </div>
-
-              <div className="profile-field">
-                <label htmlFor="confirm-password">Confirm password</label>
-                <span className="password-input-wrap">
-                  <input
-                    autoComplete="new-password"
-                    id="confirm-password"
-                    minLength="6"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(event) => {
-                      setConfirmPassword(event.target.value)
-                      setPasswordError('')
-                      setPasswordSuccess('')
-                    }}
-                    placeholder="Repeat your new password"
-                    required
-                  />
-                  <button
-                    aria-label={
-                      showConfirmPassword
-                        ? 'Hide confirmed password'
-                        : 'Show confirmed password'
-                    }
-                    className="password-visibility-button"
-                    type="button"
-                    onClick={() =>
-                      setShowConfirmPassword((isVisible) => !isVisible)
-                    }
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff aria-hidden="true" size={19} />
-                    ) : (
-                      <Eye aria-hidden="true" size={19} />
-                    )}
-                  </button>
-                </span>
-              </div>
-
+              <PasswordField
+                label="New password"
+                value={newPassword}
+                disabled={isSavingPassword}
+                visible={showNewPassword}
+                visibilityLabel="new password"
+                onToggle={() => setShowNewPassword((v) => !v)}
+                onChange={(e) => {
+                  setNewPassword(e.target.value)
+                  clearFeedback()
+                }}
+              />
+              <PasswordStrength password={newPassword} />
+              <PasswordField
+                label="Confirm password"
+                value={confirmPassword}
+                disabled={isSavingPassword}
+                visible={showConfirmPassword}
+                visibilityLabel="confirmed password"
+                onToggle={() => setShowConfirmPassword((v) => !v)}
+                placeholder="Repeat your new password"
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value)
+                  clearFeedback()
+                }}
+              />
+              <PasswordRequirements password={newPassword} confirmation={confirmPassword} />
               <button
+                className="ui-button ui-button-primary"
                 type="submit"
-                disabled={
-                  isSavingPassword || !newPassword || !confirmPassword
-                }
+                disabled={isSavingPassword || !newPassword || !confirmPassword}
+                aria-busy={isSavingPassword}
               >
+                {isSavingPassword && (
+                  <LoaderCircle className="account-spinner" aria-hidden="true" size={18} />
+                )}
                 {isSavingPassword ? 'Saving...' : 'Update password'}
               </button>
-
               {passwordSuccess && (
                 <p className="form-success" role="status">
                   {passwordSuccess}
@@ -190,18 +220,7 @@ function ProfilePage({
             </form>
           )}
         </div>
-
-        {!isDemo && (
-          <button
-            className="mobile-profile-sign-out ghost-button"
-            type="button"
-            onClick={onSignOut}
-          >
-            <LogOut aria-hidden="true" size={20} />
-            Sign out
-          </button>
-        )}
-      </section>
+      </div>
     </AppLayout>
   )
 }

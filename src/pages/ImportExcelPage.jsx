@@ -28,21 +28,12 @@ function ImportExcelPage({
       onSignOut={onSignOut}
       user={user}
     >
-      <header className="app-header compact">
-        <div>
-          <p className="eyebrow">Import Excel</p>
-          <h1>Bring in your existing tracker.</h1>
-          <p>Upload a spreadsheet and add its rows to your application list.</p>
-        </div>
-      </header>
-
-      <section className="form-page">
-        <ExcelImportPanel
-          applications={applications}
-          demoRows={demoRows}
-          onImportApplications={onImportApplications}
-        />
-      </section>
+      <ExcelImportPanel
+        applications={applications}
+        demoRows={demoRows}
+        onImportApplications={onImportApplications}
+        onDashboard={onDashboard}
+      />
     </AppLayout>
   )
 }

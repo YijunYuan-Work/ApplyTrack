@@ -1,0 +1,65 @@
+{
+  "base": "303ddb5b6f5a74d9b4be9853648facb0127370b1",
+  "protectedFiles": 77,
+  "protectedGitBlobsIdentical": true,
+  "windowsLineEndingsNormalizedByGit": true,
+  "css": [
+    {
+      "path": "src/App.css",
+      "removedSelectorBranches": 60,
+      "retainedRules": 44,
+      "retainedDeclarationsAndMediaUnchanged": true,
+      "exception": null
+    },
+    {
+      "path": "src/styles/theme.css",
+      "removedSelectorBranches": 108,
+      "retainedRules": 40,
+      "retainedDeclarationsAndMediaUnchanged": true,
+      "exception": "Loading heading and three fallback eyebrow color declarations now use the existing Teal text-h token."
+    }
+  ],
+  "handlers": [
+    {
+      "path": "src/pages/ProfilePage.jsx",
+      "name": "handlePasswordSubmit",
+      "astUnchanged": true
+    },
+    {
+      "path": "src/pages/ResetPasswordPage.jsx",
+      "name": "handleSubmit",
+      "astUnchanged": true
+    },
+    {
+      "path": "src/components/ExcelImportPanel.jsx",
+      "name": "getApplicationKey",
+      "astUnchanged": true
+    },
+    {
+      "path": "src/components/ExcelImportPanel.jsx",
+      "name": "findDuplicateIndexes",
+      "astUnchanged": true
+    }
+  ],
+  "zeroCallerCleanup": true,
+  "canonicalDesignArtifactsByteVerified": true,
+  "localTestEnvironment": {
+    "committedViteAndPlaywrightConfigsUnchanged": true,
+    "gitIgnoredWrapperOverrides": {
+      "optimizeDeps": {
+        "entries": [
+          "index.html"
+        ]
+      },
+      "server": {
+        "watch": {
+          "ignored": [
+            "**/tmp/**",
+            "**/.temp/**"
+          ]
+        }
+      }
+    },
+    "sameApplicationEntryPluginsFixturesAndAssertions": true
+  }
+}

@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import { ArrowRight, LoaderCircle } from 'lucide-react'
 import { navigate } from '../utils/routes'
+import AuthLayout from '../components/AuthLayout'
+import PasswordField from '../components/PasswordField'
 
 function SignInPage({ error, isLoading, onAuthSubmit }) {
   const [mode, setMode] = useState('sign-in')
@@ -11,6 +13,7 @@ function SignInPage({ error, isLoading, onAuthSubmit }) {
 
   function handleSubmit(event) {
     event.preventDefault()
+    if (isLoading) return
 
     onAuthSubmit({
       mode,
@@ -20,89 +23,88 @@ function SignInPage({ error, isLoading, onAuthSubmit }) {
   }
 
   return (
-    <main className="auth-shell">
-      <section className="auth-panel">
-        <div>
-          <p className="eyebrow">ApplyTrack</p>
-          <h1>
-            {isSignUp ? 'Create your workspace.' : 'Sign in to your workspace.'}
-          </h1>
-          <p>Manage applications, interviews, and follow-ups in one focused workspace.</p>
+    <AuthLayout>
+      <div>
+        <p className="eyebrow">ApplyTrack</p>
+        <h1>{isSignUp ? 'Create your workspace.' : 'Sign in to your workspace.'}</h1>
+        <p>Manage applications, interviews, and follow-ups in one focused workspace.</p>
+      </div>
+
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <div className="auth-toggle" role="group" aria-label="Authentication mode">
+          <button
+            className={mode === 'sign-in' ? 'toggle-active' : ''}
+            aria-pressed={!isSignUp}
+            disabled={isLoading}
+            type="button"
+            onClick={() => setMode('sign-in')}
+          >
+            Sign in
+          </button>
+          <button
+            className={mode === 'sign-up' ? 'toggle-active' : ''}
+            aria-pressed={isSignUp}
+            disabled={isLoading}
+            type="button"
+            onClick={() => setMode('sign-up')}
+          >
+            Sign up
+          </button>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="auth-toggle" aria-label="Authentication mode">
-            <button
-              className={mode === 'sign-in' ? 'toggle-active' : ''}
-              type="button"
-              onClick={() => setMode('sign-in')}
-            >
-              Sign in
-            </button>
-            <button
-              className={mode === 'sign-up' ? 'toggle-active' : ''}
-              type="button"
-              onClick={() => setMode('sign-up')}
-            >
-              Sign up
-            </button>
-          </div>
+        <label className="account-field">
+          <span>Username</span>
+          <input
+            autoComplete="username"
+            disabled={isLoading}
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            placeholder="jane"
+            required
+          />
+        </label>
 
-          <label>
-            Username
-            <input
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="jane"
-              required
-            />
-          </label>
+        <PasswordField
+          label="Password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          visible={showPassword}
+          onToggle={() => setShowPassword((current) => !current)}
+          minLength={0}
+          autoComplete={isSignUp ? 'new-password' : 'current-password'}
+          disabled={isLoading}
+        />
 
-          <label>
-            Password
-            <span className="password-field">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="At least 6 characters"
-                required
-              />
-              <button
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="password-visibility"
-                title={showPassword ? 'Hide password' : 'Show password'}
-                type="button"
-                onClick={() => setShowPassword((current) => !current)}
-              >
-                {showPassword ? (
-                  <EyeOff aria-hidden="true" size={20} />
-                ) : (
-                  <Eye aria-hidden="true" size={20} />
-                )}
-              </button>
-            </span>
-          </label>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
 
-          {error && <p className="form-error">{error}</p>}
+        <button
+          className="ui-button ui-button-add"
+          type="submit"
+          disabled={isLoading}
+          aria-busy={isLoading}
+        >
+          {isLoading && <LoaderCircle aria-hidden="true" className="account-spinner" size={18} />}
+          {isLoading ? 'Working...' : isSignUp ? 'Create account' : 'Sign in'}
+        </button>
 
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Working...' : isSignUp ? 'Create account' : 'Sign in'}
-          </button>
-
-          <div className="auth-divider" aria-hidden="true">
-            <span>or</span>
-          </div>
-          <button
-            className="ghost-button auth-demo-button"
-            type="button"
-            onClick={() => navigate('/demo')}
-          >
-            View public demo
-          </button>
-        </form>
-      </section>
-    </main>
+        <div className="auth-divider" aria-hidden="true">
+          <span>or</span>
+        </div>
+        <button
+          className="ui-button ui-button-ghost auth-demo-button"
+          type="button"
+          disabled={isLoading}
+          onClick={() => navigate('/demo')}
+        >
+          View public demo
+          <ArrowRight aria-hidden="true" size={18} />
+        </button>
+      </form>
+    </AuthLayout>
   )
 }
 

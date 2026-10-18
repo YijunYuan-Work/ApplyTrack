@@ -1,0 +1,8 @@
+{
+  "syntheticOnly": true,
+  "passwordRequests": 1,
+  "importWrites": 2,
+  "confirmedFailureThenRetry": true,
+  "blockedRequests": [],
+  "consoleErrors": []
+}
