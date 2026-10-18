@@ -1,8 +1,9 @@
 # Final-03: CI Performance
 
 Base: main `45de218cb0747524e382e297d58ed303bd490c2c` (Final-02).
-Working benchmark report: local one-worker comparison, second two-worker run and
-candidate GitHub CI measurements are still in progress. The PR remains Draft.
+Recommendation: retain two file-level Chromium workers in CI, with one worker
+for local defaults and the separate Auth suite. Local and GitHub results below
+support the change without removing tests, weakening assertions or adding retries.
 
 ## Configuration And Isolation
 
@@ -26,6 +27,8 @@ serial, including normal multi-browser debugging. CI still selects Chromium.
   in distinct RF-07/08/09 directories and are unique per width within each file.
   Files can overlap; tests inside each file remain serial. This analysis covers
   the existing single-Chromium CI command, not simultaneous multi-engine runs.
+- Clipboard replacements are page-local; BroadcastChannel/session tests run in
+  isolated contexts. Native dialogs and keyboard events are page-scoped.
 - Download files use test-specific paths or in-memory buffers. No suite-global
   database, account, persistent storage state, server port or output file was
   found that needs an isolation refactor for the proposed scheduling.
@@ -37,12 +40,16 @@ including all nine Final-01 Sign Out and twelve Auth cases.
 
 ## Measurements
 
-Existing completed one-worker CI baseline:
+Primary one-worker baseline is merged main
+[39172399030](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/39172399030):
+**1048s (17m28s)** functional, 40s Auth, **1131s (18m51s)** job; all 237+12 passed.
+This run completed while local evaluation was already underway; it did not
+block starting the task. A second completed baseline is
 [39170000004](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/39170000004),
 commit `d68c0d65266ad4685c9e5fd9bf17a44e0d2da919`. Its protected sources/config are
 identical to merged main. Chromium237 and Auth12 passed: functional step
 **939s (15m39s)**, Auth step 35s, complete job **1022s (17m02s)**.
-The new merged-main CI was not awaited before starting this work.
+The difference between these one-worker runs illustrates runner/run variance.
 
 Local Windows benchmark: Node 24.16.0, Playwright 1.62.1, 20 logical CPUs,
 31.82 GiB RAM. Each run starts a fresh Vite server and browsers; the Vite cache
@@ -50,25 +57,38 @@ is retained. Order: two-worker A (cold cache), one worker, two-worker B.
 Identical debug logging and five-second owned-process-tree sampling are used.
 No benchmark overlaps another local browser/check run.
 
-| Run | Workers | Playwright elapsed | Passed | Failed/skipped/flaky/retries/timeouts |
-| --- | ---: | ---: | ---: | --- |
-| Two-worker A | 2 | 367.715s | 237 | 0/0/0/0/0 |
-| One-worker comparison | 1 | 680.517s | 237 | 0/0/0/0/0 |
-| Two-worker B | 2 | Pending | Pending | Pending |
+| Run | Workers | Command wall | Playwright elapsed | Passed | Failed/skipped/flaky/retries/timeouts |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Two-worker A | 2 | 368.129s | 367.715s | 237 | 0/0/0/0/0 |
+| One-worker comparison | 1 | 680.927s | 680.517s | 237 | 0/0/0/0/0 |
+| Two-worker B | 2 | 358.074s | 357.679s | 237 | 0/0/0/0/0 |
 
-Run A observed two active tests, exactly two worker indices and no runner errors.
-Peak summed process-tree RSS was 2.45 GiB, private bytes 2.72 GiB; system available
-RAM remained at least 13.58 GiB. Shared RSS can be counted more than once, so this
-is a conservative process sum, not unique physical memory consumption.
+All **711/711** local functional executions passed. Both two-worker runs had
+exactly two worker indices and two active tests, versus one for the control.
+The mean two-worker elapsed time was **46.7% shorter locally**.
 
-Native Chromium GPU mailbox diagnostics appeared in debug stderr, without test
-failure or browser crash. They are retained for comparison with one worker,
-not suppressed or assumed to be caused by concurrency. Application/HTTP failures
-deliberately injected by existing tests are not classified as infrastructure
-failures. Complete baseline/repeat log analysis is pending.
+Sampled summed process-tree RSS peaks: **1.38 GiB** (one), **2.45/2.03 GiB** (two).
+Private-byte peaks: 1.28 GiB and 2.72/1.71 GiB respectively. Available system RAM
+remained at least 13.58 GiB. All 250 sampling records succeeded. These approximate
+five-second process sums can double-count shared RSS and miss instantaneous
+peaks; they are not unique physical-memory usage or measurements of CI limits.
 
-Local times are not GitHub CI speedup measurements. Candidate CI timing is
-pending; no claim of a measured CI improvement is made yet.
+Native GPU mailbox stderr counts were **15** (one), **12/13** (two), with no
+associated local test failure or crash. Logs contained no matched uncaught JS,
+Vite internal/import error, fatal/OOM message or nonzero browser exit; reports
+had no runner errors. Injected application/HTTP failures remain expected test
+behavior. GPU diagnostics are retained, not suppressed, and do not establish
+the cause of the separate CI screenshot failure below.
+
+Actual two-worker CI
+[39174353894](https://github.com/YijunYuan-Work/ApplyTrack/actions/runs/39174353894),
+commit `0d947cdd6b8ef5670fb3f0c9a71a0afe9cd96d61`, passed every quality gate:
+**615s (10m15s)** functional, 40s Auth, **697s (11m37s)** job. Logs explicitly
+confirm 237 tests using two workers, 237 passed, Auth12, Unit207 and Audit30.
+This is **41.3% shorter functional time / 38.4% shorter job time** than merged
+main's one-worker baseline, and 34.5% shorter functional time than the earlier
+one-worker PR baseline. Hosted-runner/run variance remains; this is an observed
+comparison, not a guaranteed speedup. No CI peak-memory figure is claimed.
 
 ## CI Screenshot Failure Investigation
 
@@ -84,7 +104,12 @@ To retain diagnostic evidence, the existing quality job now uses the official
 [upload-artifact action](https://github.com/actions/upload-artifact#usage) only
 on failure, uploading `test-results/` for three days. No permission escalation,
 new job, browser flag, animation override, test retry, screenshot removal or
-assertion change is introduced. A subsequent complete CI run must still pass.
+assertion change is introduced. The subsequent complete CI run above passed;
+that does not establish the original failure's cause. Its failure-only upload
+step was correctly skipped on success; an actual upload is not yet exercised.
+The original twelve Auth tests also passed two additional complete local runs
+(24/24 in 49.403s, zero retries/skips/flaky results). This did not reproduce the
+CI protocol error and does not establish its root cause.
 
 ## Checks And Reproduction
 
@@ -107,12 +132,22 @@ CI logs/timings. Local wrappers only isolate evidence/cache paths, pin the Vite
 entry to `index.html`, and exclude ignored toolchain directories from watching;
 they do not alter test discovery, assertions, timeouts or browser options.
 
-## Provisional Recommendation And Boundaries
+## Stability And Remaining Limits
 
-Two CI workers are a candidate, not yet a final stability conclusion. Confirm
-the fresh baseline, repeated complete run and real GitHub execution before
-marking the PR ready. Scheduling remains file-level; no sharding, additional
-jobs, retries, dependencies or coverage reduction is proposed.
+Two complete local two-worker runs plus the actual two-worker GitHub run passed
+all 237 tests, with no observed concurrency-specific failure. The local control
+also passed all 237. Keep the bounded CI-only two-worker setting; do not enable
+within-file parallelism. No sharding, additional jobs, retries, npm dependencies
+or coverage reduction is introduced. The final report update changes no tested
+execution configuration, application or test code.
+
+The functional suite remains the dominant cost; browser installation, Auth,
+Vite/browser startup, full-page axe/screenshots and long file-level groups impose
+overhead or a scheduling tail. The measured local two-worker final tails were
+20.790s/25.514s after the other worker finished; individual axe/screenshot costs
+were not separately profiled. No claim is made for more than two workers or
+simultaneous multi-engine CI. Background load and runner hardware vary. CI peak
+RAM is not sampled, and the Auth screenshot root cause remains unconfirmed.
 
 No application/UI, Auth policy, database, Supabase, Edge Function or deployment
 configuration changes. No production operation, manual deployment or merge.
