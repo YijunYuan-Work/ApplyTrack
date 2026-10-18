@@ -7,6 +7,8 @@ import '../styles/account.css'
 
 function ProfilePage({
   isDemo = false,
+  isSigningOut,
+  signOutError,
   onAddApplication,
   onDashboard,
   onImportExcel,
@@ -77,6 +79,8 @@ function ProfilePage({
     <AppLayout
       currentPage="profile"
       isDemo={isDemo}
+      isSigningOut={isSigningOut}
+      signOutError={signOutError}
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
@@ -134,6 +138,8 @@ function ProfilePage({
                   className="mobile-profile-sign-out ghost-button ui-button ui-button-ghost"
                   type="button"
                   onClick={onSignOut}
+                  disabled={isSigningOut}
+                  aria-busy={isSigningOut}
                 >
                   <LogOut aria-hidden="true" size={18} />
                   Sign out

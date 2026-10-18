@@ -67,6 +67,8 @@ function App() {
   const [route, setRoute] = useState(getRoute)
   const [authLoading, setAuthLoading] = useState(hasSupabaseConfig)
   const [authError, setAuthError] = useState('')
+  const [signOutError, setSignOutError] = useState('')
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const [dataLoading, setDataLoading] = useState(false)
   const [dataError, setDataError] = useState('')
   const [jobAgentSummary, setJobAgentSummary] = useState(null)
@@ -95,6 +97,8 @@ function App() {
       setApplications([])
       setStatusMutations({})
       setIsDeleting(false)
+      setIsSigningOut(false)
+      setSignOutError('')
       setDataError('')
       setDataLoading(false)
       setJobAgentSummary(null)
@@ -281,10 +285,25 @@ function App() {
   }
 
   async function handleSignOut() {
+    const workspace = workspaceRef.current
+    if (!workspace.userId || workspace.signingOut) return
+    workspace.signingOut = true
+    setIsSigningOut(true)
+    setSignOutError('')
     setAuthError('')
-    await signOut()
-    acceptUser(null)
-    navigate('/sign-in')
+    try {
+      await signOut()
+      if (workspaceRef.current !== workspace) return
+      acceptUser(null)
+      navigate('/sign-in')
+    } catch {
+      if (workspaceRef.current === workspace) {
+        setSignOutError('Could not sign out. Please try again.')
+      }
+    } finally {
+      workspace.signingOut = false
+      if (workspaceRef.current === workspace) setIsSigningOut(false)
+    }
   }
 
   async function handleUpdatePassword(password) {
@@ -506,6 +525,8 @@ function App() {
     (application) => application.id === editingApplicationId,
   )
   const sharedPageProps = {
+    isSigningOut,
+    signOutError,
     onAddApplication: () => navigate('/applications/new'),
     onDashboard: () => navigate('/dashboard'),
     onImportExcel: () => navigate('/import'),
