@@ -18,6 +18,8 @@ function AppLayout({
   currentPage,
   isDemo = false,
   isReadOnly = false,
+  isSigningOut = false,
+  signOutError = '',
   onAddApplication,
   onDashboard,
   onImportExcel,
@@ -29,6 +31,10 @@ function AppLayout({
   user,
 }) {
   const indicators = useRef(null)
+  const signOutAlert = useRef(null)
+  useLayoutEffect(() => {
+    if (signOutError) signOutAlert.current?.focus()
+  }, [signOutError])
   const navItems = [
     { key: 'dashboard', label: 'Dashboard', short: 'Dashboard', icon: Grid2X2, onClick: onDashboard },
     { key: 'profile', label: 'Profile', short: 'Profile', icon: User, onClick: onProfile },
@@ -136,6 +142,8 @@ function AppLayout({
                 className="sign-out-button ui-button ui-button-ghost"
                 type="button"
                 onClick={onSignOut}
+                disabled={isSigningOut}
+                aria-busy={isSigningOut}
               >
                 <LogOut aria-hidden="true" size={20} />
                 <span className="nav-label">Sign out</span>
@@ -146,7 +154,14 @@ function AppLayout({
         </div>
       </aside>
 
-      <section className="app-content">{children}</section>
+      <section className="app-content">
+        {!isDemo && signOutError && (
+          <p className="form-error" role="alert" tabIndex={-1} ref={signOutAlert}>
+            {signOutError}
+          </p>
+        )}
+        {children}
+      </section>
 
       <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
         <span className="mobile-nav-indicator" aria-hidden="true" hidden={activeIndex < 0} />

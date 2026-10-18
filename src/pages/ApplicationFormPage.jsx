@@ -11,6 +11,8 @@ function getInitialApplication(application) {
 function ApplicationFormPage({
   application,
   isDemo = false,
+  isSigningOut,
+  signOutError,
   onAddApplication,
   onCancel,
   onDashboard,
@@ -126,6 +128,8 @@ function ApplicationFormPage({
     <AppLayout
       currentPage="applications"
       isDemo={isDemo}
+      isSigningOut={isSigningOut}
+      signOutError={signOutError}
       onAddApplication={() => confirmNavigation(onAddApplication)}
       onDashboard={() => confirmNavigation(onDashboard)}
       onImportExcel={() => confirmNavigation(onImportExcel)}

@@ -27,6 +27,8 @@ function DashboardPage({
   isDeleting = false,
   isLoading,
   isReadOnly = false,
+  isSigningOut,
+  signOutError,
   jobAgentSummary,
   onAddApplication,
   onBulkDeleteApplications,
@@ -293,6 +295,8 @@ function DashboardPage({
       currentPage="dashboard"
       isDemo={isDemo}
       isReadOnly={isReadOnly}
+      isSigningOut={isSigningOut}
+      signOutError={signOutError}
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}

@@ -21,6 +21,8 @@ import '../styles/job-agent.css'
 function JobAgentPage({
   demoWorkspace = null,
   isDemo = false,
+  isSigningOut,
+  signOutError,
   onAddApplication,
   onDashboard,
   onImportExcel,
@@ -383,6 +385,8 @@ function JobAgentPage({
     <AppLayout
       currentPage="agent"
       isDemo={isDemo}
+      isSigningOut={isSigningOut}
+      signOutError={signOutError}
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}

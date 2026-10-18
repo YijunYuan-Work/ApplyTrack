@@ -5,6 +5,8 @@ function ImportExcelPage({
   applications,
   demoRows = [],
   isDemo = false,
+  isSigningOut,
+  signOutError,
   onAddApplication,
   onDashboard,
   onImportExcel,
@@ -19,6 +21,8 @@ function ImportExcelPage({
     <AppLayout
       currentPage="import"
       isDemo={isDemo}
+      isSigningOut={isSigningOut}
+      signOutError={signOutError}
       onAddApplication={onAddApplication}
       onDashboard={onDashboard}
       onImportExcel={onImportExcel}
