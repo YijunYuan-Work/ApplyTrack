@@ -1,41 +1,42 @@
-# Dependency security baseline
+# Dependency Security
 
-Last reviewed: 2026-10-09.
+This guide describes repository policy, not a fresh vulnerability scan. Recheck
+advisories when dependencies change; historical audit counts are not current
+security guarantees.
 
-## Baseline and remediation
+## Current Dependency Surface
 
-The repository initially reported 12 npm audit vulnerabilities: 8 high and
-4 moderate. After updating compatible dependency resolutions in
-`package-lock.json`, the audit reports **0 high**, **0 critical**, and
-**3 moderate** advisory entries. These are audit *entries*, not three separate
-confirmed exploitable application paths.
+- [package.json](../../package.json) pins SheetJS Community Edition 0.20.3 from the
+  official SheetJS CDN, rather than the obsolete npm registry release 0.18.5.
+  The Excel importer accepts `.xlsx` / `.xls`, limits files to 5 MB and validates
+  expected columns. Size limits do not eliminate parser vulnerabilities.
+- Resume upload is not an active product feature. Dormant file-extraction helpers
+  in the retained [resume utility](../../src/utils/resumeParser.js) reference
+  `mammoth` and `pdfjs-dist`; there is no reachable resume-import form. Existing
+  unit tests cover skill detection, not PDF/DOCX extraction. This does not justify
+  ignoring installed dependency risk.
+- The earlier review recorded GHSA-hp3w-g68c-fv3c through
+  `mammoth -> argparse@1.0.10 -> sprintf-js@1.0.3`; this chain is still present
+  in the lockfile. Reassess current advisories and compatible fixes rather than
+  applying the historical suggested breaking Mammoth downgrade.
+- The Edge Function's `npm:@supabase/supabase-js@2` import floats within a major
+  version independently of the frontend lockfile. Backend releases need native
+  dependency/type and runtime checks, not just an npm audit.
 
-The locked upgrades include patched releases of `pdfjs-dist`, `vite`,
-`@xmldom/xmldom`, `browserslist`, `postcss` and other transitive packages.
+## Checks and Handling
 
-## Remaining advisory chain
+```powershell
+npm ci
+npm audit --audit-level=high
+```
 
-The remaining moderate reports describe one inherited dependency chain:
+The [dependency audit workflow](../../.github/workflows/dependency-audit.yml) runs
+on dependency/workflow changes in PRs and `main`, and on manual invocation.
+High/critical findings fail the check; moderate findings remain visible but do not
+fail that threshold. It is not a scheduled scan or a complete supply-chain audit.
 
-`mammoth` -> `argparse@1.0.10` -> `sprintf-js@1.0.3`
-
-The reported issue concerns unbounded precision specifiers in `sprintf-js`
-(GHSA-hp3w-g68c-fv3c). The npm audit suggested resolution is to downgrade
-`mammoth` to `0.3.29`, a major and potentially functionality-breaking change,
-so it was intentionally **not** applied.
-
-The current browser-based resume importer limits input files to 5 MB, but
-file-size restrictions alone do not remove the inherited library advisory.
-The project should evaluate a supported dependency-tree upgrade, an upstream
-fix, or a safer replacement for DOCX text extraction, with automated tests
-covering PDF, DOCX, and TXT parsing before changing this component.
-
-## Enforcement
-
-`.github/workflows/dependency-audit.yml` runs `npm audit --audit-level=high`
-for dependency changes on pull requests, matching changes on `main`, and
-manual runs. High/critical advisories fail that check. Moderate advisories
-are reported but do **not** currently fail CI; this is a conscious and
-temporary policy, not a claim that moderate findings are harmless.
-
-Revisit the remaining chain during the resume-ingestion hardening work.
+Monitor SheetJS advisories separately: a CDN tarball is not covered like an npm
+registry package. Do not use `npm audit fix --force` or downgrade a parser blindly.
+Review reachability and compatibility, test affected formats, commit the lockfile,
+and obtain separate approval for any production release. Never attach real
+resumes, spreadsheets, job-search records or secrets to security evidence.

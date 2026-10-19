@@ -1,220 +1,106 @@
 # ApplyTrack
 
-> A private, focused workspace for managing a job search from first lead to final outcome.
+A focused workspace for managing a job search, from first lead to final outcome.
 
 [Live application](https://apply-track-six.vercel.app/) | [Public demo](https://apply-track-six.vercel.app/#/demo)
 
-ApplyTrack brings applications, interviews, follow-ups, offers, and rejections into one clear pipeline. It was created to replace the mix of spreadsheets, browser tabs, and reminders that often grows around an active job search.
+ApplyTrack replaces scattered spreadsheets, browser tabs and reminders with an
+application pipeline. It combines day-to-day tracking with a user-controlled queue
+of opportunities forwarded from LinkedIn and Indeed.
 
-The project combines a practical application tracker with a user-controlled Job Agent. LinkedIn and Indeed alerts can be forwarded into a private queue, reviewed in ApplyTrack, and moved into the application pipeline after the user applies on the original site.
+## What It Does
 
-## The Product
+- Board and List views with search, status filters, date sorting and selection.
+- Application details and full create/edit forms for notes, salary, contacts,
+  follow-ups, referrals, cover letters and interview rounds.
+- Applied, Interview, Offer and Rejected stages, with confirmed save/delete outcomes.
+- Progress Map, interview metrics and a weekly Applied/Rejected activity calendar.
+- Excel `.xlsx` / `.xls` import, template download, preview, duplicate guidance and
+  row selection before confirmation.
+- Username/password accounts and password updates for signed-in users.
+- An account-free Public Demo with local simulated workflows.
 
-ApplyTrack is designed around a simple workflow:
-
-1. Capture an opportunity manually, from Excel, or from a job-alert email.
-2. Track its current stage and the next action required.
-3. Record interviews, follow-ups, offers, and final outcomes.
-4. Review progress over time without losing the detail behind the numbers.
-
-The interface is built as a working product rather than a marketing dashboard. Dense application data remains scannable, important actions stay visible, and the layout adapts across desktop, tablet, and mobile screens.
-
-## Core Experience
-
-### Application Pipeline
-
-- Board and list views for active applications
-- Applied, interview, offer, and rejected stages
-- Search, status filters, date sorting, pagination, and multi-select actions
-- Detailed application records with follow-up dates, notes, referrals, cover letters, and interview rounds
-- Automatic last-updated tracking when an application changes
-
-### Progress and Activity
-
-- Outcome pipeline visualization
-- Interview counts based on actual interview rounds, not only current status
-- Weekly activity calendar showing applications and rejections
-- Clear totals for applications, interviews, offers, and rejected roles
-
-### Flexible Data Entry
-
-- Focused add and edit application forms
-- Excel import with row preview and per-application selection
-- Public demo data for portfolio previews without requiring an account
-
-### Profile and Account
-
-- Username-based authentication
-- Password updates for signed-in users
-- Session behavior designed for a personal workspace
-
-Public password recovery and recovery email settings are temporarily unavailable. Existing valid password reset links remain supported.
+Calendar rejection events use the latest known rejection date, independently of
+unrelated edits. Unknown historical dates are not guessed or backfilled.
 
 ## Job Agent
 
-The Job Agent reduces the distance between discovering a role and tracking the completed application. It uses job alerts the user already configured on LinkedIn and Indeed, so search preferences remain under the user's control on those platforms.
+1. Configure job alerts on LinkedIn or Indeed and forward them to the private
+   address shown in Job Agent Setup.
+2. Review the Matches queue, open a source posting, and apply on its original site.
+3. Confirm **Finished applying** to create a populated application record, or
+   remove an unsuitable job.
 
-```mermaid
-flowchart LR
-    A["LinkedIn and Indeed alerts"] --> B["Private ApplyTrack inbox"]
-    B --> C["Application queue"]
-    C --> D["Apply on the original site"]
-    D --> E["Confirm finished applying"]
-    E --> F["Application pipeline"]
-```
+The signed Resend webhook validates delivery and uses database-backed claims,
+retry leases and deduplication. Search targeting stays on the source platforms.
 
-The current Job Agent includes:
+ApplyTrack does not scrape job sites, store LinkedIn/Indeed credentials, submit
+applications, or autofill external application forms. A job URL is a stored link,
+not an automatic application-prefill service. Alerts may contain only some search
+results; provider email-template changes can affect parsing.
 
-- A private forwarding address for LinkedIn and Indeed alerts
-- Signed Resend inbound webhook processing
-- Message and job deduplication
-- A single queue of jobs waiting to be applied to
-- Direct links back to the source platform
-- One-click creation of a populated pipeline record after applying
-- Removal of roles that are not a good fit
+## Architecture and Privacy
 
-ApplyTrack does **not** scrape job sites, store LinkedIn or Indeed credentials, or silently submit applications. The user reviews each role and completes the application on its original site before confirming it in ApplyTrack.
+React 19 + Vite form a hash-routed single-page application. Supabase provides Auth,
+PostgreSQL and user-scoped Row Level Security; the `ingest-job-alert` Edge Function
+handles Resend inbound events. Recharts renders analytics and SheetJS parses Excel.
 
-## Product Principles
+Browser configuration contains only public Supabase credentials. Service-role and
+Resend secrets belong on the server. ApplyTrack stores parsed job fields and
+processing metadata, not full raw email bodies or attachments; forwarded mail is
+also handled by the configured email provider.
 
-- **Keep the next action visible.** The product should make it obvious what needs attention.
-- **Make information scannable.** Job-search data is dense, so structure matters more than decoration.
-- **Use familiar controls.** Forms, filters, sorting, navigation, and destructive actions should behave as expected.
-- **Respect private data.** Applications and account recovery information belong to the user.
-- **Stay user-controlled.** Automation should remove repetitive work without making decisions or submissions invisibly.
-
-## Architecture
-
-ApplyTrack is a React single-page application backed by Supabase.
-
-```text
-React 19 + Vite
-        |
-        +-- Supabase Auth and session management
-        +-- Postgres application and Job Agent data
-        +-- Row Level Security for user-owned records
-        +-- Edge Function for inbound job-alert email
-        |
-        +-- Resend for job-alert ingestion
-        +-- Recharts for progress visualization
-        +-- xlsx for spreadsheet imports
-```
-
-The frontend uses lightweight hash routing and separates route-level pages, reusable components, API helpers, data normalization, and service integrations.
-
-## Privacy and Trust
-
-- Every application and Job Agent record is scoped to its owner through Supabase Row Level Security.
-- Service-role credentials are restricted to server-side Edge Functions.
-- Resend webhook signatures are verified before inbound alerts are processed.
-- Raw job-alert email bodies and attachments are not retained.
-- Public recovery-email requests are unsupported; valid existing reset links use Supabase Auth.
-- Browser-visible Supabase credentials are limited to the publishable key.
-
-## Project Status
-
-ApplyTrack currently supports the complete tracking workflow, spreadsheet migration, progress reporting, account management, and LinkedIn/Indeed alert ingestion. The Job Agent is intentionally assisted rather than fully autonomous: it prepares a queue and records completed applications while the user remains responsible for reviewing and submitting each application.
-
-Future work is focused on link-based application prefill and browser-assisted form support while preserving this user-controlled boundary.
-
-## Technology
-
-| Area | Tools |
-| --- | --- |
-| Frontend | React 19, Vite 8 |
-| Backend | Supabase Auth, Postgres, Storage, RLS, Edge Functions |
-| Visualization | Recharts |
-| Spreadsheet processing | xlsx |
-| Email | Resend |
-| Deployment | Vercel |
+There is no active resume-upload/profile-answer workflow. Public password recovery
+and recovery-email settings are unavailable; authenticated password changes and
+existing valid Supabase recovery-token links remain supported. Demo changes are
+in memory and reset on reload; Demo does not use a personal account.
 
 ## Run Locally
 
+Use Node.js 24 and npm:
+
 ```powershell
-npm install
+npm ci
+npm run dev -- --host 127.0.0.1
+```
+
+Open the URL printed by Vite, normally `http://127.0.0.1:5173/#/demo`. Demo needs
+no Supabase configuration. Without configuration, non-Demo routes show Setup.
+
+For real account development, use a separate test Supabase project. Copy
+[.env.example](.env.example) to ignored `.env.local`, replace its placeholders,
+and restart Vite:
+
+```powershell
 Copy-Item .env.example .env.local
-npm run dev
 ```
 
-Add the Supabase project URL and publishable key to `.env.local`, then run `supabase/schema.sql` in the Supabase SQL Editor. The local application is normally available at `http://127.0.0.1:5173`, with the public demo at `http://127.0.0.1:5173/#/demo`.
+The required browser values are `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_PUBLISHABLE_KEY`. `VITE_JOB_ALERT_INBOUND_DOMAIN` is optional for
+displaying a configured forwarding address; it does not provision email receiving.
+Real ingestion also needs a receiving domain, signed webhook and server secrets.
 
-<details>
-<summary><strong>Environment and service configuration</strong></summary>
+Database bootstrap and existing-project migrations are different operations.
+Read [Maintenance](docs/MAINTENANCE.md#database-and-release-boundaries) before any
+SQL or Edge deployment. Never run setup SQL or a generic database push against
+production as part of frontend installation.
 
-The browser environment supports these values:
-
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-VITE_JOB_ALERT_INBOUND_DOMAIN=alerts.your-domain.com
-```
-
-Only `.env.example` should be committed. Keep `.env.local`, Supabase service-role credentials, Resend secrets, and Edge Function environment files private.
-
-For an existing Supabase project, apply the migrations in `supabase/migrations/` or run:
+## Development
 
 ```powershell
-npx supabase db push
+npm run lint
+npm test
+npm run test:audit
+npm run build
+npm run preview
 ```
 
-To activate inbound LinkedIn and Indeed alerts, configure a Resend receiving domain, subscribe an `email.received` webhook to the public `ingest-job-alert` Edge Function, set its server-side secrets, and deploy it:
+See [test instructions](tests/refinement-02/README.md) for isolated browser and
+PostgreSQL checks. Passing synthetic tests is not live-service certification.
 
-```powershell
-npx supabase secrets set RESEND_API_KEY=re_your_api_key
-npx supabase secrets set RESEND_WEBHOOK_SECRET=whsec_your_webhook_secret
-npx supabase secrets set INBOUND_EMAIL_DOMAIN=alerts.your-domain.com
-npx supabase functions deploy ingest-job-alert --no-verify-jwt
-```
+## Documentation
 
-The unsupported custom recovery-email handler is retired from the repository. Do not redeploy its historical source. Signed-in password updates and existing valid recovery-token handling remain supported. Repository removal does not delete an already-deployed cloud function: production retirement requires separate approval and the [SEC-02 runbook](docs/refinement/SEC_02_RETIREMENT_RUNBOOK.md).
-
-</details>
-
-## Dependency security
-
-Spreadsheet parsing uses SheetJS Community Edition 0.20.3 from the [official
-SheetJS distribution](https://cdn.sheetjs.com/), rather than the obsolete npm
-registry release 0.18.5. The import flow accepts .xlsx and legacy .xls files,
-limits uploads to 5 MB, and validates expected columns. Monitor the official
-SheetJS advisories because the CDN tarball is not tracked like an npm-registry
-version.
-
-The CI workflow uses Node.js 24 and runs lint, tests, and a production build
-on every pull request. For the same checks locally, run `npm ci` followed by
-`npm run lint`, `npm test`, and `npm run build`.
-
-## Development Commands
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the Vite development server |
-| `npm run build` | Create a production build |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run the project unit tests |
-| `npm run preview` | Preview the production build locally |
-
-## Project Structure
-
-```text
-src/
-  api/          Supabase API helpers
-  components/   Shared React components
-  data/         Defaults and normalization helpers
-  lib/          Supabase client setup
-  pages/        Route-level views
-  styles/       Theme and responsive styles
-  utils/        Routing, storage, parsing, and import utilities
-supabase/
-  functions/    Edge Functions
-  migrations/   Incremental database migrations
-  schema.sql    Database schema and RLS policies
-docs/           Product implementation plans
-```
-
-## Project Documentation
-
-- [Product direction](PRODUCT.md)
-- [Design system and interface guidance](DESIGN.md)
-- [Agent development guide](AGENTS.md)
-- [Job Agent implementation plan](docs/job-agent-implementation-plan.md)
-- [LinkedIn and Indeed alert-ingestion plan](docs/linkedin-indeed-alert-ingestion-plan.md)
+- [Design system](docs/DESIGN_SYSTEM.md): approved Version B palette and responsive UI.
+- [Maintenance](docs/MAINTENANCE.md): verification, release constraints and open issues.
+- [Dependency security](docs/security/dependency-security.md): dependency policy and limits.
+- [Test guide](tests/refinement-02/README.md): commands, fixtures and coverage boundaries.

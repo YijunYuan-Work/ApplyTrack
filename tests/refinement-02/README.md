@@ -1,5 +1,8 @@
 # Refinement Regression Tests
 
+See [Maintenance](../../docs/MAINTENANCE.md) for release boundaries and
+[Design System](../../docs/DESIGN_SYSTEM.md) for the current responsive UI.
+
 This directory began as the Refinement 02 audit. Fixed findings now assert the
 desired behavior, including ownership, ingestion retries and terminal states,
 mutation reliability, selection, historical rejection dates, responsive navigation,
@@ -68,7 +71,7 @@ migrations), then exercises RF-04 ownership constraints/failure atomicity, RF-05
 atomic claims/retries/leases, RF-06 conversion state consistency, and RF-12 nullable
 rejection dates. It compares fresh/replayed constraints, RPC definitions and
 execution permissions, and runs synchronized conversion/ownership races plus the
-real-handler/SQL ingestion tests. See `database/run.ps1` for exact fixtures.
+real-handler/SQL ingestion tests. See [database/run.ps1](database/run.ps1) for exact fixtures.
 
 Auth users are synthetic rows; bootstrap supplies minimal Auth/Storage contracts
 and local grants. GoTrue, PostgREST and Storage HTTP services do not run. These
@@ -79,11 +82,14 @@ Storage object recovery or production migration/deployment readiness.
 
 Evidence is generated under Git-ignored `test-results/`: responsive screenshots,
 failure traces, sanitized performance/axe attachments and breakpoint observations.
-Never commit traces from real authenticated sessions or real data. The report
-maps every reproduced bug to a stable test title; artifacts can be regenerated.
+Never commit traces from real authenticated sessions or real data. Test titles
+retain historical finding IDs; generated evidence can be regenerated without
+keeping completed implementation reports in the documentation tree.
 
 Every PR and push to `main` runs lint, Unit, Audit, the separate 12-case Auth suite,
 the complete 237-case Chromium functional suite (two workers), and build.
 Firefox/WebKit, SQL/Docker and native Deno checks remain local gates; no critical
 Chromium coverage is deferred to `main`. CI retains browser failure artifacts for
-three days. See `.github/workflows/ci.yml` and the two Playwright configs.
+three days. See [CI](../../.github/workflows/ci.yml),
+[functional config](../../playwright.audit.config.js) and
+[Auth config](../../playwright.auth.config.js).
