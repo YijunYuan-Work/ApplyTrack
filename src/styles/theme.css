@@ -1,15 +1,8 @@
-/* Legacy page and shared product UI. Navigation shell: components/AppLayout.css. */
+/* Shared product defaults and responsive overrides. Page styles own UI 2.0 interiors. */
 html,
 body {
   overflow-x: hidden;
   background: var(--bg);
-}
-
-.empty-state {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
-  box-shadow: var(--shadow);
 }
 
 .app-header h1 {
@@ -31,23 +24,24 @@ body {
   color: var(--text-h);
   font-size: 0.72rem;
   font-weight: 900;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
 
 button {
-  background: #0b76d1;
+  background: var(--accent);
   color: #fff;
-  box-shadow: 0 10px 22px rgba(11, 118, 209, 0.16);
 }
 
 button:hover {
-  background: #075ca7;
+  background: var(--accent-h);
 }
 
 button:disabled {
@@ -130,14 +124,12 @@ dd {
   background: rgba(255, 255, 255, 0.58);
   color: var(--text-soft);
   text-align: center;
+  box-shadow: var(--shadow);
 }
 
 .form-page {
   width: min(1040px, 100%);
   margin: 0 auto;
-}
-
-.form-page {
   padding: 0 0 48px;
 }
 
@@ -171,10 +163,6 @@ dd {
   .form-actions > * {
     width: 100%;
   }
-}
-@media (width > 900px) {
-  .eyebrow { margin: 0 0 10px; color: var(--text-h); font-size: 0.93rem; font-weight: 750; text-transform: none; }
-  .app-header p { margin-top: 12px; color: #4a5870; font-size: 1.03rem; }
 }
 @media (width > 900px) {
 
@@ -234,7 +222,6 @@ dd {
   }
 
   .form-actions > * {
-    width: 100%;
     min-height: 48px;
   }
 

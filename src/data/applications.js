@@ -1,8 +1,5 @@
 import { getDateKey } from './progress.js'
 
-export const applicationsKey = 'applytrack-applications'
-export const userKey = 'applytrack-user'
-
 export const statuses = ['Applied', 'Interview', 'Offer', 'Rejected']
 
 export function getTodayIsoDate() {
@@ -14,43 +11,6 @@ export function getTodayIsoDate() {
     String(today.getDate()).padStart(2, '0'),
   ].join('-')
 }
-
-export const initialApplications = [
-  {
-    id: 1,
-    company: 'Northstar Labs',
-    role: 'Frontend Developer',
-    location: 'Remote',
-    status: 'Applied',
-    date: '2026-05-20',
-    jobUrl: 'https://example.com/frontend-developer',
-    contact: 'Maya Chen',
-    salary: '$95k - $120k',
-    followUp: '2026-05-30',
-    coverLetter: 'Yes',
-    referral: 'No',
-    lastUpdated: '2026-05-21',
-    interviewCount: 0,
-    notes: 'Submitted through the careers page. Follow up with recruiter.',
-  },
-  {
-    id: 2,
-    company: 'Brightline Health',
-    role: 'React Engineer',
-    location: 'Toronto, ON',
-    status: 'Interview',
-    date: '2026-05-23',
-    jobUrl: '',
-    contact: 'Alex Rivera',
-    salary: '$105k - $130k',
-    followUp: '2026-05-28',
-    coverLetter: 'Yes',
-    referral: 'No',
-    lastUpdated: '2026-05-24',
-    interviewCount: 1,
-    notes: 'Screening call booked. Review component architecture examples.',
-  },
-]
 
 export const demoApplications = [
   {
