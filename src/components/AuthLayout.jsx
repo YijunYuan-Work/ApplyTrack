@@ -3,7 +3,7 @@ import '../styles/account.css'
 function Brand() {
   return (
     <div className="account-brand">
-      <span aria-hidden="true">A</span>
+      <img src="/brand/applytrack-icon-192.png" alt="" width="38" height="38" />
       <strong>ApplyTrack</strong>
     </div>
   )

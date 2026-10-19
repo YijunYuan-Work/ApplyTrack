@@ -20,6 +20,14 @@ defaults/fallbacks. Page interiors belong to the focused stylesheets in
 
 ## Color and Typography
 
+Brand images live in [public/brand](../public/brand); use the supplied transparent
+192px icon for navigation/authentication and the 512px logo for the README.
+Keep the original colors and transparency without a filter, crop or colored tile.
+Navigation marks retain their 36px sidebar/rail and 32px mobile sizes; Auth uses
+38px on desktop and 36px below 1040px. Keep the adjacent ApplyTrack wordmark and
+use empty image alt text to avoid repeating it. Browser icons and the supplied
+180px Apple Touch Icon live in [public](../public).
+
 | Palette | Value | Role |
 | --- | --- | --- |
 | Deep Teal | `#286A73` | Navigation, headings, primary actions, Offer |

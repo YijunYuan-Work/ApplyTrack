@@ -67,7 +67,7 @@ function AppLayout({
     <main className="app-layout" ref={indicators} style={{ '--active-nav': Math.max(0, activeIndex) }}>
       <header className="mobile-app-bar">
         <div className="mobile-brand-lockup" aria-label="ApplyTrack">
-          <span className="mobile-brand-mark" aria-hidden="true">A</span>
+          <img className="mobile-brand-mark" src="/brand/applytrack-icon-192.png" alt="" width="32" height="32" />
           <span>ApplyTrack</span>
         </div>
         {!isReadOnly && showAddApplication && (
@@ -85,7 +85,7 @@ function AppLayout({
 
       <aside className="sidebar" aria-label="Workspace">
         <div className="sidebar-identity">
-          <span className="brand-mark" aria-hidden="true">A</span>
+          <img className="brand-mark" src="/brand/applytrack-icon-192.png" alt="" width="36" height="36" />
           <div className="sidebar-identity-copy">
             <p className="sidebar-brand">ApplyTrack</p>
             <p className="sidebar-user-row" title={isDemo ? 'Public demo workspace' : `${user.name}'s workspace`}>

@@ -41,16 +41,12 @@
   gap: 11px;
   font-size: 17px;
 }
-.account-brand > span {
+.account-brand > img {
   flex: none;
-  display: grid;
-  place-items: center;
+  display: block;
   width: 38px;
   height: 38px;
-  border-radius: 10px;
-  background: var(--color-sea-glass);
-  color: var(--text-h);
-  font-weight: 700;
+  object-fit: contain;
 }
 .auth-brand-copy {
   display: flex;
@@ -571,12 +567,9 @@
   .auth-mobile-brand {
     display: block;
   }
-  .auth-mobile-brand .account-brand > span {
+  .auth-mobile-brand .account-brand > img {
     width: 36px;
     height: 36px;
-    font-size: 16px;
-    background: var(--color-deep-teal);
-    color: var(--on-solid);
   }
   .auth-toggle button,
   .password-input-wrap .password-visibility-button {
