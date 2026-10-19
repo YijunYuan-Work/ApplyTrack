@@ -1,8 +1,10 @@
 import { defineConfig } from '@playwright/test'
+import process from 'node:process'
 
 export default defineConfig({
   testDir: './tests/refinement-02/ui',
-  workers: 1,
+  // CI runs Chromium files concurrently; local multi-browser runs stay serial.
+  workers: process.env.CI ? 2 : 1,
   reporter: 'list',
   use: { baseURL: 'http://127.0.0.1:5195', viewport: { width: 1440, height: 900 }, trace: 'retain-on-failure' },
   projects: ['chromium', 'firefox', 'webkit'].map((browserName) => ({ name: browserName, use: { browserName } })),
