@@ -39,16 +39,11 @@
   padding: 0 6px;
 }
 .brand-mark, .mobile-brand-mark {
-  display: grid;
+  display: block;
   flex: none;
-  place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
-  background: var(--color-sea-glass);
-  color: var(--color-deep-teal);
-  font-size: 16px;
-  font-weight: 700;
+  object-fit: contain;
 }
 .sidebar-identity-copy {
   min-width: 0;
@@ -304,9 +299,6 @@
   .mobile-brand-mark {
     width: 32px;
     height: 32px;
-    border-radius: 9px;
-    background: var(--color-deep-teal);
-    color: var(--on-solid);
   }
   .mobile-add-action {
     background: var(--action-add);

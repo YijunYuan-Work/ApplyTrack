@@ -1,3 +1,5 @@
+<img src="public/brand/applytrack-logo-512.png" alt="ApplyTrack logo" width="96" height="96" />
+
 # ApplyTrack
 
 A focused workspace for managing a job search, from first lead to final outcome.
