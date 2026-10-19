@@ -1,15 +1,3 @@
-.app-header h1 {
-  margin: 0;
-  color: var(--text-h);
-  line-height: 1.02;
-}
-
-.app-header p,
-.empty-state p {
-  margin: 10px 0 0;
-  line-height: 1.55;
-}
-
 .required-label {
   display: inline-flex;
   gap: 4px;
@@ -49,8 +37,7 @@
   font-size: 0.85rem;
 }
 
-.app-header,
-.form-page {
+.app-header {
   width: min(1080px, calc(100% - 40px));
   margin: 0 auto;
 }
@@ -72,70 +59,9 @@
   font-size: 3.2rem;
 }
 
-.form-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.form-actions {
-  flex-wrap: wrap;
-}
-
-.eyebrow {
-  margin: 0 0 12px;
-  color: var(--accent);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.empty-state {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--shadow);
-}
-
-.form-page {
-  padding: 12px 0 56px;
-}
-
-label {
-  display: grid;
-  gap: 7px;
-  color: var(--text-h);
-  font-size: 0.86rem;
-  font-weight: 750;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: #fff;
-  color: var(--text-h);
-  font: inherit;
-  padding: 10px 12px;
-}
-
-input,
-select {
-  min-height: 46px;
-}
-
-textarea {
-  min-height: 106px;
-  resize: vertical;
-}
-
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--accent);
   outline: 3px solid var(--accent-bg);
 }
 
@@ -143,67 +69,29 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
+  min-height: 48px;
   border-radius: 7px;
   cursor: pointer;
   font: inherit;
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
-}
-
-button {
-  min-height: 48px;
   border: 0;
   padding: 0 16px;
-  background: var(--accent);
-  color: #fff;
-}
-
-button:hover {
-  background: #256257;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.64;
 }
 
 .ghost-button {
   min-height: 38px;
   padding: 0 12px;
   border: 1px solid var(--border);
-  background: #fff;
-  color: var(--text-h);
   font-size: 0.86rem;
 }
 
-.ghost-button:hover {
-  background: #eef4f2;
-}
-
-.form-error,
-.form-success,
 .loading-message {
   margin: 16px 0 0;
   border-radius: 8px;
   padding: 12px 14px;
   font-weight: 750;
-}
-
-.form-error {
-  border: 1px solid #f1c9c9;
-  background: #fff0f0;
-  color: #8b2d2d;
-}
-
-.form-success {
-  border: 1px solid #b8dfc6;
-  background: #eefaf2;
-  color: #285039;
-}
-
-.loading-message {
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.72);
   color: var(--text-h);
@@ -224,15 +112,9 @@ button:disabled {
   font-size: 1.1rem;
 }
 
-.empty-state {
-  padding: 30px;
-  text-align: center;
-}
-
 @media (min-width: 721px) and (max-width: 1040px) {
 
-  .app-header,
-  .form-page {
+  .app-header {
     width: min(100% - 32px, 1080px);
   }
 
@@ -251,12 +133,8 @@ button:disabled {
     align-items: flex-start;
     flex-direction: column;
   }
-}
 
-@media (max-width: 720px) {
-
-  .app-header,
-  .form-page {
+  .app-header {
     width: min(100% - 28px, 1080px);
   }
 
@@ -269,9 +147,5 @@ button:disabled {
 
   .app-header h1 {
     font-size: 2.2rem;
-  }
-
-  .form-actions {
-    flex-direction: column;
   }
 }

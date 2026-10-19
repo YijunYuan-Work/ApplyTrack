@@ -1,19 +1,20 @@
-# Refinement 02 Audit Tests
+# Refinement Regression Tests
 
-These tests began as the Refinement 02 baseline audit. Tests named `BUG` characterize
-known defects and intentionally assert current, incorrect behavior. Passing them
-does NOT mean the product is defect-free. Approved fixes must replace the relevant
-characterization with desired-behavior regression assertions. RF-03 replaces the
-F02/F03 notes characterizations with lossless/nullable regression assertions and
-adds create/edit coverage at desktop, tablet and phone widths.
-RF-04 replaces F01's cross-owner-association characterization with a rejection
-regression and extends the real SQL runner; F05's stale-state characterization
-is intentionally unchanged.
+This directory began as the Refinement 02 audit. Fixed findings now assert the
+desired behavior, including ownership, ingestion retries and terminal states,
+mutation reliability, selection, historical rejection dates, responsive navigation,
+Demo passwords and salary parsing. Finding numbers in test titles are traceability
+labels, not evidence that those bugs remain open.
+
+The non-finite interview-count characterization in `logic.test.js` still preserves
+`Infinity`. This is a separate normalization correctness follow-up, not a claim
+that normal UI or SQL inputs can persist that value.
 
 ## Run Locally
 
-Requirements: Node 24, npm dependencies, PowerShell 7, Docker Desktop for SQL tests.
-All commands run from `C:\Work\SideProject\ApplyTrack`.
+Requirements: Node 24, installed npm dependencies and Playwright browsers.
+The separate SQL runner also requires PowerShell 7 and Docker Desktop.
+Run from `C:\Work\SideProject\ApplyTrack`:
 
 ```powershell
 npm ci
@@ -21,21 +22,27 @@ npx playwright install chromium firefox webkit
 npm test
 npm run test:audit
 npm run test:auth-ui
+npm run test:audit-ui -- --project chromium
+# Optional cross-engine local gate (all three configured engines):
 npm run test:audit-ui
-docker pull public.ecr.aws/supabase/postgres:17.6.1.166
-npm run test:audit-db
 npm run lint
 npm run build
-npm audit --audit-level=high
 ```
 
-Run browser suites sequentially: Vite shares its dependency cache. RF-03 tests
-import the production row mappers directly without Vite SSR or Supabase setup.
-Browser suites reserve ports 5193 (existing auth) and 5195 (audit), refuse to reuse
-an existing server, and start their own synthetic environment. Never supply
-production credentials. All audit browser requests outside the local Vite origin
-are intercepted; only the synthetic backend at `127.0.0.1:54399` is mocked.
-Job URLs are never opened. Public demo workflows assert that no backend requests occur.
+Run Auth and functional invocations sequentially; they share Vite's dependency
+cache. Auth owns port 5193 and runs one Chromium worker. Functional tests own port
+5195, default to one local worker and use two workers in CI. Files can run
+concurrently, but cases within a file remain serial. Neither suite reuses an
+existing server. There are currently 237 Chromium functional cases and 12 Auth
+cases, with no configured retries. Each test has isolated context/backend state.
+
+Never supply production credentials. Functional browser requests outside the
+local Vite origin are intercepted: the backend at `127.0.0.1:54399` is mocked and
+unexpected external requests are blocked. Job Agent navigation tests open an
+intercepted synthetic posting/new tab, not a live LinkedIn or Indeed page. Demo
+tests assert that simulated workflows do not send persistence/Auth requests.
+
+## Edge And Database Coverage
 
 The Edge harness executes the real TypeScript handler, real parser/linkedom, and
 real Resend Svix verification under Node's experimental VM/TypeScript stripping
@@ -43,31 +50,40 @@ APIs. Database calls and inbound email retrieval are controlled fixtures. `fetch
 throws instead of allowing external network access. It is NOT a hosted Deno or
 Resend integration test.
 
-SQL tests create a uniquely named, labeled, network-disabled Supabase PostgreSQL
-17 container with tmpfs data and no host ports or bind mounts. Only that container
-is removed in `finally`. The cached image must already exist; the runner does not
-pull automatically. Synthetic users are inserted directly; GoTrue, PostgREST and
-Storage HTTP services do not run. `bootstrap.sql` supplies a minimal Storage
-schema/API contract and local default grants. Consequently, this proves database
-policy/RPC behavior under that fixture, not production grants or Storage service
-behavior. Historical migration replay first supplies the application-table
-baseline from `schema.sql`, because the nine migrations do not create that table.
-RF-04 restores that pre-RF-04 application constraint baseline, replays all nine
-historical migrations unchanged, seeds valid legacy associations, then applies
-`20261011042500_job_lead_ownership_integrity.sql`. Fresh and incremental databases
-run the same ownership/role/RPC assertions, eight concurrent conversions each,
-and two lock-synchronized owner-change races each. Constraint catalog definitions
-are compared between both paths. Separate synthetic databases prove that a
-cross-owner link, an orphaned link and nullable-owner schema drift fail the
-migration without altering existing data, grants, policies or RPCs. Successful
-migration also compares complete legacy rows and those security definitions.
-See [RF-04 release runbook](../../docs/refinement/RF_04_OWNERSHIP_MIGRATION_RUNBOOK.md)
-for the production approval boundary and test limitations.
+```powershell
+# Explicitly acquire the pinned image before the runner, if not cached:
+docker pull public.ecr.aws/supabase/postgres:17.6.1.166
+npm run test:audit-db
+```
+
+The SQL runner creates only its own uniquely named/labeled PostgreSQL 17 container:
+network disabled, no host ports, read-only root filesystem, tmpfs database/logs and
+one read-only bind of `synthetic-getkey.sh`. It checks mounts and removes only its
+own labeled container in `finally`; it does not pull images automatically. Its
+absolute workspace check makes it a Windows local gate, not an Ubuntu CI drop-in.
+
+It tests both the canonical schema and historical migration replay. Replay supplies
+the original application-table baseline (not created by the nine original
+migrations), then exercises RF-04 ownership constraints/failure atomicity, RF-05
+atomic claims/retries/leases, RF-06 conversion state consistency, and RF-12 nullable
+rejection dates. It compares fresh/replayed constraints, RPC definitions and
+execution permissions, and runs synchronized conversion/ownership races plus the
+real-handler/SQL ingestion tests. See `database/run.ps1` for exact fixtures.
+
+Auth users are synthetic rows; bootstrap supplies minimal Auth/Storage contracts
+and local grants. GoTrue, PostgREST and Storage HTTP services do not run. These
+tests establish behavior under that fixture, not live production ACLs, hosted Auth,
+Storage object recovery or production migration/deployment readiness.
+
+## CI And Evidence
 
 Evidence is generated under Git-ignored `test-results/`: responsive screenshots,
 failure traces, sanitized performance/axe attachments and breakpoint observations.
 Never commit traces from real authenticated sessions or real data. The report
 maps every reproduced bug to a stable test title; artifacts can be regenerated.
 
-CI runs the Node audit suite and Chromium audit suite in addition to existing
-checks. Firefox, WebKit and Docker SQL tests remain explicitly local gates.
+Every PR and push to `main` runs lint, Unit, Audit, the separate 12-case Auth suite,
+the complete 237-case Chromium functional suite (two workers), and build.
+Firefox/WebKit, SQL/Docker and native Deno checks remain local gates; no critical
+Chromium coverage is deferred to `main`. CI retains browser failure artifacts for
+three days. See `.github/workflows/ci.yml` and the two Playwright configs.
