@@ -36,6 +36,22 @@ jobs:
         run: npm run test:audit-ui -- --project chromium
       - name: Build
         run: npm run build
+      - name: Preserve functional HTML report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-functional-report
+          path: playwright-report/functional/
+          retention-days: 3
+          if-no-files-found: ignore
+      - name: Preserve authentication HTML report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-auth-report
+          path: playwright-report/auth/
+          retention-days: 3
+          if-no-files-found: ignore
       - name: Preserve browser failure evidence
         if: failure()
         uses: actions/upload-artifact@v7

@@ -4,5 +4,7 @@ import base from './playwright.audit.config.js'
 export default {
   ...base,
   testDir: './tests/diagnostics',
+  outputDir: './test-results/diagnostics',
+  reporter: 'list',
   projects: base.projects.filter((project) => project.name === 'chromium'),
 }
