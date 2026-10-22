@@ -4,7 +4,11 @@ export default defineConfig({
   testDir: './tests/auth-ui',
   fullyParallel: false,
   workers: 1,
-  reporter: 'list',
+  outputDir: './test-results/auth',
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: './playwright-report/auth', open: 'never' }],
+  ],
   use: {
     baseURL: 'http://127.0.0.1:5193',
     browserName: 'chromium',

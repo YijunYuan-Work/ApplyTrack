@@ -4,7 +4,7 @@
 
 A focused workspace for managing a job search, from first lead to final outcome.
 
-[Live application](https://apply-track-six.vercel.app/) | [Public demo](https://apply-track-six.vercel.app/#/demo)
+[Live application](https://apply-track-six.vercel.app/) | [Public demo](https://apply-track-six.vercel.app/#/demo) | [QA case study](docs/QA_AUTOMATION.md)
 
 ApplyTrack replaces scattered spreadsheets, browser tabs and reminders with an
 application pipeline. It combines day-to-day tracking with a user-controlled queue
@@ -24,6 +24,37 @@ of opportunities forwarded from LinkedIn and Indeed.
 
 Calendar rejection events use the latest known rejection date, independently of
 unrelated edits. Unknown historical dates are not guessed or backfilled.
+
+## Testing & Quality Assurance
+
+Quality engineering focuses on trustworthy outcomes, not only happy-path clicks.
+The current automated baseline is:
+
+| Layer | What it verifies |
+| --- | --- |
+| 207 Unit tests | Row mapping, local dates, analytics, Excel input and conservative alert/salary parsing. |
+| 30 Audit tests | Source contracts, real Edge handler/parser execution with controlled dependencies, signed-webhook rejection and retry behavior. |
+| 241 Playwright functional tests | Real React workflows: CRUD, search, queue boundaries, stale responses, concurrent edits, cancellation, partial failures and session isolation. |
+| 12 separate Authentication UI tests | Sign-in/up, validation, password updates, sign-out and valid legacy reset-session handling. |
+| Local PostgreSQL runner | Real SQL constraints, permissions, RPCs, migration replay and synchronized races in isolated PostgreSQL 17. |
+
+Playwright exercises the real React application and Supabase browser client against
+an **intercepted synthetic Supabase HTTP backend**, not live production services.
+Deterministic fixtures control commits and response order. Responsive checks cover
+desktop/tablet/phone; keyboard, focus and axe checks cover accessibility basics.
+The separate SQL runner tests actual local database behavior, but does not run a
+complete hosted Supabase environment.
+
+GitHub Actions runs lint, Unit/Audit, both Chromium suites and the production build
+on every PR and `main` push. Native HTML reports are downloadable CI artifacts;
+failure traces and selected screenshots/attachments support diagnosis. Reports
+are kept for three days, not published to a public report-hosting service.
+
+Explore the [QA automation case study](docs/QA_AUTOMATION.md), with source-backed
+walkthroughs of [status races](tests/refinement-02/ui/status-mutations.spec.js),
+[destructive operations](tests/refinement-02/ui/delete-mutations.spec.js) and
+[large job queues](tests/refinement-02/ui/job-queue.spec.js). The
+[test guide](tests/refinement-02/README.md) covers execution, reports and limitations.
 
 ## Job Agent
 
@@ -102,6 +133,7 @@ PostgreSQL checks. Passing synthetic tests is not live-service certification.
 
 ## Documentation
 
+- [QA automation](docs/QA_AUTOMATION.md): test design, risk-based cases and evidence boundaries.
 - [Design system](docs/DESIGN_SYSTEM.md): approved Version B palette and responsive UI.
 - [Maintenance](docs/MAINTENANCE.md): verification, release constraints and open issues.
 - [Dependency security](docs/security/dependency-security.md): dependency policy and limits.

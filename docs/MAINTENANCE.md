@@ -21,7 +21,7 @@ git diff --check
 ```
 
 [CI](../.github/workflows/ci.yml) runs these quality gates on PRs and `main`:
-207 Unit, 30 Audit, 12 separate Chromium Auth and 237 Chromium functional cases.
+207 Unit, 30 Audit, 12 separate Chromium Auth and 241 Chromium functional cases.
 Functional CI uses two workers; local multi-browser runs default to one. Do not
 remove critical PR coverage, add retries to hide failures or run both Vite-owning
 suites simultaneously. See the [test guide](../tests/refinement-02/README.md) for
