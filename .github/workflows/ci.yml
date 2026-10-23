@@ -28,12 +28,14 @@ jobs:
         run: npm test
       - name: Isolated source and Edge audit characterizations
         run: npm run test:audit
-      - name: Install Chromium for isolated authentication UI tests
-        run: npx playwright install --with-deps chromium
+      - name: Install browsers for isolated UI tests
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Test authentication UI with synthetic backend
         run: npm run test:auth-ui
       - name: Synthetic functional audit (Chromium)
         run: npm run test:audit-ui -- --project chromium
+      - name: Cross-browser smoke (Firefox and WebKit)
+        run: npm run test:smoke-ui
       - name: Build
         run: npm run build
       - name: Preserve functional HTML report
@@ -50,6 +52,14 @@ jobs:
         with:
           name: playwright-auth-report
           path: playwright-report/auth/
+          retention-days: 3
+          if-no-files-found: ignore
+      - name: Preserve cross-browser smoke HTML report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-smoke-report
+          path: playwright-report/smoke/
           retention-days: 3
           if-no-files-found: ignore
       - name: Preserve browser failure evidence

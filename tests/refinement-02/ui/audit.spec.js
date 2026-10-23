@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { application, backend, lead, nav, noOverflow, signIn, spreadsheet } from './fixtures.js'
 
-test('CRUD, details, sorting, filtering, pagination and persisted refresh', async ({ page, context }) => {
+test('CRUD, details, sorting, filtering, pagination and persisted refresh', { tag: '@smoke' }, async ({ page, context }) => {
   test.setTimeout(60000)
   const state = await backend(context, Array.from({ length: 25 }, (_, i) => application(i + 1, i === 0 ? { status: 'Rejected', last_updated: '2027-01-01' } : {})))
   await signIn(page)

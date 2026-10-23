@@ -36,6 +36,7 @@ The current automated baseline is:
 | 30 Audit tests | Source contracts, real Edge handler/parser execution with controlled dependencies, signed-webhook rejection and retry behavior. |
 | 241 Playwright functional tests | Real React workflows: CRUD, search, queue boundaries, stale responses, concurrent edits, cancellation, partial failures and session isolation. |
 | 12 separate Authentication UI tests | Sign-in/up, validation, password updates, sign-out and valid legacy reset-session handling. |
+| 7 smoke scenarios per Firefox/WebKit | Selected existing functional cases for CRUD, validation, queue filtering, analytics, responsive navigation and logout failure/retry. |
 | Local PostgreSQL runner | Real SQL constraints, permissions, RPCs, migration replay and synchronized races in isolated PostgreSQL 17. |
 
 Playwright exercises the real React application and Supabase browser client against
@@ -45,8 +46,10 @@ desktop/tablet/phone; keyboard, focus and axe checks cover accessibility basics.
 The separate SQL runner tests actual local database behavior, but does not run a
 complete hosted Supabase environment.
 
-GitHub Actions runs lint, Unit/Audit, both Chromium suites and the production build
-on every PR and `main` push. Native HTML reports are downloadable CI artifacts;
+GitHub Actions runs lint, Unit/Audit, both complete Chromium suites, the lightweight
+Firefox/WebKit smoke subset and the production build on every PR and `main` push.
+This is not full cross-engine regression coverage. Native HTML reports are isolated
+per suite and downloadable as CI artifacts;
 failure traces and selected screenshots/attachments support diagnosis. Reports
 are kept for three days, not published to a public report-hosting service.
 

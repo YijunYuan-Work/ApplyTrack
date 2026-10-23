@@ -7,7 +7,7 @@ const day = (page, date) => page.locator('.calendar-day').filter({ has: page.loc
 const totals = (page) => page.locator('.progress-summary strong')
 
 for (const width of [1440, 768, 390]) {
-  test(`G03: Real/Demo Progress parity and rendered outcomes/calendar at ${width}px`, async ({ page, context }, info) => {
+  test(`G03: Real/Demo Progress parity and rendered outcomes/calendar at ${width}px`, { tag: width === 768 ? ['@smoke'] : [] }, async ({ page, context }, info) => {
     const state = await backend(context, demoApplications.map((row) => ({ ...toApplicationRow(row, '00000000-0000-4000-8000-000000000001'), id: row.id })))
     await page.setViewportSize({ width, height: 900 })
     await signIn(page)

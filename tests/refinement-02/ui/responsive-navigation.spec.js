@@ -49,7 +49,7 @@ async function keyboardSignOut(page) {
 }
 
 for (const width of [390, 768, 1440]) {
-  test(`RF-13: navigation, keyboard focus and authenticated Sign Out at ${width}px`, async ({ page, context }, info) => {
+  test(`RF-13: navigation, keyboard focus and authenticated Sign Out at ${width}px`, { tag: [390, 768].includes(width) ? ['@smoke'] : [] }, async ({ page, context }, info) => {
     const state = await backend(context, [application(1)])
     const originalUser = structuredClone(state.user)
     await page.setViewportSize({ width, height: 900 })
