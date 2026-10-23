@@ -1,4 +1,4 @@
-import base from './playwright.audit.config.js'
+import base from './playwright.functional.config.js'
 
 // Opt-in measurements, never part of the mandatory functional/CI test directory.
 export default {

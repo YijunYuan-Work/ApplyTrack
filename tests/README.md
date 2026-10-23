@@ -1,17 +1,33 @@
-# Refinement Regression Tests
+# Test Guide
 
-See [Maintenance](../../docs/MAINTENANCE.md) for release boundaries and
-[Design System](../../docs/DESIGN_SYSTEM.md) for the current responsive UI.
+See [Maintenance](../docs/MAINTENANCE.md) for release boundaries and
+[Design System](../docs/DESIGN_SYSTEM.md) for the current responsive UI.
 
-This directory began as the Refinement 02 audit. Fixed findings now assert the
-desired behavior, including ownership, ingestion retries and terminal states,
-mutation reliability, selection, historical rejection dates, responsive navigation,
-Demo passwords and salary parsing. Finding numbers in test titles are traceability
-labels, not evidence that those bugs remain open.
+Tests are organized by responsibility, not the implementation phase that added
+them. Existing assertions cover ownership, ingestion retries, mutation reliability,
+selection, historical rejection dates, navigation, Demo passwords and salary parsing.
+Historical finding IDs and release evidence remain in Git history and the
+[maintenance records](../docs/MAINTENANCE.md#recorded-releases-and-data-contracts).
 
-The non-finite interview-count characterization in `logic.test.js` still preserves
+The non-finite interview-count characterization in
+[`services/data-contracts.test.js`](services/data-contracts.test.js) still preserves
 `Infinity`. This is a separate normalization correctness follow-up, not a claim
 that normal UI or SQL inputs can persist that value.
+
+## Structure
+
+| Location | Responsibility |
+| --- | --- |
+| `browser/functional/` | Full browser regressions and locally scoped HTTP/data/interaction helpers. |
+| `browser/auth/` | Separate authentication browser suite and synthetic Auth backend. |
+| `services/` | Real Edge handler with controlled dependencies, inbox and source/data contracts. |
+| `database/postgres/` | Isolated SQL fixtures, migration replay, synchronized races and runner. |
+| `security/` | Recovery-retirement contracts and optional Windows synthetic ACL/encryption checks. |
+| `diagnostics/` | Opt-in rendering measurements, outside mandatory CI discovery. |
+| `fixtures/` | Cross-layer salary examples; browser-specific helpers stay beside their callers. |
+
+Co-located Unit tests remain under `src/` and the shared alert parser. No suite
+was split, merged or copied as part of the organization change.
 
 ## Run Locally
 
@@ -24,12 +40,12 @@ Run from the repository root (on this Windows workspace,
 npm ci
 npx playwright install chromium firefox webkit
 npm test
-npm run test:audit
-npm run test:auth-ui
-npm run test:audit-ui -- --project chromium
-npm run test:smoke-ui
+npm run test:contracts
+npm run test:auth
+npm run test:browser -- --project chromium
+npm run test:smoke
 # Optional cross-engine local gate (all three configured engines):
-npm run test:audit-ui
+npm run test:browser
 npm run lint
 npm run build
 ```
@@ -45,8 +61,8 @@ context/backend state. Verify the selection without running tests or replacing
 the HTML report (explicitly override the configured reporter):
 
 ```powershell
-npm run test:smoke-ui -- --project=firefox --list --reporter=list
-npm run test:smoke-ui -- --project=webkit --list --reporter=list
+npm run test:smoke -- --project=firefox --list --reporter=list
+npm run test:smoke -- --project=webkit --list --reporter=list
 ```
 
 Never supply production credentials. Functional browser requests outside the
@@ -58,7 +74,7 @@ tests assert that simulated workflows do not send persistence/Auth requests.
 To run a single case, use its file and a title fragment (not a new test copy):
 
 ```powershell
-npm run test:audit-ui -- status-mutations.spec.js --project=chromium --grep "late abandoned database write"
+npm run test:browser -- status-mutations.spec.js --project=chromium --grep "late abandoned database write"
 ```
 
 The full commands above run every existing case; the targeted invocation is a
@@ -77,7 +93,7 @@ Resend integration test.
 ```powershell
 # Explicitly acquire the pinned image before the runner, if not cached:
 docker pull public.ecr.aws/supabase/postgres:17.6.1.166
-npm run test:audit-db
+npm run test:database
 ```
 
 The SQL runner creates only its own uniquely named/labeled PostgreSQL 17 container:
@@ -92,7 +108,15 @@ migrations), then exercises RF-04 ownership constraints/failure atomicity, RF-05
 atomic claims/retries/leases, RF-06 conversion state consistency, and RF-12 nullable
 rejection dates. It compares fresh/replayed constraints, RPC definitions and
 execution permissions, and runs synchronized conversion/ownership races plus the
-real-handler/SQL ingestion tests. See [database/run.ps1](database/run.ps1) for exact fixtures.
+real-handler/SQL ingestion tests. See [database/postgres/run.ps1](database/postgres/run.ps1)
+for exact fixtures. Historical migration names, RPCs, `RF05_TEST_CONTAINER` /
+`RF05_TEST_DATABASE`, container labels and cleanup checks are deliberately unchanged.
+
+The optional [ACL](security/local-directory-acl.ps1) and
+[encryption](security/age-encryption.mjs) scripts are not general backup tools or
+CI gates. They retain their exact Windows workspace, synthetic-directory and
+verified-tool requirements. Do not rewrite those guards or acquire missing tools
+merely to run a naming-cleanup check.
 
 Auth users are synthetic rows; bootstrap supplies minimal Auth/Storage contracts
 and local grants. GoTrue, PostgREST and Storage HTTP services do not run. These
@@ -165,12 +189,13 @@ GitHub repository access rules and must not be treated as secret storage. Local
 report generation alone does not prove GitHub's artifact-upload step succeeded;
 check the actual run and downloaded artifact before making that claim.
 
-Every PR and push to `main` runs lint, Unit, Audit, the separate 12-case Auth suite,
+Every PR and push to `main` runs lint, 207 Unit, 30 service/security contracts,
+the separate 12-case Auth suite,
 the complete 241-case Chromium functional suite (two workers), 7 smoke cases each
 in Firefox and WebKit (one worker), and build. Full Firefox/WebKit, SQL/Docker and
 native Deno checks remain local gates; no critical Chromium coverage is deferred
-to `main`. See [CI](../../.github/workflows/ci.yml),
-[functional config](../../playwright.audit.config.js) and
-[Auth config](../../playwright.auth.config.js) and
-[smoke config](../../playwright.smoke.config.js). The
-[QA case study](../../docs/QA_AUTOMATION.md) explains three representative test designs.
+to `main`. See [CI](../.github/workflows/ci.yml),
+[functional config](../playwright.functional.config.js) and
+[Auth config](../playwright.auth.config.js) and
+[smoke config](../playwright.smoke.config.js). The
+[QA case study](../docs/QA_AUTOMATION.md) explains three representative test designs.

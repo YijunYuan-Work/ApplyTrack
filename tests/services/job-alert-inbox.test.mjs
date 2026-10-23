@@ -16,7 +16,7 @@ async function api(client) {
   return module.namespace
 }
 
-test('RF-05 inbox initialization: eight callers return the same alias without overwriting settings', async () => {
+test('Inbox initialization: eight callers return the same alias without overwriting settings', async () => {
   let row = null, reads = 0, release
   const gate = new Promise((resolve) => { release = resolve })
   const client = {
@@ -43,7 +43,7 @@ test('RF-05 inbox initialization: eight callers return the same alias without ov
   assert.equal((await createJobAlertInbox('synthetic-user')).addressAlias, row.address_alias)
 })
 
-test('RF-05 inbox initialization: real read/insert errors are propagated, not masked as conflicts', async () => {
+test('Inbox initialization: real read/insert errors are propagated, not masked as conflicts', async () => {
   for (const stage of ['initial', 'insert', 'reread']) {
     const error = { message: 'Synthetic database failure' }
     const client = {

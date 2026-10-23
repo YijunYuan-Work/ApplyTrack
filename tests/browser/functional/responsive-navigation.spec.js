@@ -49,7 +49,7 @@ async function keyboardSignOut(page) {
 }
 
 for (const width of [390, 768, 1440]) {
-  test(`RF-13: navigation, keyboard focus and authenticated Sign Out at ${width}px`, { tag: [390, 768].includes(width) ? ['@smoke'] : [] }, async ({ page, context }, info) => {
+  test(`Navigation: navigation, keyboard focus and authenticated Sign Out at ${width}px`, { tag: [390, 768].includes(width) ? ['@smoke'] : [] }, async ({ page, context }, info) => {
     const state = await backend(context, [application(1)])
     const originalUser = structuredClone(state.user)
     await page.setViewportSize({ width, height: 900 })
@@ -80,7 +80,7 @@ for (const width of [390, 768, 1440]) {
   })
 }
 
-test('RF-13: live resizing preserves one exit and the authenticated session', async ({ page, context }, info) => {
+test('Navigation: live resizing preserves one exit and the authenticated session', async ({ page, context }, info) => {
   const state = await backend(context)
   await signIn(page)
   await nav(page, 'Profile')
@@ -97,7 +97,7 @@ test('RF-13: live resizing preserves one exit and the authenticated session', as
   await info.attach('resize-boundaries', { body:JSON.stringify(evidence), contentType:'application/json' })
 })
 
-test('RF-13: fractional CSS viewports have no navigation or Sign Out gap', async ({ page, context }, info) => {
+test('Navigation: fractional CSS viewports have no navigation or Sign Out gap', async ({ page, context }, info) => {
   const state = await backend(context)
   await context.route('http://127.0.0.1:5195/rf13-frame', route => route.fulfill({ contentType:'text/html',
     body:'<iframe title="Synthetic fractional viewport" style="width:720.5px;height:900px;border:0" src="/#/sign-in"></iframe>' }))

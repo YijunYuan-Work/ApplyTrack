@@ -20,7 +20,7 @@ async function logoutService(context) {
 }
 
 for (const width of [1440, 768, 390]) {
-  test(`Final-01: confirmed logout, accessible failure/retry and pending single-flight at ${width}px`, { tag: width === 1440 ? ['@smoke'] : [] }, async ({ page, context }, info) => {
+  test(`Sign out: confirmed logout, accessible failure/retry and pending single-flight at ${width}px`, { tag: width === 1440 ? ['@smoke'] : [] }, async ({ page, context }, info) => {
     const state = await backend(context, [application(1)])
     const originalUser = structuredClone(state.user)
     const operations = await logoutService(context)
@@ -78,7 +78,7 @@ for (const width of [1440, 768, 390]) {
   })
 }
 
-test('Final-01: a rejected logout promise is handled without exposing technical errors', async ({ page, context }) => {
+test('Sign out: a rejected logout promise is handled without exposing technical errors', async ({ page, context }) => {
   await backend(context)
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
@@ -96,7 +96,7 @@ test('Final-01: a rejected logout promise is handled without exposing technical 
   expect(errors).toEqual([])
 })
 
-test('Final-01: pending and failed logout survive page navigation without locking other controls', async ({ page, context }) => {
+test('Sign out: pending and failed logout survive page navigation without locking other controls', async ({ page, context }) => {
   const state = await backend(context, [application(1)])
   const operations = await logoutService(context)
   await signIn(page)
@@ -128,7 +128,7 @@ test('Final-01: pending and failed logout survive page navigation without lockin
 
 for (const failed of [false, true]) {
   for (const sameAccount of [false, true]) {
-    test(`Final-01: old ${failed ? 'failure' : 'success'} cannot affect ${sameAccount ? 're-signed-in' : 'different-user'} session or unlock its logout`, async ({ page, context }) => {
+    test(`Sign out: old ${failed ? 'failure' : 'success'} cannot affect ${sameAccount ? 're-signed-in' : 'different-user'} session or unlock its logout`, async ({ page, context }) => {
       const state = await backend(context, [application(1)])
       const operations = await logoutService(context)
       await signIn(page)

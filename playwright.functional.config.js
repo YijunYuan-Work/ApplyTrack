@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 import process from 'node:process'
 
 export default defineConfig({
-  testDir: './tests/refinement-02/ui',
+  testDir: './tests/browser/functional',
   // CI runs Chromium files concurrently; local multi-browser runs stay serial.
   workers: process.env.CI ? 2 : 1,
   outputDir: './test-results/functional',

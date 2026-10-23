@@ -114,7 +114,7 @@ test('reports unknown for unrelated mail', () => {
 })
 
 for (const [text, minimum, maximum, period] of salaryCases) {
-  test(`RF-15: email annual fields and presentation agree for ${text}`, () => {
+  test(`Job alert parser: email annual fields and presentation agree for ${text}`, () => {
     for (const source of ['linkedin', 'indeed']) {
       const href = source === 'linkedin' ? 'https://www.linkedin.com/jobs/view/123' : 'https://ca.indeed.com/viewjob?jk=salary123'
       const result = parseJobAlert({ anchors: [{ href, text: 'Engineer', segments: ['Synthetic Company', 'Toronto', text] }] })
@@ -129,7 +129,7 @@ for (const [text, minimum, maximum, period] of salaryCases) {
 }
 
 for (const text of rejectedSalaryCases) {
-  test(`RF-15: email rejects incomplete/ambiguous salary ${text}`, () => {
+  test(`Job alert parser: email rejects incomplete/ambiguous salary ${text}`, () => {
     const { jobs } = parseJobAlert({ anchors: [{ href: 'https://ca.indeed.com/viewjob?jk=salary123', text: 'Engineer', segments: ['Synthetic Company', 'Toronto', text] }] })
     assert.equal(jobs[0].salaryMin, null)
     assert.equal(jobs[0].salaryMax, null)
@@ -138,7 +138,7 @@ for (const text of rejectedSalaryCases) {
   })
 }
 
-test('RF-15: LinkedIn and Indeed HTML alerts preserve explicit currency and hourly units', () => {
+test('Job alert parser: LinkedIn and Indeed HTML alerts preserve explicit currency and hourly units', () => {
   for (const [href, salary, minimum] of [
     ['https://www.linkedin.com/jobs/view/123', 'USD $90k - $120k a year', 90000],
     ['https://ca.indeed.com/viewjob?jk=salary123', '$40 per hour', null],

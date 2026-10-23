@@ -49,7 +49,7 @@ const rows = () => [
 ]
 
 for (const width of [390, 768, 1440]) {
-  test(`UI-03: metrics, accessible Map/Calendar and responsive geometry at ${width}px`, async ({
+  test(`Progress: metrics, accessible Map/Calendar and responsive geometry at ${width}px`, async ({
     page,
     context,
   }) => {
@@ -174,7 +174,7 @@ test('Calendar bounds stay inside the panel across integer responsive boundaries
   expect(state.blocked).toEqual([])
 })
 
-test('UI-03: chart focus/hover reveals the real node and branch values; widths conserve flow', async ({
+test('Progress: chart focus/hover reveals the real node and branch values; widths conserve flow', async ({
   page,
   context,
 }) => {
@@ -219,7 +219,7 @@ test('UI-03: chart focus/hover reveals the real node and branch values; widths c
   expect(conservation.sum).toBeCloseTo(conservation.height, 5)
 })
 
-test('UI-03: an outstanding canonical deletion refreshes the focused inspection value', async ({
+test('Progress: an outstanding canonical deletion refreshes the focused inspection value', async ({
   page,
   context,
 }) => {
@@ -245,7 +245,7 @@ test('UI-03: an outstanding canonical deletion refreshes the focused inspection 
 })
 
 for (const status of ['Applied', 'Offer', 'Rejected']) {
-  test(`UI-03: sparse ${status} dataset has no phantom branches or non-finite geometry`, async ({
+  test(`Progress: sparse ${status} dataset has no phantom branches or non-finite geometry`, async ({
     page,
     context,
   }) => {
@@ -267,7 +267,7 @@ for (const status of ['Applied', 'Offer', 'Rejected']) {
   })
 }
 
-test('UI-03: normal motion ends at canonical values; reduced motion stays local across Demo navigation', async ({
+test('Progress: normal motion ends at canonical values; reduced motion stays local across Demo navigation', async ({
   page,
   context,
 }) => {
@@ -293,7 +293,7 @@ test('UI-03: normal motion ends at canonical values; reduced motion stays local 
   expect(state.blocked).toEqual([])
 })
 
-test('UI-03: fractional responsive boundaries follow CSS, including live viewport changes', async ({
+test('Progress: fractional responsive boundaries follow CSS, including live viewport changes', async ({
   page,
   context,
 }) => {

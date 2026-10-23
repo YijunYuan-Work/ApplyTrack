@@ -12,21 +12,21 @@ Use Node.js 24, the committed [package scripts](../package.json) and lockfile:
 npm ci
 npm run lint
 npm test
-npm run test:audit
+npm run test:contracts
 npx playwright install chromium firefox webkit
-npm run test:auth-ui
-npm run test:audit-ui -- --project chromium
-npm run test:smoke-ui
+npm run test:auth
+npm run test:browser -- --project chromium
+npm run test:smoke
 npm run build
 git diff --check
 ```
 
 [CI](../.github/workflows/ci.yml) runs these quality gates on PRs and `main`:
-207 Unit, 30 Audit, 12 separate Chromium Auth, 241 Chromium functional cases and
+207 Unit, 30 service/security contracts, 12 separate Chromium Auth, 241 Chromium functional cases and
 7 smoke cases each in Firefox/WebKit. Functional CI uses two workers; smoke and
 local multi-browser runs use one. Do not remove critical PR coverage, add retries
 to hide failures or run Vite-owning suites simultaneously. See the
-[test guide](../tests/refinement-02/README.md) for
+[test guide](../tests/README.md) for
 ports, local Firefox/WebKit/SQL commands and fixture limitations.
 
 Use synthetic accounts/data for tests. Keep screenshots/traces, local toolchains

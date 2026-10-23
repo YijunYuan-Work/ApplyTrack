@@ -4,7 +4,7 @@ import { fromApplicationRow, toApplicationRow, toApplicationStatusRow } from './
 import { getRejectionDate, normalizeApplication, normalizeRejectedDate } from './applications.js'
 import { applicationFormChanges, mergeApplicationFormChanges, prepareApplicationForm, validateApplicationForm } from './applicationForm.js'
 
-test('RF-08: required fields validate trimmed values without changing literal notes', () => {
+test('Application rows: required fields validate trimmed values without changing literal notes', () => {
   assert.deepEqual(validateApplicationForm({ company: ' \t ', role: ' \n ' }), {
     company: 'Enter a company name.', role: 'Enter a role name.',
   })
@@ -18,7 +18,7 @@ test('RF-08: required fields validate trimmed values without changing literal no
   assert.equal(prepared.location, 'Not specified')
 })
 
-test('RF-08: edit intent excludes unchanged status/rounds and optional fields', () => {
+test('Application rows: edit intent excludes unchanged status/rounds and optional fields', () => {
   const initial = fromApplicationRow({ ...baseRow, notes: 'Original', salary: '90000' })
   const prepared = prepareApplicationForm({ ...initial, notes: 'Edited note', salary: ' 100000 ' }, initial.id)
   assert.deepEqual(applicationFormChanges(prepared, initial), {
@@ -26,7 +26,7 @@ test('RF-08: edit intent excludes unchanged status/rounds and optional fields', 
   })
 })
 
-test('RF-08: explicit form status/count edits retain the Interview promotion business rule', () => {
+test('Application rows: explicit form status/count edits retain the Interview promotion business rule', () => {
   const initial = normalizeApplication({ id: 1, company: 'Acme', role: 'Engineer', interviewCount: 0 })
   const prepared = prepareApplicationForm({ ...initial, status: 'Interview' }, initial.id)
   assert.equal(prepared.interviewCount, 1)
@@ -35,7 +35,7 @@ test('RF-08: explicit form status/count edits retain the Interview promotion bus
   assert.equal(changes.interviewCount, 1)
 })
 
-test('RF-08: Real/Demo merges promote existing Interview/zero and preserve fresh unrelated data', () => {
+test('Application rows: Real/Demo merges promote existing Interview/zero and preserve fresh unrelated data', () => {
   const current = normalizeApplication({ id: 1, company: 'Acme', role: 'Engineer', status: 'Interview', interviewCount: 0, notes: 'Server note\r\nReferral: No', salary: 'Fresh salary', date: '2025-12-30' })
   const merged = mergeApplicationFormChanges(current, { role: 'Updated role', lastUpdated: '2026-10-12' })
   assert.deepEqual(merged, { ...current, role: 'Updated role', lastUpdated: '2026-10-12', interviewCount: 1 })
@@ -48,7 +48,7 @@ const baseRow = {
   cover_letter: 'No', referral: 'Yes', interview_count: 2,
 }
 
-test('RF-07: quick status payload is partial and promotes only zero interview rounds', () => {
+test('Application rows: quick status payload is partial and promotes only zero interview rounds', () => {
   assert.deepEqual(toApplicationStatusRow('Interview', 0, '2026-10-12'), {
     status: 'Interview', last_updated: '2026-10-12', interview_count: 1,
   })
@@ -65,7 +65,7 @@ test('RF-07: quick status payload is partial and promotes only zero interview ro
   })
 })
 
-test('F08: row mapping preserves nullable/explicit dates without inferring legacy history', () => {
+test('Application rows: row mapping preserves nullable/explicit dates without inferring legacy history', () => {
   for (const value of [undefined, null, '', '2024-02-30', '2026-01-01T00:00:00Z']) {
     const model = fromApplicationRow({ ...baseRow, status: 'Rejected', rejected_date: value })
     assert.equal(model.rejectedDate, null)
@@ -78,7 +78,7 @@ test('F08: row mapping preserves nullable/explicit dates without inferring legac
   assert.equal(normalizeRejectedDate('2024-02-29'), '2024-02-29')
 })
 
-test('F08: fresh canonical transition, reopen/re-enter and duplicate rejection semantics', () => {
+test('Application rows: fresh canonical transition, reopen/re-enter and duplicate rejection semantics', () => {
   const initial = normalizeApplication({ company: 'Synthetic', role: 'Engineer', status: 'Applied' })
   const rejected = mergeApplicationFormChanges(initial, { status: 'Rejected', lastUpdated: '2026-01-09' })
   assert.equal(rejected.rejectedDate, '2026-01-09')
@@ -93,7 +93,7 @@ test('F08: fresh canonical transition, reopen/re-enter and duplicate rejection s
   assert.throws(() => getRejectionDate(initial, 'Rejected', '2026-02-30'), /valid local date/)
 })
 
-test('F08: stale form cannot clear a canonical rejection date or force an artificial transition', () => {
+test('Application rows: stale form cannot clear a canonical rejection date or force an artificial transition', () => {
   const initial = normalizeApplication({ id: 1, company: 'Synthetic', role: 'Engineer' })
   const intent = applicationFormChanges(prepareApplicationForm({ ...initial, notes: 'Note', rejectedDate: '2020-01-01' }, 1), initial)
   assert.equal(Object.hasOwn(intent, 'rejectedDate'), false)
@@ -115,7 +115,7 @@ for (const [name, notes] of [
   ['whitespace only', ' \t\r\n '],
   ['empty', ''],
 ]) {
-  test(`RF-03: ${name} notes survive reading and role-only write/read roundtrip`, () => {
+  test(`Application rows: ${name} notes survive reading and role-only write/read roundtrip`, () => {
     const mapped = fromApplicationRow({ ...baseRow, notes })
     assert.equal(mapped.notes, notes)
     const written = toApplicationRow({ ...mapped, role: 'Updated role' }, 'synthetic-user')
@@ -133,20 +133,20 @@ for (const [name, notes] of [
 for (const [name, notes] of [
   ['null', null], ['undefined', undefined], ['number', 42], ['object', {}],
 ]) {
-  test(`RF-03: ${name} notes normalize to an empty UI string at read/write boundaries`, () => {
+  test(`Application rows: ${name} notes normalize to an empty UI string at read/write boundaries`, () => {
     assert.equal(fromApplicationRow({ ...baseRow, notes }).notes, '')
     assert.equal(normalizeApplication({ notes }).notes, '')
     assert.equal(toApplicationRow({ notes }, 'synthetic-user').notes, '')
   })
 }
 
-test('RF-03: missing notes and a nullable row do not prevent a mixed list mapping', () => {
+test('Application rows: missing notes and a nullable row do not prevent a mixed list mapping', () => {
   assert.equal(fromApplicationRow(baseRow).notes, '')
   const rows = [baseRow, { ...baseRow, id: 2, notes: null }, { ...baseRow, id: 3, notes: 'Keep this' }]
   assert.deepEqual(rows.map(fromApplicationRow).map(({ notes }) => notes), ['', '', 'Keep this'])
 })
 
-test('RF-03: unversioned historical notes are preserved without guessing structured fields', () => {
+test('Application rows: unversioned historical notes are preserved without guessing structured fields', () => {
   const notes = 'Original note\nCover letter: Yes\nReferral: Yes\nInterview stage: 2\nLast updated: 2020-01-01'
   for (const value of [undefined, null, '']) {
     const mapped = fromApplicationRow({

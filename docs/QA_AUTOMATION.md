@@ -5,14 +5,15 @@ The emphasis is on observable, trustworthy outcomes when requests fail, overlap
 or return incomplete data, not on accumulating happy-path test counts.
 
 The browser suites run the real React UI and Supabase JavaScript client. A
-[per-context HTTP fixture](../tests/refinement-02/ui/fixtures/backend.js#L6-L30)
+[per-context HTTP fixture](../tests/browser/functional/fixtures/backend.js#L6-L30)
 intercepts a synthetic Supabase origin, records requests and blocks unexpected
 external traffic. Tests can separate a simulated database commit from delivery of
 its HTTP response. No production account, live email or live database is needed.
 
 The cases below describe existing regression and defensive scenarios, **not
 historical production incidents**. They do not claim that every injected ordering
-was previously observed in production. Finding IDs record audit traceability.
+was previously observed in production. Historical finding IDs remain traceable
+through Git history and the pinned release records in [Maintenance](MAINTENANCE.md).
 
 ## A. Concurrent Application Status Updates
 
@@ -22,15 +23,15 @@ intent. A correct dropdown value alone would miss those data-integrity failures.
 
 **Setup.** Seed an Applied application, sign in through the synthetic Auth route
 and set `state.controlStatus = true`. The
-[PATCH fixture](../tests/refinement-02/ui/fixtures/backend.js#L100-L125) queues operations
+[PATCH fixture](../tests/browser/functional/fixtures/backend.js#L100-L125) queues operations
 and evaluates version filters at commit time. `commit()`, `respond()`, `fail()` and
 `abort()` control state changes and transport outcomes independently; synchronization
 uses `expect.poll`, not arbitrary sleeps.
 
-**Execution.** The [FIFO scenario](../tests/refinement-02/ui/status-mutations.spec.js#L18-L40)
+**Execution.** The [FIFO scenario](../tests/browser/functional/status-mutations.spec.js#L18-L40)
 selects Interview, Rejected and Offer while the first request is pending, then
 releases responses one at a time. The
-[late-write scenario](../tests/refinement-02/ui/status-mutations.spec.js#L42-L56)
+[late-write scenario](../tests/browser/functional/status-mutations.spec.js#L42-L56)
 aborts the first response, completes the newer Rejected request, then attempts
 the abandoned write's commit. Its decisive assertions are:
 
@@ -45,9 +46,9 @@ await expect(control(page)).toHaveValue('Rejected')
 **Assertions.** The guarded old write affects zero rows; UI and fixture state agree,
 including after reload. FIFO checks also inspect partial PATCH payloads, unchanged
 notes/salary/contact/follow-up fields, interview rounds and rejection dates. A
-[delayed response after a full edit](../tests/refinement-02/ui/status-mutations.spec.js#L91-L110)
+[delayed response after a full edit](../tests/browser/functional/status-mutations.spec.js#L91-L110)
 must preserve newly saved notes and salary. A
-[reverse-response test across two records](../tests/refinement-02/ui/status-mutations.spec.js#L192-L209)
+[reverse-response test across two records](../tests/browser/functional/status-mutations.spec.js#L192-L209)
 checks that one record's success does not clear another's error.
 
 **Demonstrates.** Risk-based concurrency tests distinguish user intent, simulated
@@ -67,25 +68,25 @@ delete unrelated applications. A lost response is ambiguous even after a commit.
 **Setup.** Seed applications with known IDs and an unrelated row whose notes/salary
 must survive. Enable `state.controlDeletes`, select exact records and accept or
 dismiss the native confirmation dialog. The
-[DELETE fixture](../tests/refinement-02/ui/fixtures/backend.js#L127-L163) can restrict
+[DELETE fixture](../tests/browser/functional/fixtures/backend.js#L127-L163) can restrict
 returned/deleted IDs, fail a request, abort after committing, or return malformed
 confirmation data.
 
 **Execution and assertions.**
 
-- [Cancellation](../tests/refinement-02/ui/delete-mutations.spec.js#L32-L46): Board
+- [Cancellation](../tests/browser/functional/delete-mutations.spec.js#L32-L46): Board
   and List retain the exact selection and row count; the request log contains no DELETE.
-- [Failure then retry](../tests/refinement-02/ui/delete-mutations.spec.js#L48-L76):
+- [Failure then retry](../tests/browser/functional/delete-mutations.spec.js#L48-L76):
   inspect the user filter, requested IDs and `select=id`; hold the request, return
   an error, assert the alert and checked records, then confirm a retry. Only the
   intended IDs disappear, the unrelated row is byte-for-value unchanged in fixture
   state, and reload shows the surviving record.
-- [Selection changes while pending](../tests/refinement-02/ui/delete-mutations.spec.js#L99-L124):
+- [Selection changes while pending](../tests/browser/functional/delete-mutations.spec.js#L99-L124):
   newly selected unrelated IDs stay checked; duplicate click events create only
   one confirmation and one delete operation.
-- [Zero/partial and invalid confirmations](../tests/refinement-02/ui/delete-mutations.spec.js#L218-L245):
+- [Zero/partial and invalid confirmations](../tests/browser/functional/delete-mutations.spec.js#L218-L245):
   show an explicit error and retain selection instead of claiming full success.
-- [Committed delete with a lost response](../tests/refinement-02/ui/delete-mutations.spec.js#L247-L265):
+- [Committed delete with a lost response](../tests/browser/functional/delete-mutations.spec.js#L247-L265):
   a zero-row retry is still not false success; reload resolves what remains.
 
 **Demonstrates.** Negative tests inspect both visible feedback and the exact set of
@@ -104,7 +105,7 @@ RLS execution test; reload/check guidance remains important before retrying.
 server cap may miss jobs, filtered bulk removal may target the wrong scope, or a
 late response may replace the latest search results.
 
-**Setup.** The [boundary matrix](../tests/refinement-02/ui/job-queue.spec.js#L23-L54)
+**Setup.** The [boundary matrix](../tests/browser/functional/job-queue.spec.js#L23-L54)
 uses 0, 1, 499, 500, 501 and 1,203 waiting leads, plus Applied, expired and other-owner
 leads that must survive. Cap returned rows at 37 independently of exact counts;
 the visible page is limited to 20. No large live dataset is needed.
@@ -114,19 +115,19 @@ the visible page is limited to 20. No large live dataset is needed.
 - Boundary cases verify Dashboard and queue totals, newest-first order, bounded
   rendering, confirmed bulk removal and persistence after reload. DELETE requests
   target only new, unassociated leads; existing applications and excluded leads remain.
-- [Search/source filtering](../tests/refinement-02/ui/job-queue.spec.js#L56-L92)
+- [Search/source filtering](../tests/browser/functional/job-queue.spec.js#L56-L92)
   finds a rare literal containing punctuation in a 1,101-lead queue, distinguishes
   no matches from an empty queue and resets pagination when filters change.
-- [Filtered Remove All](../tests/refinement-02/ui/job-queue.spec.js#L94-L106)
+- [Filtered Remove All](../tests/browser/functional/job-queue.spec.js#L94-L106)
   confirms the whole waiting queue, not just the filtered page; cancellation sends no DELETE.
-- [Failure and partial-batch handling](../tests/refinement-02/ui/job-queue.spec.js#L108-L168)
+- [Failure and partial-batch handling](../tests/browser/functional/job-queue.spec.js#L108-L168)
   injects failure, partial, lost and invalid responses. With 201 leads, the first
   batch confirms 100 removals and the next fails: the alert reports partial
   progress, 101 remain, and retry handles those remaining leads. Truncated
   confirmations never become an unqualified success message.
-- [Conversion/new-arrival overlap](../tests/refinement-02/ui/job-queue.spec.js#L201-L221)
+- [Conversion/new-arrival overlap](../tests/browser/functional/job-queue.spec.js#L201-L221)
   preserves a lead converted during deletion and a newly arrived lead beyond the
-  deletion snapshot. [Stale search responses](../tests/refinement-02/ui/job-queue.spec.js#L306-L321)
+  deletion snapshot. [Stale search responses](../tests/browser/functional/job-queue.spec.js#L306-L321)
   are returned in reverse order; only the latest result stays visible.
 
 **Demonstrates.** Boundary-value analysis targets the result cap and batch/page
@@ -139,10 +140,10 @@ authorization. The fixture implements the query subset these tests use.
 
 ## Fixture Organization
 
-The compatible [fixture entry point](../tests/refinement-02/ui/fixtures.js) keeps
-existing imports stable. [Data builders](../tests/refinement-02/ui/fixtures/data.js),
-[HTTP interception/state](../tests/refinement-02/ui/fixtures/backend.js) and
-[UI interactions](../tests/refinement-02/ui/fixtures/interactions.js) now have
+The compatible [fixture entry point](../tests/browser/functional/fixtures.js) keeps
+existing imports stable. [Data builders](../tests/browser/functional/fixtures/data.js),
+[HTTP interception/state](../tests/browser/functional/fixtures/backend.js) and
+[UI interactions](../tests/browser/functional/fixtures/interactions.js) now have
 separate homes. CRUD and Job Agent routing stay together: splitting their small,
 shared query/mutation state further would obscure the concurrency contract.
 
@@ -159,12 +160,12 @@ not copies. Exactly **7 Firefox + 7 WebKit** executions run serially with one wo
 
 | Existing scenario | Selection / risk |
 | --- | --- |
-| [Core application workflow](../tests/refinement-02/ui/audit.spec.js#L4) | CRUD, details, sorting/filtering, pagination and reload. |
-| [Form validation](../tests/refinement-02/ui/form-save.spec.js#L24) | Real mode: required fields, trimmed content and reliable saves. |
-| [Job queue filtering](../tests/refinement-02/ui/job-queue.spec.js#L56) | Search beyond the first server page, literal punctuation, source filters and page reset. |
-| [Progress analytics](../tests/refinement-02/ui/progress-analytics.spec.js#L10) | 768px: Real/Demo parity, Pipeline Map and Calendar. |
-| [Responsive navigation](../tests/refinement-02/ui/responsive-navigation.spec.js#L52) | 390px and 768px: authenticated routes, keyboard interaction and Sign Out. |
-| [Sign Out outcomes](../tests/refinement-02/ui/sign-out.spec.js#L23) | 1440px: failure feedback, retry and duplicate-click prevention. |
+| [Core application workflow](../tests/browser/functional/application-workflows.spec.js#L4) | CRUD, details, sorting/filtering, pagination and reload. |
+| [Form validation](../tests/browser/functional/form-save.spec.js#L24) | Real mode: required fields, trimmed content and reliable saves. |
+| [Job queue filtering](../tests/browser/functional/job-queue.spec.js#L56) | Search beyond the first server page, literal punctuation, source filters and page reset. |
+| [Progress analytics](../tests/browser/functional/progress-analytics.spec.js#L10) | 768px: Real/Demo parity, Pipeline Map and Calendar. |
+| [Responsive navigation](../tests/browser/functional/responsive-navigation.spec.js#L52) | 390px and 768px: authenticated routes, keyboard interaction and Sign Out. |
+| [Sign Out outcomes](../tests/browser/functional/sign-out.spec.js#L23) | 1440px: failure feedback, retry and duplicate-click prevention. |
 
 Each Real case signs in through the synthetic backend. Smoke is an early
 cross-engine signal, not the complete functional, concurrency or Auth suite on
@@ -173,10 +174,10 @@ Firefox/WebKit suite remains an optional local gate. No retries or sleeps were a
 
 ## Evidence and Reproduction
 
-See the [test guide](../tests/refinement-02/README.md) for commands and limitations.
+See the [test guide](../tests/README.md) for commands and limitations.
 [GitHub Actions](../.github/workflows/ci.yml) runs the complete 241-case Chromium
 functional suite with two workers, the separate 12-case Auth suite, 207 Unit and
-30 Audit tests, the 7-per-engine Firefox/WebKit smoke gate, lint and build. No
+30 service/security contract tests, the 7-per-engine Firefox/WebKit smoke gate, lint and build. No
 retries or critical-test deferral to main. Native Deno and isolated PostgreSQL
 checks remain local gates, separate from the synthetic HTTP tests.
 

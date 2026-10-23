@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { application, backend, nav, signIn } from '../refinement-02/ui/fixtures.js'
+import { application, backend, nav, signIn } from '../browser/functional/fixtures.js'
 
 test('optional: measure 1000-row Board and paginated List rendering', async ({ page, context }, info) => {
   test.setTimeout(120000)

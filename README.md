@@ -33,7 +33,7 @@ The current automated baseline is:
 | Layer | What it verifies |
 | --- | --- |
 | 207 Unit tests | Row mapping, local dates, analytics, Excel input and conservative alert/salary parsing. |
-| 30 Audit tests | Source contracts, real Edge handler/parser execution with controlled dependencies, signed-webhook rejection and retry behavior. |
+| 30 Contract tests | Source/security contracts, real Edge handler/parser execution with controlled dependencies, signed-webhook rejection and retry behavior. |
 | 241 Playwright functional tests | Real React workflows: CRUD, search, queue boundaries, stale responses, concurrent edits, cancellation, partial failures and session isolation. |
 | 12 separate Authentication UI tests | Sign-in/up, validation, password updates, sign-out and valid legacy reset-session handling. |
 | 7 smoke scenarios per Firefox/WebKit | Selected existing functional cases for CRUD, validation, queue filtering, analytics, responsive navigation and logout failure/retry. |
@@ -46,7 +46,7 @@ desktop/tablet/phone; keyboard, focus and axe checks cover accessibility basics.
 The separate SQL runner tests actual local database behavior, but does not run a
 complete hosted Supabase environment.
 
-GitHub Actions runs lint, Unit/Audit, both complete Chromium suites, the lightweight
+GitHub Actions runs lint, Unit/Contracts, both complete Chromium suites, the lightweight
 Firefox/WebKit smoke subset and the production build on every PR and `main` push.
 This is not full cross-engine regression coverage. Native HTML reports are isolated
 per suite and downloadable as CI artifacts;
@@ -54,10 +54,10 @@ failure traces and selected screenshots/attachments support diagnosis. Reports
 are kept for three days, not published to a public report-hosting service.
 
 Explore the [QA automation case study](docs/QA_AUTOMATION.md), with source-backed
-walkthroughs of [status races](tests/refinement-02/ui/status-mutations.spec.js),
-[destructive operations](tests/refinement-02/ui/delete-mutations.spec.js) and
-[large job queues](tests/refinement-02/ui/job-queue.spec.js). The
-[test guide](tests/refinement-02/README.md) covers execution, reports and limitations.
+walkthroughs of [status races](tests/browser/functional/status-mutations.spec.js),
+[destructive operations](tests/browser/functional/delete-mutations.spec.js) and
+[large job queues](tests/browser/functional/job-queue.spec.js). The
+[test guide](tests/README.md) covers execution, reports and limitations.
 
 ## Job Agent
 
@@ -126,12 +126,12 @@ production as part of frontend installation.
 ```powershell
 npm run lint
 npm test
-npm run test:audit
+npm run test:contracts
 npm run build
 npm run preview
 ```
 
-See [test instructions](tests/refinement-02/README.md) for isolated browser and
+See [test instructions](tests/README.md) for isolated browser and
 PostgreSQL checks. Passing synthetic tests is not live-service certification.
 
 ## Documentation
@@ -140,4 +140,4 @@ PostgreSQL checks. Passing synthetic tests is not live-service certification.
 - [Design system](docs/DESIGN_SYSTEM.md): approved Version B palette and responsive UI.
 - [Maintenance](docs/MAINTENANCE.md): verification, release constraints and open issues.
 - [Dependency security](docs/security/dependency-security.md): dependency policy and limits.
-- [Test guide](tests/refinement-02/README.md): commands, fixtures and coverage boundaries.
+- [Test guide](tests/README.md): commands, fixtures and coverage boundaries.

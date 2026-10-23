@@ -12,7 +12,7 @@ import {
 import { expectAccessiblePage } from './accessibility.js'
 
 for (const width of [1440, 768, 390]) {
-  test(`UI-02: Dashboard geometry, details, focus and full editor at ${width}px`, async ({
+  test(`Dashboard: Dashboard geometry, details, focus and full editor at ${width}px`, async ({
     page,
     context,
   }, info) => {
@@ -123,7 +123,7 @@ for (const width of [1440, 768, 390]) {
   })
 }
 
-test('UI-02: fractional viewports retain the visible Board selection scope without overflow', async ({
+test('Dashboard: fractional viewports retain the visible Board selection scope without overflow', async ({
   page,
   context,
 }, info) => {
@@ -189,7 +189,7 @@ test('UI-02: fractional viewports retain the visible Board selection scope witho
   expect(state.blocked).toEqual([])
 })
 
-test('UI-02: drawer keeps canonical status through pending, error, retry and confirmed transition', async ({
+test('Dashboard: drawer keeps canonical status through pending, error, retry and confirmed transition', async ({
   page,
   context,
 }) => {
@@ -225,7 +225,7 @@ test('UI-02: drawer keeps canonical status through pending, error, retry and con
   expect(state.blocked).toEqual([])
 })
 
-test('UI-02: session changes remove private drawer content and ignore late status responses', async ({
+test('Dashboard: session changes remove private drawer content and ignore late status responses', async ({
   page,
   context,
 }) => {
@@ -254,7 +254,7 @@ test('UI-02: session changes remove private drawer content and ignore late statu
   expect(state.blocked).toEqual([])
 })
 
-test('UI-02: drawer deletion preserves confirmation, cancellation, failure and retry', async ({
+test('Dashboard: drawer deletion preserves confirmation, cancellation, failure and retry', async ({
   page,
   context,
 }) => {
@@ -285,7 +285,7 @@ test('UI-02: drawer deletion preserves confirmation, cancellation, failure and r
 })
 
 for (const width of [1440, 768, 390]) {
-  test(`UI-02: reduced-motion Demo drawer and editing stay local at ${width}px`, async ({
+  test(`Dashboard: reduced-motion Demo drawer and editing stay local at ${width}px`, async ({
     page,
     context,
   }) => {
