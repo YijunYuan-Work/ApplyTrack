@@ -41,11 +41,12 @@ concurrently, but cases within a file remain serial. Smoke owns port 5195 and us
 one worker for 7 existing `@smoke` cases each in Firefox and WebKit. None of the
 suites reuses an existing server. There are still 241 Chromium functional cases
 and 12 Auth cases, with no configured retries. Each test has isolated
-context/backend state. Verify the selection without running tests:
+context/backend state. Verify the selection without running tests or replacing
+the HTML report (explicitly override the configured reporter):
 
 ```powershell
-npm run test:smoke-ui -- --project=firefox --list
-npm run test:smoke-ui -- --project=webkit --list
+npm run test:smoke-ui -- --project=firefox --list --reporter=list
+npm run test:smoke-ui -- --project=webkit --list --reporter=list
 ```
 
 Never supply production credentials. Functional browser requests outside the
