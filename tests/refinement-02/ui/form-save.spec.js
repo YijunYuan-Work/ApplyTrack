@@ -21,7 +21,7 @@ async function setup(page, context, rows = []) {
 }
 
 for (const demo of [false, true]) {
-  test(`trimmed validation, correction and optional fields (${demo ? 'Demo' : 'Real'})`, async ({ page, context }) => {
+  test(`trimmed validation, correction and optional fields (${demo ? 'Demo' : 'Real'})`, { tag: demo ? [] : ['@smoke'] }, async ({ page, context }) => {
     const state = await backend(context)
     if (demo) await page.goto('/#/demo')
     else await signIn(page)

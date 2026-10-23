@@ -5,7 +5,7 @@ The emphasis is on observable, trustworthy outcomes when requests fail, overlap
 or return incomplete data, not on accumulating happy-path test counts.
 
 The browser suites run the real React UI and Supabase JavaScript client. A
-[per-context HTTP fixture](../tests/refinement-02/ui/fixtures.js#L32-L56)
+[per-context HTTP fixture](../tests/refinement-02/ui/fixtures/backend.js#L6-L30)
 intercepts a synthetic Supabase origin, records requests and blocks unexpected
 external traffic. Tests can separate a simulated database commit from delivery of
 its HTTP response. No production account, live email or live database is needed.
@@ -22,7 +22,7 @@ intent. A correct dropdown value alone would miss those data-integrity failures.
 
 **Setup.** Seed an Applied application, sign in through the synthetic Auth route
 and set `state.controlStatus = true`. The
-[PATCH fixture](../tests/refinement-02/ui/fixtures.js#L134-L161) queues operations
+[PATCH fixture](../tests/refinement-02/ui/fixtures/backend.js#L100-L125) queues operations
 and evaluates version filters at commit time. `commit()`, `respond()`, `fail()` and
 `abort()` control state changes and transport outcomes independently; synchronization
 uses `expect.poll`, not arbitrary sleeps.
@@ -67,7 +67,7 @@ delete unrelated applications. A lost response is ambiguous even after a commit.
 **Setup.** Seed applications with known IDs and an unrelated row whose notes/salary
 must survive. Enable `state.controlDeletes`, select exact records and accept or
 dismiss the native confirmation dialog. The
-[DELETE fixture](../tests/refinement-02/ui/fixtures.js#L168-L204) can restrict
+[DELETE fixture](../tests/refinement-02/ui/fixtures/backend.js#L127-L163) can restrict
 returned/deleted IDs, fail a request, abort after committing, or return malformed
 confirmation data.
 
@@ -137,13 +137,48 @@ arrivals. More realistic failure modes matter more than just rendering many card
 proof of production scale, live provider templates, PostgREST parsing or hosted
 authorization. The fixture implements the query subset these tests use.
 
+## Fixture Organization
+
+The compatible [fixture entry point](../tests/refinement-02/ui/fixtures.js) keeps
+existing imports stable. [Data builders](../tests/refinement-02/ui/fixtures/data.js),
+[HTTP interception/state](../tests/refinement-02/ui/fixtures/backend.js) and
+[UI interactions](../tests/refinement-02/ui/fixtures/interactions.js) now have
+separate homes. CRUD and Job Agent routing stay together: splitting their small,
+shared query/mutation state further would obscure the concurrency contract.
+
+The move preserves delayed commit/response controls, version filters, partial
+deletes, query counts, request logs and external blocking. Each backend also clones
+its default synthetic user, so metadata cannot leak between instances. The separate
+Auth harness and shared navigation/accessibility helpers remain unchanged; there is
+no new framework, Page Object Model or dependency.
+
+## Cross-Browser Smoke
+
+The [smoke config](../playwright.smoke.config.js) selects existing `@smoke` cases,
+not copies. Exactly **7 Firefox + 7 WebKit** executions run serially with one worker:
+
+| Existing scenario | Selection / risk |
+| --- | --- |
+| [Core application workflow](../tests/refinement-02/ui/audit.spec.js#L4) | CRUD, details, sorting/filtering, pagination and reload. |
+| [Form validation](../tests/refinement-02/ui/form-save.spec.js#L24) | Real mode: required fields, trimmed content and reliable saves. |
+| [Job queue filtering](../tests/refinement-02/ui/job-queue.spec.js#L56) | Search beyond the first server page, literal punctuation, source filters and page reset. |
+| [Progress analytics](../tests/refinement-02/ui/progress-analytics.spec.js#L10) | 768px: Real/Demo parity, Pipeline Map and Calendar. |
+| [Responsive navigation](../tests/refinement-02/ui/responsive-navigation.spec.js#L52) | 390px and 768px: authenticated routes, keyboard interaction and Sign Out. |
+| [Sign Out outcomes](../tests/refinement-02/ui/sign-out.spec.js#L23) | 1440px: failure feedback, retry and duplicate-click prevention. |
+
+Each Real case signs in through the synthetic backend. Smoke is an early
+cross-engine signal, not the complete functional, concurrency or Auth suite on
+those engines. All original cases and assertions still run in Chromium; the full
+Firefox/WebKit suite remains an optional local gate. No retries or sleeps were added.
+
 ## Evidence and Reproduction
 
 See the [test guide](../tests/refinement-02/README.md) for commands and limitations.
 [GitHub Actions](../.github/workflows/ci.yml) runs the complete 241-case Chromium
 functional suite with two workers, the separate 12-case Auth suite, 207 Unit and
-30 Audit tests, lint and build. No retries or critical-test deferral to main.
-Firefox/WebKit, native Deno and isolated PostgreSQL checks remain local gates.
+30 Audit tests, the 7-per-engine Firefox/WebKit smoke gate, lint and build. No
+retries or critical-test deferral to main. Native Deno and isolated PostgreSQL
+checks remain local gates, separate from the synthetic HTTP tests.
 
 Native HTML reports show each test's status, duration, source and execution steps,
 plus attachments when a test produces them. Failure traces support DOM/network

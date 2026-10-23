@@ -13,18 +13,20 @@ npm ci
 npm run lint
 npm test
 npm run test:audit
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 npm run test:auth-ui
 npm run test:audit-ui -- --project chromium
+npm run test:smoke-ui
 npm run build
 git diff --check
 ```
 
 [CI](../.github/workflows/ci.yml) runs these quality gates on PRs and `main`:
-207 Unit, 30 Audit, 12 separate Chromium Auth and 241 Chromium functional cases.
-Functional CI uses two workers; local multi-browser runs default to one. Do not
-remove critical PR coverage, add retries to hide failures or run both Vite-owning
-suites simultaneously. See the [test guide](../tests/refinement-02/README.md) for
+207 Unit, 30 Audit, 12 separate Chromium Auth, 241 Chromium functional cases and
+7 smoke cases each in Firefox/WebKit. Functional CI uses two workers; smoke and
+local multi-browser runs use one. Do not remove critical PR coverage, add retries
+to hide failures or run Vite-owning suites simultaneously. See the
+[test guide](../tests/refinement-02/README.md) for
 ports, local Firefox/WebKit/SQL commands and fixture limitations.
 
 Use synthetic accounts/data for tests. Keep screenshots/traces, local toolchains
@@ -139,8 +141,9 @@ or assertions about today's function version, row counts or cloud settings.
   Review the [dependency policy](security/dependency-security.md). The retained
   unused resume parser/dependencies are not a supported upload feature.
 - **Verification/performance:** synthetic HTTP/SQL tests do not certify hosted
-  Auth/Storage/Resend, physical devices or screen readers. Firefox/WebKit, native
-  Deno and PostgreSQL tests remain local gates. The existing build chunk-size
+  Auth/Storage/Resend, physical devices or screen readers. Full Firefox/WebKit,
+  native Deno and PostgreSQL tests remain local gates beyond the CI smoke subset.
+  The existing build chunk-size
   warning and an isolated historical CI screenshot failure with unconfirmed cause
   are not grounds to weaken tests or suppress failure evidence. Initial account
   load and Dashboard effects can also duplicate Job Agent summary requests;

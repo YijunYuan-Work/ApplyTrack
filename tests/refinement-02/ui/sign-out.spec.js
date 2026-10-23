@@ -20,7 +20,7 @@ async function logoutService(context) {
 }
 
 for (const width of [1440, 768, 390]) {
-  test(`Final-01: confirmed logout, accessible failure/retry and pending single-flight at ${width}px`, async ({ page, context }, info) => {
+  test(`Final-01: confirmed logout, accessible failure/retry and pending single-flight at ${width}px`, { tag: width === 1440 ? ['@smoke'] : [] }, async ({ page, context }, info) => {
     const state = await backend(context, [application(1)])
     const originalUser = structuredClone(state.user)
     const operations = await logoutService(context)

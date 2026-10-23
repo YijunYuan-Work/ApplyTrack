@@ -53,7 +53,7 @@ for (const count of [0, 1, 499, 500, 501, 1203]) {
   })
 }
 
-test('search beyond 500, literal punctuation, source filters and page reset', async ({ page, context }) => {
+test('search beyond 500, literal punctuation, source filters and page reset', { tag: '@smoke' }, async ({ page, context }) => {
   const state = await backend(context, [], Array.from({ length: 1101 }, (_, i) => lead(i + 1)))
   state.leads[0].company = 'Rare %,_("job")'
   await signIn(page)

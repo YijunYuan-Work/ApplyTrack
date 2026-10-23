@@ -27,18 +27,26 @@ npm test
 npm run test:audit
 npm run test:auth-ui
 npm run test:audit-ui -- --project chromium
+npm run test:smoke-ui
 # Optional cross-engine local gate (all three configured engines):
 npm run test:audit-ui
 npm run lint
 npm run build
 ```
 
-Run Auth and functional invocations sequentially; they share Vite's dependency
+Run Auth, functional and smoke invocations sequentially; they share Vite's dependency
 cache. Auth owns port 5193 and runs one Chromium worker. Functional tests own port
 5195, default to one local worker and use two workers in CI. Files can run
-concurrently, but cases within a file remain serial. Neither suite reuses an
-existing server. There are currently 241 Chromium functional cases and 12 Auth
-cases, with no configured retries. Each test has isolated context/backend state.
+concurrently, but cases within a file remain serial. Smoke owns port 5195 and uses
+one worker for 7 existing `@smoke` cases each in Firefox and WebKit. None of the
+suites reuses an existing server. There are still 241 Chromium functional cases
+and 12 Auth cases, with no configured retries. Each test has isolated
+context/backend state. Verify the selection without running tests:
+
+```powershell
+npm run test:smoke-ui -- --project=firefox --list
+npm run test:smoke-ui -- --project=webkit --list
+```
 
 Never supply production credentials. Functional browser requests outside the
 local Vite origin are intercepted: the backend at `127.0.0.1:54399` is mocked and
@@ -92,15 +100,16 @@ Storage object recovery or production migration/deployment readiness.
 
 ## CI And Evidence
 
-Both suites preserve the console list reporter and generate native HTML reports
+All three suites preserve the console list reporter and generate native HTML reports
 without opening a browser automatically. Outputs are Git-ignored and isolated:
 
 | Suite | HTML report | Raw test output | CI artifact |
 | --- | --- | --- | --- |
 | Functional | `playwright-report/functional/` | `test-results/functional/` | `playwright-functional-report` |
 | Authentication | `playwright-report/auth/` | `test-results/auth/` | `playwright-auth-report` |
+| Firefox/WebKit smoke | `playwright-report/smoke/` | `test-results/smoke/` | `playwright-smoke-report` |
 
-Running one suite cannot clear the other's report or raw evidence. A rerun of the
+Running one suite cannot clear another's report or raw evidence. A rerun of the
 **same** suite replaces that suite's local report; copy it to an ignored directory
 first if you need to preserve a previous run. Existing tests sometimes also write
 ad hoc screenshots under ignored `tmp/`; only attached/copied report evidence and
@@ -114,6 +123,7 @@ After running the relevant suite:
 npx playwright show-report playwright-report/functional --host 127.0.0.1
 # Stop that viewer with Ctrl+C before viewing the other report on its default port:
 npx playwright show-report playwright-report/auth --host 127.0.0.1
+npx playwright show-report playwright-report/smoke --host 127.0.0.1
 ```
 
 In the report, inspect the status/duration and open a test for source, steps,
@@ -125,7 +135,7 @@ are produced by selected tests, not promised for every test.
 ### Download CI Evidence
 
 Open this repository's **Actions > CI > the PR run**, verify its commit SHA and
-scroll to **Artifacts**. Download and extract the functional or Auth artifact,
+scroll to **Artifacts**. Download and extract the functional, Auth or smoke artifact,
 then point `npx playwright show-report` at the extracted folder containing
 `index.html`. Keep the `data/` folder beside it for attachments. Opening through
 the local viewer is preferable to double-clicking `index.html`.
@@ -139,13 +149,13 @@ npx playwright show-trace "path/to/extracted/functional/failed-test/trace.zip" -
 
 Inspect the failed action/assertion, DOM snapshot and synthetic network responses.
 This local viewer needs no public upload or report-hosting service. Trace paths
-vary by test and browser; Auth traces are under the `auth/` subtree instead.
+vary by test and browser; Auth/smoke traces use the `auth/` and `smoke/` subtrees.
 
-Both HTML uploads use `if: always()`, so earlier test failures and skipped later
+All three HTML uploads use `if: always()`, so earlier test failures and skipped later
 test/build steps do not prevent uploading an already generated report. No report
 can be uploaded for a suite that never started or failed before generating one;
 missing files are ignored rather than represented as passing results. Raw failure
-evidence still uploads on job failure. All three artifacts expire after three days.
+evidence still uploads on job failure. All four artifacts expire after three days.
 
 Use only synthetic fixture data. Never commit or upload traces from real accounts,
 session credentials, private resumes, mail or production environments. Synthetic
@@ -155,9 +165,11 @@ report generation alone does not prove GitHub's artifact-upload step succeeded;
 check the actual run and downloaded artifact before making that claim.
 
 Every PR and push to `main` runs lint, Unit, Audit, the separate 12-case Auth suite,
-the complete 241-case Chromium functional suite (two workers), and build.
-Firefox/WebKit, SQL/Docker and native Deno checks remain local gates; no critical
-Chromium coverage is deferred to `main`. See [CI](../../.github/workflows/ci.yml),
+the complete 241-case Chromium functional suite (two workers), 7 smoke cases each
+in Firefox and WebKit (one worker), and build. Full Firefox/WebKit, SQL/Docker and
+native Deno checks remain local gates; no critical Chromium coverage is deferred
+to `main`. See [CI](../../.github/workflows/ci.yml),
 [functional config](../../playwright.audit.config.js) and
-[Auth config](../../playwright.auth.config.js). The
+[Auth config](../../playwright.auth.config.js) and
+[smoke config](../../playwright.smoke.config.js). The
 [QA case study](../../docs/QA_AUTOMATION.md) explains three representative test designs.
