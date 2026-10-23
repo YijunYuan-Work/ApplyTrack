@@ -48,7 +48,7 @@ test('preserves support for legacy .xls workbooks', async () => {
   assert.equal(applications[0].company, 'Old format Co')
 })
 
-test('F08: historical imports use only valid explicit rejection dates, never applied/updated/import day', async () => {
+test('Excel import: historical imports use only valid explicit rejection dates, never applied/updated/import day', async () => {
   for (const type of ['xlsx', 'biff8']) {
     const rows = await parseExcelApplications(spreadsheetFile([
       ['Company', 'Role', 'Status', 'Applied Date', 'Last Updated', 'Rejection Date'],
@@ -67,14 +67,14 @@ test('F08: historical imports use only valid explicit rejection dates, never app
   assert.equal(legacy.rejectedDate, null)
 })
 
-test('F08: typed Excel rejection dates preserve their calendar components', async () => {
+test('Excel import: typed Excel rejection dates preserve their calendar components', async () => {
   const [row] = await parseExcelApplications(spreadsheetFile([
     ['Company', 'Role', 'Rejected Date'], ['Explicit', 'Engineer', new Date(2024, 1, 29)],
   ]))
   assert.equal(row.rejectedDate, '2024-02-29')
 })
 
-test('RF-03: Excel notes retain labels and whitespace through the production row mappers', async () => {
+test('Excel import: Excel notes retain labels and whitespace through the production row mappers', async () => {
   const notes = '  Cover letter: Yes\n\nReferral: No\nLast updated: interview pending  \n'
   for (const bookType of ['xlsx', 'biff8']) {
     const [parsed] = await parseExcelApplications(spreadsheetFile([

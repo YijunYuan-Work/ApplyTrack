@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { readFile } from 'node:fs/promises'
 import { createContext, SourceTextModule, SyntheticModule } from 'node:vm'
-import { harness } from '../edge.test.mjs'
+import { harness } from '../../services/job-alert-handler.test.mjs'
 
 const exec = promisify(execFile)
 const container = process.env.RF05_TEST_CONTAINER
@@ -68,7 +68,7 @@ async function snapshot() {
   return sql("select jsonb_build_object('leads',(select count(*) from public.job_leads),'receipt',(select last_received_at from public.job_alert_inboxes where id=501))")
 }
 
-test('RF-05 real SQL setup and service-only invoker RPC access', async () => {
+test('Job alert SQL: real SQL setup and service-only invoker RPC access', async () => {
   await sql("grant usage on schema public to service_role; grant select,insert,update on public.job_alert_inboxes,public.job_alert_messages to service_role; grant usage,select on sequence public.job_alert_messages_id_seq,public.job_alert_inboxes_id_seq to service_role; insert into public.job_alert_inboxes(id,user_id,address_alias) values(501,'" + owner + "','" + 'a'.repeat(32) + "')", 'supabase_admin')
   for (const signature of ['claim_job_alert_message(bigint,text,text,text,timestamptz,text)', 'finish_job_alert_message(bigint,uuid,bigint,text,jsonb)']) {
     const result = await sql("select jsonb_build_object('anon',has_function_privilege('anon'," + quote('public.' + signature) + ",'EXECUTE'),'authenticated',has_function_privilege('authenticated'," + quote('public.' + signature) + ",'EXECUTE'),'service',has_function_privilege('service_role'," + quote('public.' + signature) + ",'EXECUTE'),'definer',(select prosecdef from pg_proc where oid=" + quote('public.' + signature) + "::regprocedure))")
@@ -93,7 +93,7 @@ test('RF-05 real SQL setup and service-only invoker RPC access', async () => {
     create trigger audit_alert_fault before update on public.job_alert_messages for each row execute function public.audit_alert_fault();`, 'supabase_admin')
 })
 
-test('RF-05 actual handler + SQL: each write failure rolls back the transaction and retries', async () => {
+test('Job alert SQL: actual handler + SQL: each write failure rolls back the transaction and retries', async () => {
   for (const table of ['job_leads', 'job_alert_inboxes', 'job_alert_messages']) {
     const h = await fixture('rf05-failure-' + table)
     h.email.html = h.email.html.replace('/123', '/' + (10001 + ['job_leads', 'job_alert_inboxes', 'job_alert_messages'].indexOf(table)))
@@ -109,7 +109,7 @@ test('RF-05 actual handler + SQL: each write failure rolls back the transaction 
   }
 })
 
-test('RF-05 actual handler + SQL: concurrent failed retries, lease takeover and stale-worker fencing', async () => {
+test('Job alert SQL: actual handler + SQL: concurrent failed retries, lease takeover and stale-worker fencing', async () => {
   const h = await fixture('rf05-concurrent')
   h.state.retrieveFailed = true
   assert.equal((await h.handler(h.request())).status, 500)
@@ -139,7 +139,7 @@ async function waitFor(check) {
   }
 }
 
-test('RF-05 actual handler + SQL: eight simultaneous initial claims and Failed retries overlap at a lock', async () => {
+test('Job alert SQL: actual handler + SQL: eight simultaneous initial claims and Failed retries overlap at a lock', async () => {
   await sql('create table public.audit_claim_gate(released boolean); insert into public.audit_claim_gate values(false)', 'supabase_admin')
   for (const retry of [false, true]) {
     const h = await fixture('rf05-overlap-' + retry)
@@ -183,7 +183,7 @@ test('RF-05 actual handler + SQL: eight simultaneous initial claims and Failed r
   }
 })
 
-test('RF-05 actual handler + SQL: metadata refresh preserves applied and expired leads', async () => {
+test('Job alert SQL: actual handler + SQL: metadata refresh preserves applied and expired leads', async () => {
   for (const state of ['applied', 'expired']) {
     const h = await fixture('rf05-terminal-' + state)
     await sql("update public.job_leads set state=" + quote(state) + " where user_id=" + quote(owner) + " and source='linkedin' and external_id='123'")
@@ -192,7 +192,7 @@ test('RF-05 actual handler + SQL: metadata refresh preserves applied and expired
   }
 })
 
-test('RF-05 actual handler + SQL: Indeed salary, metadata and creation/update counts remain supported', async () => {
+test('Job alert SQL: actual handler + SQL: Indeed salary, metadata and creation/update counts remain supported', async () => {
   const h = await fixture('rf05-indeed')
   h.email.from = 'jobs@indeed.com'
   h.email.html = '<section><a href="https://ca.indeed.com/viewjob?jk=rf05indeed">Data Analyst</a><p>Synthetic Indeed</p><p>Toronto, Ontario</p><p>$90,000 - $120,000 a year</p><p>Remote</p></section>'
@@ -207,7 +207,7 @@ test('RF-05 actual handler + SQL: Indeed salary, metadata and creation/update co
   assert.deepEqual(counts, { created: 0, updated: 1, found: 1 })
 })
 
-test('RF-05 actual handler + SQL: failed failure-release writes expire and legacy Processing is reclaimable', async () => {
+test('Job alert SQL: actual handler + SQL: failed failure-release writes expire and legacy Processing is reclaimable', async () => {
   const h = await fixture('rf05-release-failure')
   h.state.retrieveFailed = true
   await sql("insert into public.audit_alert_fault values('failure_release')", 'supabase_admin')
@@ -222,7 +222,7 @@ test('RF-05 actual handler + SQL: failed failure-release writes expire and legac
   assert.equal((await legacy.handler(legacy.request())).status, 200)
 })
 
-test('RF-05 actual handler + SQL: unknown and empty alerts require successful terminal writes', async () => {
+test('Job alert SQL: actual handler + SQL: unknown and empty alerts require successful terminal writes', async () => {
   for (const provider of ['unknown', 'linkedin']) {
     const h = await fixture('rf05-empty-' + provider)
     h.email.from = provider === 'unknown' ? 'newsletter@example.invalid' : 'jobs@linkedin.com'
@@ -237,7 +237,7 @@ test('RF-05 actual handler + SQL: unknown and empty alerts require successful te
   }
 })
 
-test('RF-05 real SQL: null/stale tokens cannot commit and inbox mismatches roll back', async () => {
+test('Job alert SQL: real SQL: null/stale tokens cannot commit and inbox mismatches roll back', async () => {
   await sql("insert into public.job_alert_messages(user_id,resend_email_id,status) values(" + quote(owner) + ",'rf05-null-token','processing')")
   const row = await sql("select jsonb_build_object('id',id) from public.job_alert_messages where resend_email_id='rf05-null-token'")
   await assert.rejects(sql("select public.finish_job_alert_message(" + row.id + ",null,501,'unknown','[]')"), /lease is no longer valid/)
@@ -251,7 +251,7 @@ test('RF-05 real SQL: null/stale tokens cannot commit and inbox mismatches roll 
   }
 })
 
-test('RF-05 actual client initialization + SQL: concurrent callers return one existing alias unchanged', async () => {
+test('Job alert SQL: actual client initialization + SQL: concurrent callers return one existing alias unchanged', async () => {
   let entered = 0, release
   const gate = new Promise((resolve) => { release = resolve })
   const userId = '00000000-0000-4000-8000-000000000002'
@@ -280,7 +280,7 @@ test('RF-05 actual client initialization + SQL: concurrent callers return one ex
   assert.equal((await module.namespace.createJobAlertInbox(userId)).enabled, false)
 })
 
-test('RF-06 actual handler + SQL: ingestion and conversion serialize in both lock orders', async () => {
+test('Job alert SQL: actual handler + SQL: ingestion and conversion serialize in both lock orders', async () => {
   await sql('create table public.audit_state_gate(released boolean); insert into public.audit_state_gate values(false); grant select on public.audit_state_gate to authenticated,service_role', 'supabase_admin')
   const gate = `do $$ begin while not (select released from public.audit_state_gate) loop perform pg_sleep(0.05); end loop; end; $$;`
   for (const conversionFirst of [true, false]) {

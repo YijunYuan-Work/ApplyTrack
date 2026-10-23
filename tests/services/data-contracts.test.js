@@ -14,7 +14,7 @@ export function workbookFile(rows, extraRows) {
   return { name: 'audit.xlsx', size: bytes.length, arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) }
 }
 
-test('RF-03 F02/F03: API mapper preserves legitimate note labels and accepts null notes', () => {
+test('Data contracts: API mapper preserves legitimate note labels and accepts null notes', () => {
   const row = { id: 1, company: 'Synthetic', role: 'Engineer', notes: 'Cover letter: Yes\nReferral: No\nLast updated: interview pending\nKeep this', cover_letter: 'No', referral: 'Yes', last_updated: '2026-01-01' }
   assert.equal(fromApplicationRow(row).notes, row.notes)
   assert.equal(fromApplicationRow({ ...row, notes: null }).notes, '')
@@ -68,7 +68,7 @@ test('Job presentation: optional salary, deduplicated chips, annual and hourly s
   assert.match(getJobLeadPresentation({ description: '$40 per hour' }).salaryLabel, /40 per hour/)
 })
 
-test('RF-15 F15: shorthand salary is never truncated to dollar-sized amounts', () => {
+test('Data contracts: shorthand salary is never truncated to dollar-sized amounts', () => {
   const result = getJobLeadPresentation({ description: '$90k - $120k a year' })
   assert.equal(result.salaryLabel, '$90k - $120k a year')
   assert.equal(result.summary, '')

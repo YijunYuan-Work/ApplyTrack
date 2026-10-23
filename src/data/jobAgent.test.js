@@ -70,7 +70,7 @@ test('sortJobLeadsNewestFirst orders leads by import date with newest first', ()
 })
 
 for (const [text, minimum, maximum, period] of salaryCases) {
-  test(`RF-15: complete salary expression ${text}`, () => {
+  test(`Salary parsing: complete salary expression ${text}`, () => {
     assert.deepEqual(parseSalaryText(text), { minimum, maximum, period, matchedText: text })
     const presentation = getJobLeadPresentation({ description: `${text} · Build tools` })
     assert.equal(presentation.salaryLabel, text)
@@ -79,7 +79,7 @@ for (const [text, minimum, maximum, period] of salaryCases) {
 }
 
 for (const text of rejectedSalaryCases) {
-  test(`RF-15: reject without salvaging or stripping ${text}`, () => {
+  test(`Salary parsing: reject without salvaging or stripping ${text}`, () => {
     assert.equal(parseSalaryText(text), null)
     const presentation = getJobLeadPresentation({ description: `Build tools · ${text} · Keep details` })
     assert.equal(presentation.salaryLabel, null)
@@ -87,7 +87,7 @@ for (const text of rejectedSalaryCases) {
   })
 }
 
-test('RF-15: structured bounds take precedence without fabricating currency or units', () => {
+test('Salary parsing: structured bounds take precedence without fabricating currency or units', () => {
   assert.equal(getJobLeadPresentation({ salaryMin: 95000, salaryMax: 125000 }).salaryLabel, '95,000 - 125,000')
   assert.equal(getJobLeadPresentation({ salaryMax: '125000.50' }).salaryLabel, '125,000.5')
   assert.equal(getJobLeadPresentation({ salaryMin: 0, salaryMax: 125000 }).salaryLabel, '0 - 125,000')
@@ -108,7 +108,7 @@ test('RF-15: structured bounds take precedence without fabricating currency or u
   }
 })
 
-test('RF-15: salary extraction retains surrounding prose and does not infer an annual period', () => {
+test('Salary parsing: salary extraction retains surrounding prose and does not infer an annual period', () => {
   const value = getJobLeadPresentation({ description: 'Competitive pay $100k with benefits · Build tools' })
   assert.equal(value.salaryLabel, '$100k')
   assert.equal(value.summary, 'Competitive pay with benefits · Build tools')
@@ -118,7 +118,7 @@ test('RF-15: salary extraction retains surrounding prose and does not infer an a
   })
 })
 
-test('RF-15: decimal shorthand expands exactly, without floating point salary noise', () => {
+test('Salary parsing: decimal shorthand expands exactly, without floating point salary noise', () => {
   for (let whole = 1; whole < 100; whole += 1) {
     for (let fraction = 1; fraction < 100; fraction += 1) {
       const text = `$${whole}.${String(fraction).padStart(2, '0')}k a year`

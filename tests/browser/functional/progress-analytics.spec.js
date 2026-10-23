@@ -7,7 +7,7 @@ const day = (page, date) => page.locator('.calendar-day').filter({ has: page.loc
 const totals = (page) => page.locator('.progress-summary strong')
 
 for (const width of [1440, 768, 390]) {
-  test(`G03: Real/Demo Progress parity and rendered outcomes/calendar at ${width}px`, { tag: width === 768 ? ['@smoke'] : [] }, async ({ page, context }, info) => {
+  test(`Progress: Real/Demo Progress parity and rendered outcomes/calendar at ${width}px`, { tag: width === 768 ? ['@smoke'] : [] }, async ({ page, context }, info) => {
     const state = await backend(context, demoApplications.map((row) => ({ ...toApplicationRow(row, '00000000-0000-4000-8000-000000000001'), id: row.id })))
     await page.setViewportSize({ width, height: 900 })
     await signIn(page)
@@ -46,7 +46,7 @@ for (const width of [1440, 768, 390]) {
   })
 }
 
-test('G03: invalid dates do not crash Progress or choose a phantom latest week', async ({ page, context }) => {
+test('Progress: invalid dates do not crash Progress or choose a phantom latest week', async ({ page, context }) => {
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
   await backend(context, [application(1, { applied_date: '2024-02-29' }),
@@ -63,7 +63,7 @@ test('G03: invalid dates do not crash Progress or choose a phantom latest week',
   expect(errors).toEqual([])
 })
 
-test('G03: year/month navigation and Applied plus Rejected on the same local day', async ({ page, context }) => {
+test('Progress: year/month navigation and Applied plus Rejected on the same local day', async ({ page, context }) => {
   await backend(context, [application(1, { applied_date: '2025-12-31', status: 'Rejected', rejected_date: '2026-01-01' }),
     application(2, { applied_date: '2026-01-01', status: 'Rejected', rejected_date: '2026-01-01' }),
     application(3, { applied_date: '2026-01-04' })])
@@ -80,7 +80,7 @@ test('G03: year/month navigation and Applied plus Rejected on the same local day
   await expect(page.locator('.calendar-range p')).toHaveText('1 events this week')
 })
 
-test('G03: undated nonempty dataset uses local today and empty dataset preserves the empty state', async ({ page, context }) => {
+test('Progress: undated nonempty dataset uses local today and empty dataset preserves the empty state', async ({ page, context }) => {
   await page.clock.setFixedTime(new Date('2026-01-04T12:00:00Z'))
   const state = await backend(context, [application(1, { applied_date: null })])
   await signIn(page)
@@ -94,7 +94,7 @@ test('G03: undated nonempty dataset uses local today and empty dataset preserves
   await expect(page.getByText('No applications to show yet.', { exact: true })).toBeVisible()
 })
 
-test('G03: phone day expansion reveals all events without changing totals', async ({ page, context }) => {
+test('Progress: phone day expansion reveals all events without changing totals', async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 900 })
   await backend(context, Array.from({ length: 5 }, (_, index) => application(index + 1, { applied_date: '2024-02-29' })))
   await signIn(page)

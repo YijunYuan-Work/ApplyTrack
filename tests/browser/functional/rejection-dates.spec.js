@@ -36,7 +36,7 @@ async function edit(page, company = 'Synthetic 1') {
   await expect(page.getByRole('heading', { name: 'Edit application', exact: true })).toBeVisible()
 }
 
-test('F08: legacy NULL remains unknown through note edits, repeated Rejected and reopening', async ({ page, context }) => {
+test('Rejection dates: legacy NULL remains unknown through note edits, repeated Rejected and reopening', async ({ page, context }) => {
   const state = await start(page, context, { status: 'Rejected', last_updated: '2025-12-31' })
   await calendar(page, null)
   await nav(page, 'Dashboard')
@@ -54,7 +54,7 @@ test('F08: legacy NULL remains unknown through note edits, repeated Rejected and
   expect(state.applications[0].rejected_date).toBeNull()
 })
 
-test('F08: first rejection uses local operation day, preserves Applied date, and repeated updates retain it', async ({ page, context }) => {
+test('Rejection dates: first rejection uses local operation day, preserves Applied date, and repeated updates retain it', async ({ page, context }) => {
   const state = await start(page, context)
   await page.clock.setFixedTime(new Date('2026-01-10T04:30:00Z')) // Still January 9 in Toronto.
   await control(page).selectOption('Rejected')
@@ -70,7 +70,7 @@ test('F08: first rejection uses local operation day, preserves Applied date, and
   await calendar(page, '2026-01-09')
 })
 
-test('F08: full-form rejection, salary edit, reopen and re-entry retain only the latest event', async ({ page, context }) => {
+test('Rejection dates: full-form rejection, salary edit, reopen and re-entry retain only the latest event', async ({ page, context }) => {
   const state = await start(page, context)
   await edit(page)
   await page.locator('form').getByRole('combobox', { name: 'Status', exact: true }).selectOption('Rejected')
@@ -98,7 +98,7 @@ test('F08: full-form rejection, salary edit, reopen and re-entry retain only the
   await expect(page.locator('.calendar-event-rejected')).toHaveCount(0)
 })
 
-test('F08: failed quick write adds no event; a later retry records its own operation day', async ({ page, context }) => {
+test('Rejection dates: failed quick write adds no event; a later retry records its own operation day', async ({ page, context }) => {
   const state = await start(page, context)
   state.controlStatus = true
   await control(page).selectOption('Rejected')
@@ -114,7 +114,7 @@ test('F08: failed quick write adds no event; a later retry records its own opera
 })
 
 for (const path of ['quick', 'form']) {
-  test(`F08: lost ${path} response reconciles/reads canonical date and next-day retry cannot restamp`, async ({ page, context }) => {
+  test(`Rejection dates: lost ${path} response reconciles/reads canonical date and next-day retry cannot restamp`, async ({ page, context }) => {
     const state = await start(page, context)
     state.controlStatus = path === 'quick'
     state.controlSaves = path === 'form'
@@ -144,7 +144,7 @@ for (const path of ['quick', 'form']) {
 }
 
 for (const commitFirst of ['quick', 'form']) {
-  test(`F08: concurrent note edit and rejection preserve date when ${commitFirst} commits first`, async ({ page, context }) => {
+  test(`Rejection dates: concurrent note edit and rejection preserve date when ${commitFirst} commits first`, async ({ page, context }) => {
     const state = await start(page, context)
     state.controlStatus = true
     state.controlSaves = true
@@ -177,7 +177,7 @@ for (const commitFirst of ['quick', 'form']) {
   })
 }
 
-test('F08: a full-form rejection conflict re-reads already-Rejected state rather than replacing another transition day', async ({ page, context }) => {
+test('Rejection dates: a full-form rejection conflict re-reads already-Rejected state rather than replacing another transition day', async ({ page, context }) => {
   const state = await start(page, context)
   state.controlSaves = true
   await edit(page)
@@ -194,7 +194,7 @@ test('F08: a full-form rejection conflict re-reads already-Rejected state rather
   await calendar(page, '2026-01-08')
 })
 
-test('F08: quick rejection conflict preserves a concurrent canonical transition day', async ({ page, context }) => {
+test('Rejection dates: quick rejection conflict preserves a concurrent canonical transition day', async ({ page, context }) => {
   const state = await start(page, context)
   state.controlStatus = true
   await control(page).selectOption('Rejected')
@@ -208,7 +208,7 @@ test('F08: quick rejection conflict preserves a concurrent canonical transition 
   await calendar(page, '2026-01-08')
 })
 
-test('F08: a late quick response cannot replace a newer full-form rejection date', async ({ page, context }) => {
+test('Rejection dates: a late quick response cannot replace a newer full-form rejection date', async ({ page, context }) => {
   const state = await start(page, context)
   state.controlStatus = true
   await control(page).selectOption('Rejected')
@@ -230,7 +230,7 @@ test('F08: a late quick response cannot replace a newer full-form rejection date
   await calendar(page, '2026-01-12')
 })
 
-test('F08: an uncommitted full-form failure does not stamp history and a later retry uses its new day', async ({ page, context }) => {
+test('Rejection dates: an uncommitted full-form failure does not stamp history and a later retry uses its new day', async ({ page, context }) => {
   const state = await start(page, context)
   state.controlSaves = true
   await edit(page)
@@ -246,7 +246,7 @@ test('F08: an uncommitted full-form failure does not stamp history and a later r
   await calendar(page, '2026-01-10')
 })
 
-test('F08: a delayed full rejection response cannot hide a later reopened canonical date', async ({ page, context }) => {
+test('Rejection dates: a delayed full rejection response cannot hide a later reopened canonical date', async ({ page, context }) => {
   const state = await start(page, context)
   state.controlSaves = true
   await edit(page)
@@ -263,7 +263,7 @@ test('F08: a delayed full rejection response cannot hide a later reopened canoni
   expect(state.applications[0].status).toBe('Interview')
 })
 
-test('F08: old-session rejection response and queued work cannot modify a new workspace', async ({ page, context }) => {
+test('Rejection dates: old-session rejection response and queued work cannot modify a new workspace', async ({ page, context }) => {
   const state = await start(page, context)
   state.controlStatus = true
   await control(page).selectOption('Rejected')
@@ -281,7 +281,7 @@ test('F08: old-session rejection response and queued work cannot modify a new wo
   expect(state.applications[0].rejected_date).toBe('2025-12-31')
 })
 
-test('F08: creation/import keep unknown dates NULL while explicit Excel history appears in Calendar', async ({ page, context }) => {
+test('Rejection dates: creation/import keep unknown dates NULL while explicit Excel history appears in Calendar', async ({ page, context }) => {
   const state = await start(page, context)
   await nav(page, 'Add application')
   await page.getByLabel('Company', { exact: false }).fill('New rejected')
@@ -307,7 +307,7 @@ test('F08: creation/import keep unknown dates NULL while explicit Excel history 
 
 for (const mode of ['Real', 'Demo']) {
   for (const width of [1440, 390]) {
-    test(`F08: ${mode} reject/edit/reopen/reject calendar semantics at ${width}px`, async ({ page, context }) => {
+    test(`Rejection dates: ${mode} reject/edit/reopen/reject calendar semantics at ${width}px`, async ({ page, context }) => {
       await clock(page, '2026-08-01')
       const state = await backend(context, mode === 'Real' ? demoApplications.map((row, index) => application(index + 1, toApplicationRow(row, userId))) : [])
       await page.setViewportSize({ width, height: 900 })

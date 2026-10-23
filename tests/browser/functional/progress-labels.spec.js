@@ -81,7 +81,7 @@ async function expectReadableLabels(page) {
 
 for (const width of [1440, 768]) {
   for (const [distribution, counts] of Object.entries(distributions)) {
-    test(`UI-03: Pipeline labels do not collide at ${width}px with ${distribution}`, async ({
+    test(`Progress: Pipeline labels do not collide at ${width}px with ${distribution}`, async ({
       page,
       context,
     }, testInfo) => {
@@ -118,7 +118,7 @@ for (const width of [1440, 768]) {
   }
 }
 
-test('UI-03: packed labels follow live resizing, motion and keyboard/hover inspection', async ({
+test('Progress: packed labels follow live resizing, motion and keyboard/hover inspection', async ({
   page,
   context,
 }) => {

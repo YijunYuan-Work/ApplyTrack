@@ -42,7 +42,7 @@ test('CRUD, details, sorting, filtering, pagination and persisted refresh', { ta
   expect(state.blocked).toEqual([])
 })
 
-test('RF-03 F02/F03: role-only edits preserve notes and nullable rows load alongside valid rows', async ({ page, context }) => {
+test('Applications: role-only edits preserve notes and nullable rows load alongside valid rows', async ({ page, context }) => {
   const notes = '  Cover letter: Yes\r\nReferral: No\r\nLast updated: interview pending\r\n\r\nKeep this note  \r\n'
   const state = await backend(context, [application(1, { notes })])
   await signIn(page)
@@ -64,7 +64,7 @@ test('RF-03 F02/F03: role-only edits preserve notes and nullable rows load along
   expect(state.blocked).toEqual([])
 })
 
-test('CQ: dashboard round-based interview metric preserves its distinction from Progress for zero rounds', async ({ page, context }) => {
+test('Applications: dashboard round-based interview metric preserves its distinction from Progress for zero rounds', async ({ page, context }) => {
   await backend(context, [application(1, { status: 'Interview', interview_count: 0 })])
   await signIn(page)
   await expect(page.locator('.metric-card-interviews strong')).toHaveText('0')
@@ -73,7 +73,7 @@ test('CQ: dashboard round-based interview metric preserves its distinction from 
   await expect(page.locator('.progress-summary article').filter({ hasText: 'Reached interview' }).locator('strong')).toHaveText('1')
 })
 
-test('RF-10 F16: conversion, pagination, filtering and removal preserve truthful search feedback', async ({ page, context }) => {
+test('Applications: conversion, pagination, filtering and removal preserve truthful search feedback', async ({ page, context }) => {
   const state = await backend(context, [], Array.from({ length: 25 }, (_, i) => lead(i + 1)))
   await signIn(page)
   await page.goto('/#/job-agent/matches')
@@ -102,7 +102,7 @@ test('RF-10 F16: conversion, pagination, filtering and removal preserve truthful
 })
 
 for (const width of [390]) {
-  test(`RF-03: create and role-only edit preserve notes in authenticated and demo forms at ${width}px`, async ({ page, context }, info) => {
+  test(`Applications: create and role-only edit preserve notes in authenticated and demo forms at ${width}px`, async ({ page, context }, info) => {
     await page.setViewportSize({ width, height: 900 })
     const state = await backend(context)
     const notes = '  Cover letter: Yes\nReferral: No\n\nLast updated: interview pending  \n'
@@ -136,7 +136,7 @@ for (const width of [390]) {
   })
 }
 
-test('F13: whitespace required fields show actionable errors and focus Company', async ({ page, context }) => {
+test('Applications: whitespace required fields show actionable errors and focus Company', async ({ page, context }) => {
   const state = await backend(context)
   await signIn(page)
   await nav(page, 'Add application')
@@ -149,7 +149,7 @@ test('F13: whitespace required fields show actionable errors and focus Company',
   expect(state.requests.filter((request) => request.table === 'applications' && request.method === 'POST')).toHaveLength(0)
 })
 
-test('F14: delayed save preserves deliberately chosen Progress navigation', async ({ page, context }) => {
+test('Applications: delayed save preserves deliberately chosen Progress navigation', async ({ page, context }) => {
   const state = await backend(context)
   state.holdInserts = true
   await signIn(page)
@@ -167,7 +167,7 @@ test('F14: delayed save preserves deliberately chosen Progress navigation', asyn
   await expect(page.getByText('Pending fixture', { exact: true })).toBeVisible()
 })
 
-test('F08: editing Notes preserves the known historical rejection week', async ({ page, context }) => {
+test('Applications: editing Notes preserves the known historical rejection week', async ({ page, context }) => {
   await page.clock.setFixedTime(new Date('2026-01-09T17:00:00Z'))
   const state = await backend(context, [application(1, { status: 'Rejected', applied_date: '2025-12-30', last_updated: '2025-12-31', rejected_date: '2025-12-31' })])
   await signIn(page)

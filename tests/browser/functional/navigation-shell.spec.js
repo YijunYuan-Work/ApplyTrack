@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { application, backend, nav, noOverflow, signIn } from './fixtures.js'
 
-test('UI-01: canonical shell geometry, fonts, tooltips, Add and browser history', async ({ page, context }, info) => {
+test('Navigation: canonical shell geometry, fonts, tooltips, Add and browser history', async ({ page, context }, info) => {
   test.setTimeout(60000)
   const state = await backend(context, [application(1)])
   await signIn(page)
@@ -70,7 +70,7 @@ test('UI-01: canonical shell geometry, fonts, tooltips, Add and browser history'
   await info.attach('shell-geometry', { body:JSON.stringify(evidence), contentType:'application/json' })
 })
 
-test('UI-01: navigation indicator travels to the active destination without remounting page data', async ({ page, context }) => {
+test('Navigation: navigation indicator travels to the active destination without remounting page data', async ({ page, context }) => {
   await page.addInitScript(() => {
     const animate = Element.prototype.animate
     window.shellAnimationEvidence = []

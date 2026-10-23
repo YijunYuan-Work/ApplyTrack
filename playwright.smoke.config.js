@@ -1,4 +1,4 @@
-import base from './playwright.audit.config.js'
+import base from './playwright.functional.config.js'
 
 export default {
   ...base,

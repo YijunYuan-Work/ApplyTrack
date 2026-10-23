@@ -26,16 +26,16 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
-      - name: Isolated source and Edge audit characterizations
-        run: npm run test:audit
+      - name: Service and source contracts
+        run: npm run test:contracts
       - name: Install browsers for isolated UI tests
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Test authentication UI with synthetic backend
-        run: npm run test:auth-ui
+        run: npm run test:auth
       - name: Synthetic functional audit (Chromium)
-        run: npm run test:audit-ui -- --project chromium
+        run: npm run test:browser -- --project chromium
       - name: Cross-browser smoke (Firefox and WebKit)
-        run: npm run test:smoke-ui
+        run: npm run test:smoke
       - name: Build
         run: npm run build
       - name: Preserve functional HTML report

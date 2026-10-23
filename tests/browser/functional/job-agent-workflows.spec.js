@@ -73,7 +73,7 @@ async function inboxService(context, initial = null) {
   return service
 }
 
-test('UI-04: opening the original posting does not claim submission or change the queue', async ({
+test('Job Agent: opening the original posting does not claim submission or change the queue', async ({
   page,
   context,
 }) => {
@@ -95,7 +95,7 @@ test('UI-04: opening the original posting does not claim submission or change th
   expect(state.blocked).toEqual([])
 })
 
-test('UI-04: failed inbox creation keeps setup retryable and prevents duplicate requests', async ({
+test('Job Agent: failed inbox creation keeps setup retryable and prevents duplicate requests', async ({
   page,
   context,
 }) => {
@@ -117,7 +117,7 @@ test('UI-04: failed inbox creation keeps setup retryable and prevents duplicate 
   expect(service.writes).toHaveLength(2)
 })
 
-test('UI-04: old clipboard completion cannot mark a replacement address as copied', async ({
+test('Job Agent: old clipboard completion cannot mark a replacement address as copied', async ({
   page,
   context,
 }) => {
@@ -147,7 +147,7 @@ test('UI-04: old clipboard completion cannot mark a replacement address as copie
   ).toHaveCount(0)
 })
 
-test('UI-04: an old inbox response cannot replace a different user connection or announce success', async ({
+test('Job Agent: an old inbox response cannot replace a different user connection or announce success', async ({
   page,
   context,
 }) => {
@@ -172,7 +172,7 @@ test('UI-04: an old inbox response cannot replace a different user connection or
   expect(service.row.enabled).toBe(true)
 })
 
-test('UI-04: fractional CSS breakpoints and live resizing keep all card actions in bounds', async ({
+test('Job Agent: fractional CSS breakpoints and live resizing keep all card actions in bounds', async ({
   page,
   context,
 }) => {
@@ -215,7 +215,7 @@ test('UI-04: fractional CSS breakpoints and live resizing keep all card actions 
 })
 
 for (const width of [390, 768, 1440]) {
-  test(`UI-04: readable Setup/Matches, real salaries, focus and accessible geometry at ${width}px`, async ({
+  test(`Job Agent: readable Setup/Matches, real salaries, focus and accessible geometry at ${width}px`, async ({
     page,
     context,
   }, info) => {
@@ -335,7 +335,7 @@ for (const width of [390, 768, 1440]) {
   })
 }
 
-test('UI-04: inbox creation, pending/failure/retry, pause/resume and rotation keep confirmed feedback', async ({
+test('Job Agent: inbox creation, pending/failure/retry, pause/resume and rotation keep confirmed feedback', async ({
   page,
   context,
 }) => {
@@ -372,7 +372,7 @@ test('UI-04: inbox creation, pending/failure/retry, pause/resume and rotation ke
   expect(state.blocked).toEqual([])
 })
 
-test('UI-04: setup read failure is retryable, clipboard failures never claim success, copied address follows rotation', async ({
+test('Job Agent: setup read failure is retryable, clipboard failures never claim success, copied address follows rotation', async ({
   page,
   context,
 }) => {
@@ -420,7 +420,7 @@ test('UI-04: setup read failure is retryable, clipboard failures never claim suc
 })
 
 for (const outcome of ['success', 'failure', 'lost']) {
-  test(`UI-04: explicit conversion ${outcome}, cancellation and duplicate prevention`, async ({
+  test(`Job Agent: explicit conversion ${outcome}, cancellation and duplicate prevention`, async ({
     page,
     context,
   }) => {
@@ -469,7 +469,7 @@ for (const outcome of ['success', 'failure', 'lost']) {
   })
 }
 
-test('UI-04: late conversion cannot leak feedback or an Application into a new session', async ({
+test('Job Agent: late conversion cannot leak feedback or an Application into a new session', async ({
   page,
   context,
 }) => {
@@ -498,7 +498,7 @@ test('UI-04: late conversion cannot leak feedback or an Application into a new s
   expect(state.applications[0].user_id).toBe(userId)
 })
 
-test('UI-04: normal motion and Demo inbox/queue operations stay local and respect reduced motion', async ({
+test('Job Agent: normal motion and Demo inbox/queue operations stay local and respect reduced motion', async ({
   page,
   context,
 }) => {

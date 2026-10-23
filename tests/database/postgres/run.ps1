@@ -183,7 +183,7 @@ try {
     $env:RF05_TEST_CONTAINER = $name
     $env:RF05_TEST_DATABASE = $database
     try {
-      node --experimental-vm-modules --test (Join-Path $PSScriptRoot 'alert-handler.test.mjs')
+      node --experimental-vm-modules --test (Join-Path $PSScriptRoot 'job-alert-integration.test.mjs')
       if ($LASTEXITCODE -ne 0) { throw 'RF-05 real-handler/SQL tests failed.' }
     } finally {
       Remove-Item Env:RF05_TEST_CONTAINER -ErrorAction SilentlyContinue

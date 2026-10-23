@@ -49,7 +49,7 @@ export const importRows = [
 ]
 
 for (const width of [390, 768, 1440]) {
-  test(`UI-05: account, real preview, modal, focus and responsive geometry at ${width}px`, async ({
+  test(`Workspace pages: account, real preview, modal, focus and responsive geometry at ${width}px`, async ({
     page,
     context,
   }, info) => {
@@ -127,7 +127,7 @@ for (const width of [390, 768, 1440]) {
 }
 
 for (const width of [390, 768, 1440]) {
-  test(`UI-05: auth and recovered password states remain accessible at ${width}px`, async ({
+  test(`Workspace pages: auth and recovered password states remain accessible at ${width}px`, async ({
     page,
     context,
   }, info) => {
@@ -169,7 +169,7 @@ for (const width of [390, 768, 1440]) {
   })
 }
 
-test('UI-05: drag/drop reads actual rows; duplicate selection, cancellation, pending, failure and retry preserve data', async ({
+test('Workspace pages: drag/drop reads actual rows; duplicate selection, cancellation, pending, failure and retry preserve data', async ({
   page,
   context,
 }) => {
@@ -257,7 +257,7 @@ test('UI-05: drag/drop reads actual rows; duplicate selection, cancellation, pen
   expect(state.blocked).toEqual([])
 })
 
-test('UI-05: fractional Profile and Import layouts follow their structural breakpoints', async ({ page, context }) => {
+test('Workspace pages: fractional Profile and Import layouts follow their structural breakpoints', async ({ page, context }) => {
   const state = await backend(context)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await context.route('http://127.0.0.1:5195/account-frame', (route) => route.fulfill({
@@ -292,7 +292,7 @@ test('UI-05: fractional Profile and Import layouts follow their structural break
   expect(state.blocked).toEqual([])
 })
 
-test('UI-05: normal motion and hover/focus feedback remain deliberate', async ({
+test('Workspace pages: normal motion and hover/focus feedback remain deliberate', async ({
   page,
   context,
 }) => {
@@ -316,7 +316,7 @@ test('UI-05: normal motion and hover/focus feedback remain deliberate', async ({
 })
 
 for (const width of [390, 768, 1440]) {
-  test(`UI-05: whole-app visual consistency and reduced motion at ${width}px`, async ({
+  test(`Workspace pages: whole-app visual consistency and reduced motion at ${width}px`, async ({
     page,
     context,
   }, info) => {
@@ -414,7 +414,7 @@ for (const width of [390, 768, 1440]) {
   })
 }
 
-test('UI-05: invalid/oversize/missing-column files are retryable; real template downloads and XLS files parse', async ({
+test('Workspace pages: invalid/oversize/missing-column files are retryable; real template downloads and XLS files parse', async ({
   page,
   context,
 }, info) => {
@@ -480,7 +480,7 @@ test('UI-05: invalid/oversize/missing-column files are retryable; real template 
   expect(state.blocked).toEqual([])
 })
 
-test('UI-05: stale file parsing cannot replace a new preview after route navigation', async ({
+test('Workspace pages: stale file parsing cannot replace a new preview after route navigation', async ({
   page,
   context,
 }) => {
@@ -525,7 +525,7 @@ test('UI-05: stale file parsing cannot replace a new preview after route navigat
   await expect(page.getByText('Old file', { exact: true })).toHaveCount(0)
 })
 
-test('UI-05: Demo import and profile remain local, confirmed and account-free', async ({
+test('Workspace pages: Demo import and profile remain local, confirmed and account-free', async ({
   page,
   context,
 }) => {
@@ -549,7 +549,7 @@ test('UI-05: Demo import and profile remain local, confirmed and account-free', 
 })
 
 for (const recovered of [false, true]) {
-  test(`UI-05: ${recovered ? 'recovered' : 'profile'} password waits for the server, fails safely and retries`, async ({
+  test(`Workspace pages: ${recovered ? 'recovered' : 'profile'} password waits for the server, fails safely and retries`, async ({
     page,
     context,
   }) => {
@@ -599,7 +599,7 @@ for (const recovered of [false, true]) {
   })
 }
 
-test('UI-05: late import completion cannot leak success or records into a different session', async ({
+test('Workspace pages: late import completion cannot leak success or records into a different session', async ({
   page,
   context,
 }) => {
@@ -650,7 +650,7 @@ test('UI-05: late import completion cannot leak success or records into a differ
   expect(state.blocked).toEqual([])
 })
 
-test('UI-05: sign-in pending controls prevent duplicate submissions without optimistic success', async ({
+test('Workspace pages: sign-in pending controls prevent duplicate submissions without optimistic success', async ({
   page,
   context,
 }) => {

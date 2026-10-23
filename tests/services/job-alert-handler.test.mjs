@@ -115,7 +115,7 @@ test('Edge real Svix verification rejects forged signature and non-POST', async 
   assert.equal(state.retrievals, 0)
 })
 
-test('RF-15: typed HTML parsing preserves nested markup, entities and deduplication', async () => {
+test('Job alert ingestion: typed HTML parsing preserves nested markup, entities and deduplication', async () => {
   const h = await harness()
   h.email.html = `<article><div>
     <a href="https://www.linkedin.com/jobs/view/456?ref=alert&amp;source=email"><strong>QA &amp; Test Engineer</strong></a>
@@ -158,7 +158,7 @@ test('Edge valid ingestion completes; repeated message is idempotent', async () 
   assert.equal(state.retrievals, 1)
 })
 
-test('RF-15: signed ingestion persists expanded annual bounds, never hourly or unitless annual guesses', async () => {
+test('Job alert ingestion: signed ingestion persists expanded annual bounds, never hourly or unitless annual guesses', async () => {
   for (const [salary, minimum, maximum] of [
     ['$90k - $120k a year', 90000, 120000], ['$40 per hour', null, null],
     ['$100k', null, null], ['$120k - $90k a year', null, null],
@@ -174,7 +174,7 @@ test('RF-15: signed ingestion persists expanded annual bounds, never hourly or u
   }
 })
 
-test('RF-10 R04: removal is not suppression; only a later distinct alert recreates a lead', async () => {
+test('Job alert ingestion: removal is not suppression; only a later distinct alert recreates a lead', async () => {
   const h = await harness()
   assert.equal((await h.handler(h.request())).status, 200)
   const original = structuredClone(h.state.tables.job_leads[0])
@@ -203,7 +203,7 @@ test('Edge retrieval failure is retryable and does not create leads', async () =
   assert.equal(state.tables.job_alert_messages[0].status, 'completed')
 })
 
-test('RF-05: failed completion returns 500, rolls back leads and safely retries', async () => {
+test('Job alert ingestion: failed completion returns 500, rolls back leads and safely retries', async () => {
   const { handler, request, state } = await harness()
   state.completionFailed = true
   assert.equal((await handler(request())).status, 500)
@@ -216,7 +216,7 @@ test('RF-05: failed completion returns 500, rolls back leads and safely retries'
   assert.equal(state.retrievals, 2)
 })
 
-test('RF-05 metadata refresh never overwrites concurrently applied state', async () => {
+test('Job alert ingestion: metadata refresh never overwrites concurrently applied state', async () => {
   const { handler, request, state } = await harness()
   state.tables.job_leads.push({ id: 1, user_id: 'synthetic-user', source: 'linkedin', external_id: '123', state: 'new', discovered_at: '2026-01-01T00:00:00Z' })
   state.beforeFinish = () => Object.assign(state.tables.job_leads[0], { state: 'applied', application_id: 1234 })
@@ -236,7 +236,7 @@ test('Edge unsupported provider and wrong alias are ignored without lead creatio
   assert.equal(other.state.retrievals, 0)
 })
 
-test('RF-05: each critical database failure returns non-success and can retry', async () => {
+test('Job alert ingestion: each critical database failure returns non-success and can retry', async () => {
   for (const failure of ['claimFailed', 'leadWriteFailed', 'inboxWriteFailed', 'completionFailed']) {
     const h = await harness()
     h.state[failure] = true
@@ -248,7 +248,7 @@ test('RF-05: each critical database failure returns non-success and can retry', 
   }
 })
 
-test('RF-05: ignored and partial completion failures are not acknowledged', async () => {
+test('Job alert ingestion: ignored and partial completion failures are not acknowledged', async () => {
   for (const provider of ['unknown', 'linkedin']) {
     const h = await harness()
     h.email.from = provider === 'unknown' ? 'newsletter@example.invalid' : 'jobs@linkedin.com'
@@ -262,7 +262,7 @@ test('RF-05: ignored and partial completion failures are not acknowledged', asyn
   }
 })
 
-test('RF-05: failed failure-status write recovers via an expired lease', async () => {
+test('Job alert ingestion: failed failure-status write recovers via an expired lease', async () => {
   const h = await harness()
   h.state.retrieveFailed = h.state.failureWriteFailed = true
   assert.equal((await h.handler(h.request())).status, 500)
@@ -274,7 +274,7 @@ test('RF-05: failed failure-status write recovers via an expired lease', async (
   assert.equal(h.state.tables.job_alert_messages.length, 1)
 })
 
-test('RF-05: concurrent first delivery and Failed retries have a single worker', async () => {
+test('Job alert ingestion: concurrent first delivery and Failed retries have a single worker', async () => {
   for (const retry of [false, true]) {
     const h = await harness()
     if (retry) {
@@ -298,7 +298,7 @@ test('RF-05: concurrent first delivery and Failed retries have a single worker',
   }
 })
 
-test('RF-05: lease takeover fences a late worker and its failure handler', async () => {
+test('Job alert ingestion: lease takeover fences a late worker and its failure handler', async () => {
   const h = await harness()
   let release, entered
   const gate = new Promise((resolve) => { release = resolve })
@@ -315,7 +315,7 @@ test('RF-05: lease takeover fences a late worker and its failure handler', async
   assert.equal(h.state.tables.job_leads.length, 1)
 })
 
-test('RF-05: legacy Processing without a lease is reclaimable', async () => {
+test('Job alert ingestion: legacy Processing without a lease is reclaimable', async () => {
   const h = await harness()
   h.state.tables.job_alert_messages.push({ id: 1, resend_email_id: h.event.data.email_id,
     user_id: 'synthetic-user', status: 'processing', processing_started_at: null })
@@ -323,7 +323,7 @@ test('RF-05: legacy Processing without a lease is reclaimable', async () => {
   assert.equal(h.state.tables.job_alert_messages.length, 1)
 })
 
-test('RF-05: a lost response after successful commit does not undo completion', async () => {
+test('Job alert ingestion: a lost response after successful commit does not undo completion', async () => {
   const h = await harness()
   h.state.finishResponseLost = true
   assert.equal((await h.handler(h.request())).status, 500)

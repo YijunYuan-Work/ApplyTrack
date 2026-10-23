@@ -1,1 +1,1 @@
-tests/refinement-02/database/synthetic-getkey.sh text eol=lf
+tests/database/postgres/synthetic-getkey.sh text eol=lf

@@ -10,7 +10,7 @@ import { buildProgressPresentation, percentage } from './progressPresentation.js
 const record = (id, status = 'Applied', interviewCount = 0, date = '') => ({ id, company: `Company ${id}`, role: 'Engineer', status, interviewCount, date })
 const counts = (data) => Object.fromEntries(data.nodes.map(({ name, count }) => [name, count]))
 
-test('UI-03: outcome and conversion presentation derives from conserved branches, not interview rounds', () => {
+test('Progress: outcome and conversion presentation derives from conserved branches, not interview rounds', () => {
   const rows = [record(1, 'Interview', 0), record(2, 'Offer', 4), record(3, 'Rejected', 2), record(4, 'Rejected'), record(5)]
   const progress = buildProgressData(rows)
   const result = buildProgressPresentation(rows, progress)
@@ -20,7 +20,7 @@ test('UI-03: outcome and conversion presentation derives from conserved branches
   assert.equal(percentage(0, 0), 0)
 })
 
-test('UI-03: six weekly buckets use only valid applied dates and preserve month/year boundaries', () => {
+test('Progress: six weekly buckets use only valid applied dates and preserve month/year boundaries', () => {
   const rows = [record(1, 'Applied', 0, '2025-12-31'), record(2, 'Rejected', 0, '2026-01-01'), record(3, 'Applied', 0, '2026-01-04'),
     { ...record(4, 'Rejected', 0, '2026-02-30'), rejectedDate: '2099-01-01', lastUpdated: '2099-12-31' }]
   const before = structuredClone(rows)
@@ -32,7 +32,7 @@ test('UI-03: six weekly buckets use only valid applied dates and preserve month/
   assert.deepEqual(rows, before)
 })
 
-test('UI-03: sparse, empty, undated and leap-day datasets have finite truthful presentation', () => {
+test('Progress: sparse, empty, undated and leap-day datasets have finite truthful presentation', () => {
   for (const rows of [[], [record(1)], [record(1, 'Applied', 0, '2024-02-29')], [record(1, 'Offer')]]) {
     const result = buildProgressPresentation(rows, buildProgressData(rows), new Date(2026, 0, 4))
     assert.equal(result.weeks.length, 6)
@@ -55,7 +55,7 @@ function assertConservation({ nodes, links }) {
   })
 }
 
-test('G03: independently counted mixed stages preserve totals and conserve each Sankey branch', () => {
+test('Progress: independently counted mixed stages preserve totals and conserve each Sankey branch', () => {
   const input = [record(1), record(2, 'Applied', 2), record(3, 'Interview'), record(4, 'Interview', 3),
     record(5, 'Offer'), record(6, 'Offer', 2), record(7, 'Rejected'), record(8, 'Rejected', 1)]
   const { summary, data } = buildProgressData(input)
@@ -65,7 +65,7 @@ test('G03: independently counted mixed stages preserve totals and conserve each 
   assertConservation(data)
 })
 
-test('G03: stage/count matrix and every subset conserve flows without zero branches', () => {
+test('Progress: stage/count matrix and every subset conserve flows without zero branches', () => {
   const matrix = ['Applied', 'Interview', 'Offer', 'Rejected'].flatMap((status, i) =>
     [0, 1, 3].map((count, j) => record(i * 3 + j, status, count)),
   )
@@ -82,7 +82,7 @@ test('G03: stage/count matrix and every subset conserve flows without zero branc
   }
 })
 
-test('G03: empty datasets have zero summaries and no links', () => {
+test('Progress: empty datasets have zero summaries and no links', () => {
   const { data, summary } = buildProgressData([])
   assert.deepEqual(summary, { applications: 0, interviewEvents: 0, interviewedApplications: 0, offers: 0 })
   assert.deepEqual(counts(data), { Applications: 0 })
@@ -90,14 +90,14 @@ test('G03: empty datasets have zero summaries and no links', () => {
   assert.equal(buildCalendarEvents([]).size, 0)
 })
 
-test('G03: invalid rounds cannot poison Progress totals; no inferred completed rounds', () => {
+test('Progress: invalid rounds cannot poison Progress totals; no inferred completed rounds', () => {
   const { summary, data } = buildProgressData([record(1, 'Applied', Infinity), record(2, 'Applied', -2),
     record(3, 'Rejected', 'invalid'), record(4, 'Interview', NaN), record(5, 'Offer', null), record(6, 'Applied', '2')])
   assert.deepEqual(summary, { applications: 6, interviewEvents: 2, interviewedApplications: 3, offers: 1 })
   assertConservation(data)
 })
 
-test('G03: valid dates, century leap rules and ISO prefixes; malformed dates are excluded', () => {
+test('Progress: valid dates, century leap rules and ISO prefixes; malformed dates are excluded', () => {
   for (const date of ['2024-02-29', '2000-02-29', '0099-06-01', '2026-12-31']) {
     assert.equal(getDateKey(date), date)
     assert.equal(getLocalDateKey(getDateFromKey(date)), date)
@@ -109,7 +109,7 @@ test('G03: valid dates, century leap rules and ISO prefixes; malformed dates are
   }
 })
 
-test('G03: Applied/Rejected events share dates, sort deterministically, and ignore unrelated dates', () => {
+test('Progress: Applied/Rejected events share dates, sort deterministically, and ignore unrelated dates', () => {
   const input = [
     { ...record(2, 'Rejected', 0, '2024-02-29'), company: 'Zeta', rejectedDate: '2024-02-29', lastUpdated: '2099-01-01' },
     { ...record(1, 'Interview', 1, '2024-02-29'), company: 'Alpha', lastUpdated: '2099-01-01', followUp: '2099-01-01' },
@@ -125,7 +125,7 @@ test('G03: Applied/Rejected events share dates, sort deterministically, and igno
   assert.deepEqual(buildCalendarEvents([...input].reverse()), events)
 })
 
-test('G03: invalid latest date cannot shift the week or crash; all-undated falls back to local today', () => {
+test('Progress: invalid latest date cannot shift the week or crash; all-undated falls back to local today', () => {
   const events = buildCalendarEvents([record(1, 'Applied', 0, '2026-02-28'), record(2, 'Applied', 0, 'zzzz'),
     { ...record(3, 'Rejected', 0, '2026-02-30'), rejectedDate: '9999-99-99' }])
   assert.equal(getLatestEventWeek(events), '2026-02-22')
@@ -134,7 +134,7 @@ test('G03: invalid latest date cannot shift the week or crash; all-undated falls
   assert.equal(buildCalendarDays('2025-12-28', new Map()).flatMap((day) => day.events).length, 0)
 })
 
-test('G03: year/month/leap boundaries and reversible week navigation', () => {
+test('Progress: year/month/leap boundaries and reversible week navigation', () => {
   for (const [week, dates] of [
     ['2025-12-28', ['2025-12-28', '2025-12-29', '2025-12-30', '2025-12-31', '2026-01-01', '2026-01-02', '2026-01-03']],
     ['2024-02-25', ['2024-02-25', '2024-02-26', '2024-02-27', '2024-02-28', '2024-02-29', '2024-03-01', '2024-03-02']],
@@ -149,7 +149,7 @@ test('G03: year/month/leap boundaries and reversible week navigation', () => {
   }
 })
 
-test('G03: Real row mapping and Demo normalization yield identical analytics', () => {
+test('Progress: Real row mapping and Demo normalization yield identical analytics', () => {
   const real = demoApplications.map((row) => fromApplicationRow({ ...toApplicationRow(row, 'synthetic'), id: row.id }))
   const demo = demoApplications.map(normalizeApplication)
   assert.deepEqual(buildProgressData(real), buildProgressData(demo))
@@ -157,7 +157,7 @@ test('G03: Real row mapping and Demo normalization yield identical analytics', (
   assert.deepEqual(signature(real), signature(demo))
 })
 
-test('F08: unknown rejection dates have no event; reopened records retain only latest known event', () => {
+test('Progress: unknown rejection dates have no event; reopened records retain only latest known event', () => {
   const unknown = { ...record(1, 'Rejected', 0, '2026-01-01'), rejectedDate: null, lastUpdated: '2026-01-09' }
   assert.deepEqual([...buildCalendarEvents([unknown]).keys()], ['2026-01-01'])
   assert.equal(buildProgressData([unknown]).data.nodes.at(-1).name, 'Rejected before interview')
@@ -167,7 +167,7 @@ test('F08: unknown rejection dates have no event; reopened records retain only l
   assert.deepEqual([...buildCalendarEvents([rerejected]).keys()], ['2026-01-01', '2026-01-10'])
 })
 
-test('G03: weeks can straddle the edges of four-digit event years without invalid internal dates', () => {
+test('Progress: weeks can straddle the edges of four-digit event years without invalid internal dates', () => {
   for (const value of ['0001-01-01', '9999-12-31']) {
     const events = buildCalendarEvents([record(1, 'Applied', 0, value)])
     const week = getLatestEventWeek(events)
@@ -178,7 +178,7 @@ test('G03: weeks can straddle the edges of four-digit event years without invali
 })
 
 for (const timezone of ['UTC', 'America/Toronto', 'America/Los_Angeles', 'Pacific/Kiritimati', 'Asia/Kolkata']) {
-  test(`G03: local date-only weeks, DST and midnight boundaries in ${timezone}`, () => {
+  test(`Progress: local date-only weeks, DST and midnight boundaries in ${timezone}`, () => {
     const moduleUrl = new URL('./progress.js', import.meta.url).href
     execFileSync(process.execPath, ['--input-type=module', '-e', `
       import assert from 'node:assert/strict';
